@@ -11,7 +11,7 @@
 ;;  Start with scheme --heap 13000                                        ;;
 ;;  if encountering "Out of memory" errors when compiling.                ;;
 ;;                                                                        ;;
-;;  Last edited 2015-05-12.                                               ;;
+;;  Last edited 2015-05-19.                                               ;;
 ;;                                                                        ;;
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
@@ -1153,7 +1153,8 @@
    )
 )
 
-(define (A166104v2 n) (sqrt (A166103 n)))
+(define (A166104v2 n) (A000196 (A166103 n)))
+;; (define (A166104v2 n) (sqrt (A166103 n)))
 
 (definec (A166272 n) (numerator (/ (A166100 (A166101 n)) (A166102 n))))
 (definec (A166272v2 n) (* 3 (/ (A166100 (A166101 n)) (A166102 n))))
@@ -1946,9 +1947,9 @@
 (define (A227742 n) (+ (A173318 (* 2 (- n 1))) (/ (+ 1 (A005811 (- (* 2 n) 1))) 2)))
 (define A227742v2 (FIXED-POINTS 1 1 A227741)) ;; Super-naive way.
 
-(define A227743 (MATCHING-POS 1 0 (lambda (k) (integer? (sqrt (A173318 k))))))
+(define A227743 (NONZERO-POS 1 0 (lambda (k) (A010052 (A173318 k))))) ;; Integers n for which A173318(n) is a square. 
 (define (A227744 n) (A173318 (A227743 n))) ;; Squares in A173318.
-(define (A227745 n) (sqrt (A227744 n))) ;; Corresponding n.
+(define (A227745 n) (A000196 (A227744 n))) ;; Nonnegative integers whose squares occur in A173318. 
 
 (define (A227736 n) (A227186bi (A227737 n) (A227740 n)))
 (define (A101211 n) (A227736 (A227741 n)))

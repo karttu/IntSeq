@@ -31,7 +31,8 @@
 ;;  them to this program. Alternatively, you can send the improved        ;;
 ;;  program directly to Neil Sloane.                                      ;;
 ;;                                                                        ;;
-;;  Last edited  May 14 2015 by Antti Karttunen.                          ;;
+;;  Last edited  May 19 2015 by Antti Karttunen.                          ;;
+;;  Trying to abolish sqrt, also A1163xx -> A1143xx, A1164xx -> A1144xx   ;;
 ;;                                                                        ;;
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
@@ -283,23 +284,26 @@
 
 (definec (binomial_n_2 n) (/ (* (-1+ n) n) 2))
 
-(definec (A025581 n) ;; The X component (column) of square {0..inf} arrays
-  (- (binomial_n_2 (1+ (floor->exact (flo:+ 0.5 (flo:sqrt (exact->inexact (* 2 (1+ n)))))))) (1+ n))
-)
+;; These now in intfun_a.scm with better, sqrt-free definitions:
 
-;; (map A002262 (cons 0 (iota 20))) --> (0 0 1 0 1 2 0 1 2 3 0 1 2 3 4 0 1 2 3 4 5)
-(definec (A002262 n) ;; The Y component (row) of square {0..inf} arrays
-  (- n (binomial_n_2 (floor->exact (flo:+ 0.5 (flo:sqrt (exact->inexact (* 2 (1+ n))))))))
-)
-
-
-(define (A002024 n) ;; repeat n n times, starting from n = 1.
-  (floor->exact (+ (/ 1 2) (sqrt (* 2 n))))
-)
-
-(define (A003056 n) ;; repeat n n+1 times, starting from n = 0.
-  (floor->exact (- (sqrt (* 2 (1+ n))) (/ 1 2)))
-)
+;; (definec (A025581 n) ;; The X component (column) of square {0..inf} arrays
+;;   (- (binomial_n_2 (1+ (floor->exact (flo:+ 0.5 (flo:sqrt (exact->inexact (* 2 (1+ n)))))))) (1+ n))
+;; )
+;; 
+;; ;; (map A002262 (cons 0 (iota 20))) --> (0 0 1 0 1 2 0 1 2 3 0 1 2 3 4 0 1 2 3 4 5)
+;; (definec (A002262 n) ;; The Y component (row) of square {0..inf} arrays
+;;   (- n (binomial_n_2 (floor->exact (flo:+ 0.5 (flo:sqrt (exact->inexact (* 2 (1+ n))))))))
+;; )
+;; 
+;; 
+;; (define (A002024 n) ;; repeat n n times, starting from n = 1.
+;;   (floor->exact (+ (/ 1 2) (sqrt (* 2 n))))
+;; )
+;; 
+;; (define (A003056 n) ;; repeat n n+1 times, starting from n = 0.
+;;   (floor->exact (- (sqrt (* 2 (1+ n))) (/ 1 2)))
+;; )
+;;
 
 (define (A001477 n) n)
 
@@ -2166,10 +2170,10 @@
 (definec (A115873 n) (mult_and_Xmult_first_nonzero n (A065621 n) 262144))
 
 ;; Here are the 3 A-numbers you requested: 116395 --- 116397.
-(define A116395 (fun-succ-distincts1 A115873))
+(define A114395 (fun-succ-distincts1 A115873))
 
-(define (A116396 n) (A115873 (A116395 n)))
-(define (A116397 n) (A007088 (A116396 n)))
+(define (A114396 n) (A115873 (A114395 n)))
+(define (A114397 n) (A007088 (A114396 n)))
 
 (define A115874 (fun-succ-matching-is0 (lambda (i) (= (* 19 i) (A048720bi 55 i)))))
 (define (A115875 n) (A007088 (A115874 n)))
@@ -2179,41 +2183,40 @@
 
 ;; Here are the 5 A-numbers you requested: 116384 --- 116388.
 
-(define A116384 (fun-succ-matching-is0 (lambda (i) (= (* 49 i) (A048720bi 81 i)))))
-(define (A116385 n) (A007088 (A116384 n)))
+(define A114384 (fun-succ-matching-is0 (lambda (i) (= (* 49 i) (A048720bi 81 i)))))
+(define (A114385 n) (A007088 (A114384 n)))
 
-(define A116386 (fun-succ-matching-is0 (lambda (i) (= (* 57 i) (A048720bi 73 i)))))
-(define (A116387 n) (A007088 (A116386 n)))
+(define A114386 (fun-succ-matching-is0 (lambda (i) (= (* 57 i) (A048720bi 73 i)))))
+(define (A114387 n) (A007088 (A114386 n)))
 
-(define (A116388 n) (A115872bi (1+ (A025581 (-1+ n))) (1+ (A002262 (-1+ n)))))
+(define (A114388 n) (A115872bi (1+ (A025581 (-1+ n))) (1+ (A002262 (-1+ n)))))
 
 ;; Here are the 6 A-numbers you requested: 116389 --- 116394.
+;; A114389
 
-(define (A116389 n) (A065621 (-1+ (* 2 n)))) ;; Bisection of A065621.
+(define (A114389 n) (A065621 (-1+ (* 2 n)))) ;; Bisection of A065621.
 
-(define (A116390 n) (A065621 (* n n))) ;; A065621(A000290(n))
+(define (A114390 n) (A065621 (* n n))) ;; A065621(A000290(n))
 
-(define (is-square n) (zero? (- n (expt (floor->exact (sqrt n)) 2))))
+(define A114391 (fun-succ-matching-is0 (lambda (n) (square? (A114390 n)))))
 
-(define A116391 (fun-succ-matching-is0 (lambda (n) (is-square (A116390 n)))))
+(define (A114392 n) (A114390 (A114391 n)))
 
-(define (A116392 n) (A116390 (A116391 n)))
+(define (A114393 n) (A000196 (A114392 n)))
 
-(define (A116393 n) (sqrt (A116392 n)))
-
-(define (A116394 n) (- (A116391 (+ n 1)) (A116391 n)))
+(define (A114394 n) (- (A114391 (+ n 1)) (A114391 n)))
 
 
 ;; Here are the 3 A-numbers you requested: 116398 --- 116400.
 
-(define A116398 (fun-succ-matching-is0 (lambda (n) (is-square (A000695 n)))))
-(define (A116399 n) (A000695 (A116398 n)))
-(define (A116400 n) (sqrt (A000695 (A116398 n))))
+(define A114398 (fun-succ-matching-is0 (lambda (n) (square? (A000695 n)))))
+(define (A114399 n) (A000695 (A114398 n)))
+(define (A114400 n) (A000196 (A000695 (A114398 n))))
 
 ;; Here are the 2 A-numbers you requested: 116401 --- 116402.
 
-(define (A116401 n) (- (A116398 n) (A116400 n)))
-(define (A116402 n) (/ (A116401 n) 2))
+(define (A114401 n) (- (A114398 n) (A114400 n)))
+(define (A114402 n) (/ (A114401 n) 2))
 
 ;; I.e. 5*i = 5Xi
 (define A048716 (fun-succ-matching-is0 (lambda (i) (= (A003987bi (* 4 i) (* 1 i)) (* 5 i)))))
@@ -3715,11 +3718,11 @@
         '(keywords: "tabl")
         '(indentries: crossdomain)
         '(c: "Here * stands for ordinary multiplication, and X means carryless (GF(2)[X]) multiplication (A048720).")
-        '(y: "C.f. A115857, A115871. Transpose: A116388. First column: A115873. Rows at positions 2^k are A000027."
+        '(y: "C.f. A115857, A115871. Transpose: A114388. First column: A115873. Rows at positions 2^k are A000027."
              " Row at the position 2n is equal to the row at position n. Some odd-positioned rows are:"
  " Row 1: A000027, Row 3: A048717, Row 5: A115770 (? Checked for all values less than 2^20), Row 7: A115770,"
  " Row 9: A115801, Row 11: A115803, Row 13: A115772, Row 15: A115801 (? Checked for all values less than 2^20),"
- " Row 17: A115809, Row 19: A115874, Row 49: A116384, Row 57: A116386."
+ " Row 17: A115809, Row 19: A115874, Row 49: A114384, Row 57: A114386."
          )
   )
 
@@ -3727,7 +3730,7 @@
         '(off: 1)
 ;;      '(indentries: crossdomain)
         '(c: "a(2^k) = 1, a(2n) = a(n).")
-        '(y: "C.f. A116395, 116396.")
+        '(y: "C.f. A114395, 116396.")
   )
 
   (list 115874 "Integers i such that 19*i = 55 X i."
@@ -3752,18 +3755,18 @@
         '(upto: 60)
         '(indentries: crossdomain)
         '(c: "Here * stands for ordinary multiplication, and X means carryless (GF(2)[X]) multiplication (A048720).")
-        '(y: "Row 49 of A115872. A116385 shows this sequence in binary.")
+        '(y: "Row 49 of A115872. A114385 shows this sequence in binary.")
   )
-  (list 116385 "Sequence A116384 in binary." '(off: 0) '(upto: 60) '(keywords: "base") '(comps: (007088 116384)))
+  (list 116385 "Sequence A114384 in binary." '(off: 0) '(upto: 60) '(keywords: "base") '(comps: (007088 116384)))
 
   (list 116386 "Integers i such that 57*i = 73 X i."
         '(off: 0)
         '(upto: 60)
         '(indentries: crossdomain)
         '(c: "Here * stands for ordinary multiplication, and X means carryless (GF(2)[X]) multiplication (A048720).")
-        '(y: "Row 57 of A115872. A116387 shows this sequence in binary.")
+        '(y: "Row 57 of A115872. A114387 shows this sequence in binary.")
   )
-  (list 116387 "Sequence A116386 in binary." '(off: 0) '(upto: 60) '(keywords: "base") '(comps: (007088 116386)))
+  (list 116387 "Sequence A114386 in binary." '(off: 0) '(upto: 60) '(keywords: "base") '(comps: (007088 116386)))
 
   (list 116388 "Transpose of table A115872."
         '(off: 1)
@@ -3781,29 +3784,29 @@
         '(off: 1)
         '(keywords: "nonn")
         '(comps: (065621 000290))
-        '(y: "A116391 gives the positions where a(n) is square, A116392 gives the corresponding values (squares), and A116393 gives their square roots.")
+        '(y: "A114391 gives the positions where a(n) is square, A114392 gives the corresponding values (squares), and A114393 gives their square roots.")
   )
 
-  (list 116391 "Positions i where A116390(i) is a square."
+  (list 116391 "Positions i where A114390(i) is a square."
         '(off: 1)
         '(keywords: "nonn")
-        '(y: "First differences: A116394. A116392 gives the corresponding values.")
+        '(y: "First differences: A114394. A114392 gives the corresponding values.")
   )
 
-  (list 116392 "Squares in A116390, in the order of appearance."
+  (list 116392 "Squares in A114390, in the order of appearance."
         '(off: 1)
         '(keywords: "nonn")
         '(comps: (116390 116391))
-        '(y: "a(n) = A116393(n)^2.")
+        '(y: "a(n) = A114393(n)^2.")
   )
 
-  (list 116393 "Square-roots of A116392."
+  (list 116393 "Square-roots of A114392."
         '(off: 1)
         '(keywords: "nonn")
-        '(y: "A116392(n) = a(n)^2.")
+        '(y: "A114392(n) = a(n)^2.")
   )
 
-  (list 116394 "First differences of A116391."
+  (list 116394 "First differences of A114391."
         '(off: 1)
         '(keywords: "nonn")
   )
@@ -3812,7 +3815,7 @@
         '(off: 1)
         '(upto: 95)
         '(keywords: "nonn")
-        '(y: "A116396 gives the corresponding values.")
+        '(y: "A114396 gives the corresponding values.")
   )
 
   (list 116396 "Distinct values in A115873, in the order of appearance."
@@ -3820,16 +3823,16 @@
         '(upto: 95)
         '(keywords: "nonn")
         '(comps: (115873 116395))
-        '(y: "Same sequence in binary: A116397.")
+        '(y: "Same sequence in binary: A114397.")
   )
 
-  (list 116397 "Sequence A116396 in binary." '(off: 1) '(upto: 60) '(keywords: "base") '(comps: (007088 116396)))
+  (list 116397 "Sequence A114396 in binary." '(off: 1) '(upto: 60) '(keywords: "base") '(comps: (007088 116396)))
 
   (list 116398 "Positions where A000695 is a square."
         '(off: 0)
         '(upto: 90)
         '(keywords: "nonn")
-        '(y: "A116399 gives the corresponding values. C.f. A116401.")
+        '(y: "A114399 gives the corresponding values. C.f. A114401.")
   )
 
   (list 116399 "Squares in A000695."
@@ -3841,21 +3844,21 @@
         '(y: "Intersection of A000290 and A000695.")
   )
 
-  (list 116400 "Square-roots of A116399."
+  (list 116400 "Square-roots of A114399."
         '(off: 0)
         '(upto: 90)
         '(keywords: "nonn")
-        '(y: "A116399(n) = a(n)^2. C.f. A116401.")
+        '(y: "A114399(n) = a(n)^2. C.f. A114401.")
   )
 
-  (list 116401 "a(n) = A116398(n)-A116400(n)."
+  (list 116401 "a(n) = A114398(n)-A114400(n)."
         '(off: 0)
         '(upto: 90)
         '(keywords: "nonn")
-        '(y: "A116402 gives the same sequence divided by 2.")
+        '(y: "A114402 gives the same sequence divided by 2.")
   )
 
-  (list 116402 "a(n) = A116401(n)/2."
+  (list 116402 "a(n) = A114401(n)/2."
         '(off: 0)
         '(upto: 90)
         '(keywords: "nonn")

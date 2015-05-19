@@ -13,7 +13,7 @@
 ;;  Intel x86 architecture) under the URL:                                ;;
 ;;  http://www.swiss.ai.mit.edu/projects/scheme/                          ;;
 ;;                                                                        ;;
-;;  Last edited  May 11 2015 by Antti Karttunen.                          ;;
+;;  Last edited  May 19 2015 by Antti Karttunen.                          ;;
 ;;                                                                        ;;
 ;;  Oct 02 2009: Changed macros MATCHING-POS, NONZERO-POS, ZERO-POS,      ;;
 ;;  DISTINCT-POS, DISTINCT-VALS, RECORD-POS, RECORDS-VALS, PARTIALSUMS    ;;
@@ -23,6 +23,16 @@
 ;;                                                                        ;;
 ;;  Oct 05 2009: Changed macros LEAST-EXCEEDING-I, PSEUDOINVERSE1,        ;;
 ;;  PSEUDOINVERSE2 in similar way, to use soff1 and soff2.                ;;
+;;                                                                        ;;
+;;  May 19 2015: Created a new variant PSEUDOINVERSE2NONCACHED            ;;
+;;  which uses binary search algorithm to find an inverse for any         ;;
+;;  monotonic injective function, preferably one which is not cached      ;;
+;;  itself, and is computed quickly (like e.g. A000217 and A000290).      ;;
+;;  This is now used for the definitions of A000196 & A003056             ;;
+;;  to avoid use of sqrt, which is now explicitly disabled here.          ;;
+;;  (Note: this is probably far from optimal for any specific sequence,   ;;
+;;   as say, when compared to Newton's iteration method for A000196       ;;
+;;   but at least it's generic enough to work with many functions.)       ;;
 ;;                                                                        ;;
 ;;  Refactored implement-cached-function macro out of definec,            ;;
 ;;  and used it to implement memoizing functionals                        ;;
@@ -356,6 +366,7 @@
 )
 
 
+
 ;; Was:
 ;; (define (LEAST-EXCEEDING-I soff fun_on_i) ;; soff = starting offset.
 ;;  (implement-cached-function 0 (fun_defined n)
@@ -422,10 +433,52 @@
 
 
 
+;; XXX - Invent a more respectable name for PSEUDOINVERSE2 and the next one, it is our good friend.
+
 ;; Returns the largest i, such that (foo i) <= n.
 ;; soff1 = starting offset for this function to be defined.
 ;; soff2 = starting offset for fun_on_i (i.e. its domain is [soff2,infinity])
 (define (PSEUDOINVERSE2 soff1 soff2 fun_on_i) (compose-funs -1+ (LEAST-EXCEEDING-I soff1 soff2 fun_on_i)))
+
+
+(define (PSEUDOINVERSE2NONCACHED soff1 soff2 foo)
+ (lambda (n)
+  (let ((minind soff2)
+        (maxind n) ;; Assuming foo is a monotonic injection, then foo(n) >= n, so we don't need search farther.
+       )
+        (let loop ((imin minind) (imax maxind))
+             (cond ((< imax imin) 0) ;; Didn't found any k such that foo(k) <= n, return zero.
+                   (else
+                      (let* ((imid (+ imin (/ (- imax imin (A000035 (- imax imin))) 2))) ;; imid = avg(imin,imax)
+                             (val (foo imid)) ;; What's there?
+                            )
+                        (cond ((< val imid)
+                                 (error (format #f
+"PSEUDOINVERSE2NONCACHED: argument function returns f(~a) = ~a, thus it cannot be monotoninc injection!\n"
+                                                imid val
+                                        )
+                                 )
+                              )
+                              ((= val n) imid) ;; Found it?
+                              ((< val n)
+                                    (if (> (foo (+ 1 imid)) n)
+                                        imid ;; If foo(imid) < n, but foo(imid+1) > n, then return imid
+                                        (loop (+ imid 1) imax) ;; Otherwise search from the range [imid+1,imax]
+                                    )
+                              )
+                              (else ;; i.e. if (> val n)
+                                 (loop imin (- imid 1)) ;; Search from the range [imin, imid-1]
+                              )
+                        )
+                      )
+                   )
+             )
+        )
+  )
+ )
+)
+
+
 
 ;; Not yet correct:
 ;; (define (PARSUMS_OF_CHARFUN soff foo) ;; soff = starting offset.
@@ -1060,6 +1113,7 @@
          (else (* 2 (A257690 (- n (A109497 n)))))
    )
 )
+
 
 
 ;; And cross-compositions with the other versions. I always like subtle differences...
@@ -1958,7 +2012,11 @@
 )
 
 ;; Offset 2:
-(definec (A255567 n) (cond ((= n 2) n) ((odd? n) (+ 1 (A255567 (- n 1)))) (else (A255411 (A255567 (/ n 2))))))
+;; (definec (A255567 n) (cond ((= n 2) n) ((odd? n) (+ 1 (A255567 (- n 1)))) (else (A255411 (A255567 (/ n 2))))))
+
+;; Now offset 1:
+(definec (A255567 n) (cond ((<= n 2) n) ((odd? n) (+ 1 (A255567 (- n 1)))) (else (A255411 (A255567 (/ n 2))))))
+
 ;; At least same for terms a(2) - a(255):
 (define A255567v2 (MATCHING-POS 2 1 (lambda (n) (= (+ 1 (A256450 (+ 1 (A255411 n)))) (A255411 (A256450 (+ 1 n)))))))
 
@@ -2673,6 +2731,8 @@
 
 (define (A070939 n) (if (zero? n) 1 (binwidth n)))
 
+(define (A070941 n) (binwidth (+ n n 1)))
+
 ;; Number of eigenvalues equal to 1 of n X n matrix A(i,j)=1 if j=1 or i divides j.
 (define (A083058 n) (if (< n 2) n (- n (A070939 n)))) ;; Offset=1.
 
@@ -2750,8 +2810,43 @@
 (define (A072376 n) (if (< n 2) n (/ (A053644 n) 2)))
 
 ;; A run of 2^n 0's followed by a run of 2^n 1's, for n=0, 1, 2, ... 
-(define (A079944off2 n) (A000035 (floor->exact (/ n (A072376 n)))))
+(define (A079944off2 n) (A000035 (floor->exact (/ n (A072376 n))))) ;; The second most significant bit of n.
 (define (A079944 n) (A079944off2 (+ n 2)))
+
+;; A080541 In binary representation: keep the first digit and rotate left the others. 
+(define (A080541 n) (if (< n 2) n (A003986bi (A053644 n) (+ (* 2 (A053645 n)) (A079944off2 n)))))
+
+;; A080542 In binary representation: keep the first digit and rotate right the others. 
+(define (A080542 n) (if (< n 2) n (+ (A053644 n) (* (A000035 n) (A072376 n)) (A004526 (A053645 n)))))
+
+;; (define A000031slow (cc-generic-Afun A080541 indices-of-nth-binary-forest))
+;; (define A000031slow2 (cc-generic-Afun A080542 indices-of-nth-binary-forest))
+
+
+(define (for-all-nonmsb-bit-rotations? n pred?)
+  (let loop ((k (A080542 n)))
+        (cond ((= k n) (pred? k)) ;; We came full circle?
+;; Then the result just depends whether also the first one of the cycle also fulfills pred?
+              ((not (pred? k)) #f) ;; Meanwhile, if in the middle of cycle we find a nonconformant number, then fail.
+              (else (loop (A080542 k)))
+        )
+  )
+)
+
+(define (A256999 n) ;; largest-of-all-nonmsb-bit-rotations
+  (let loop ((k (A080542 n)) (m n))
+        (cond ((= k n) m) ;; We came full circle?
+              (else (loop (A080542 k) (max m k)))
+        )
+  )
+)
+
+(define (A257697 n) (A053645 (A256999 n)))
+
+(define A257250 (MATCHING-POS 0 0 (lambda (n) (= n (A256999 n)))))
+(define A257739 (MATCHING-POS 1 1 (lambda (n) (< n (A256999 n)))))
+
+
 
 (define (A003817 n) (if (zero? n) n (-1+ (A005843 (A053644 n)))))
 (definec (A003817v2 n) (if (zero? n) n (A003986bi (A003817v2 (-1+ n)) n)))
@@ -5141,7 +5236,7 @@
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 
-(define (A000217 n) (/ (* n (+ n 1)) 2))
+(define (A000217 n) (/ (* n (+ n 1)) 2)) ;;  ;; /XFER: core.triang
 
 (define (A000096 n) (* n (+ n 3) (/ 1 2))) ;; n*(n+3)/2.
 
@@ -5149,9 +5244,58 @@
 
 (define (A000124 n) (1+ (A000217 n)))
 
+;; Complement of A000217:
+(define (A014132 n) (A014132bi (A002260 n) (A004736 n))) ;; T(n,k) = ((n+k)^2 + n-k)/2, n, k > 0, read by antidiagonals. 
+(define (A014132bi n k) (/ (+ (expt (+ n k) 2) n (- k)) 2))
+
+;;;;;;;;;;;;
+;; Interlude: binary trees & other entanglements:
+
+;; In Kimberling style:
+
+(definec (A183079 n) ;; Inverse: A220347.
+   (cond ((<= n 1) n)
+         ((even? n) (A014132 (A183079 (/ n 2))))
+         (else (A000217 (A183079 (/ (+ n 1) 2))))
+   )
+)
+
+
+(definec (A220347 n)
+   (cond ((<= n 1) n)
+         ((zero? (A010054 n)) (* 2 (A220347 (A083920 n))))
+         (else (+ -1 (* 2 (A220347 (A002024 n)))))
+   )
+)
+
+(define (A220348 n) (+ 1 (A029837 (A220347 n)))) ;; Number of row, where n occurs in A183079.
+(define (A220348v2 n) (A070941 (+ -1 (A220347 n))))
+
+
+;;;; In our style:
+
+(definec (A257797 n)
+   (cond ((<= n 1) n)
+         ((zero? (A010054 n)) (* 2 (A257797 (A083920 n))))
+         (else (+ 1 (* 2 (A257797 (+ -1 (A002024 n))))))
+   )
+)
+
+
+(definec (A257798 n)
+   (cond ((<= n 1) n)
+         ((even? n) (A014132 (A257798 (/ n 2))))
+         (else (A000217 (+ 1 (A257798 (/ (- n 1) 2)))))
+   )
+)
+
+
+;;;;;;;;;;;;
+
+
 ;; The smallest m such that the m-th triangular number is greater than or equal to half the n-th triangular number. 
-(define (A257175 n) (ceiling->exact (/ (+ -1 (sqrt (+ (* 2 n n) n n 1))) 2))) ;; By Greathouse's formula
-(define (A257175slow n) (let ((t_per_2 (/ (A000217 n) 2))) (let loop ((m 0)) (if (>= (A000217 m) t_per_2) m (loop (+ 1 m))))))
+(define (A257175unreliable n) (ceiling->exact (/ (+ -1 (sqrt (+ (* 2 n n) n n 1))) 2))) ;; By Greathouse's formula
+(define (A257175 n) (let ((t_per_2 (/ (A000217 n) 2))) (let loop ((m 0)) (if (>= (A000217 m) t_per_2) m (loop (+ 1 m))))))
 
 (define (A000290 n) (* n n)) ;; The squares: a(n) = n^2.
 ;; For clojure the syntax is: (defn A000290 "The squares: a(n) = n^2." [n] (* n n))
@@ -5167,9 +5311,22 @@
 
 (define (A016754 n) (A000290 (A005408 n))) ;; Odd squares, offset=0.
 
-(define (A000196 n) (floor->exact (sqrt n)))
+(define (sqrt n) (error "Function sqrt disabled in IntSeq-library. Use A000196 instead to get correct floored-down integer values. Called with: " n)) ;; We don't deprecate, we disable!
 
-(define (A010052 n) (- (A000196 n) (A000196 (- n 1)))) ;; Characteristic function of squares: 1 if n is a square else 0. 
+(define A000196 (PSEUDOINVERSE2NONCACHED 0 0 A000290)) ;; /XFER: core.squares
+(define (A000196unreliable n) (floor->exact (sqrt n)))
+
+
+
+
+(define (A010052 n) (if (zero? n) 1 (- (A000196 n) (A000196 (- n 1))))) ;; Characteristic function of squares: 1 if n is a square else 0. 
+
+;; (define (square? n) (= n ((lambda (r) (* r r)) (floor->exact (sqrt n)))))
+(define (square? n) (not (zero? (A010052 n)))) ;; If somebody ever uses this one...
+
+(define (A003059 n) (+ (A000196 n) (- 1 (A010052 n)))) ;; Add one to A000196 when n is not a square.
+(define (A003059unreliable n) (ceiling->exact (sqrt n))) ;; n appears 2n-1 times.
+
 
 (define (A000330 n) (* (/ 1 6) n (+ n 1) (+ n n 1))) ;; Square pyramidal numbers: 0^2 + 1^2 + 2^2 +...+ n^2 = n*(n+1)*(2*n+1)/6.
 
@@ -5296,9 +5453,45 @@
 (define (A227786v2 n) (- (A000290 (+ n 1)) 2 (modulo n 2)))
 
 
-(define (A061925 n) (1+ (ceiling->exact (/ (A000290 n) 2)))) ; Ceiling[n^2/2]+1
+(define (A061925 n) (+ 1 (/ (+ (A000290 n) (A000035 n)) 2))) ;; Ceiling[n^2/2]+1
+;; (define (A061925 n) (1+ (ceiling->exact (/ (A000290 n) 2))))
 
 (define (A046092 n) (*  2 n (1+ n))) ;; This gives the central diagonal from zero-indexed arrays/tables.
+
+
+(define A003056 (PSEUDOINVERSE2NONCACHED 0 0 A000217))
+
+(define (A003056unreliable n) ;; repeat n n+1 times, starting from n = 0.
+  (floor->exact (- (sqrt (* 2 (1+ n))) (/ 1 2)))
+)
+
+(define (A083920 n) (- n (A003056 n))) ;; Number of nontriangular numbers <= n.
+
+(define (A002024 n) (+ 1 (A003056 (- n 1))))
+
+(define (A002024unreliable n) ;; repeat n n times, starting from n = 1.
+  (floor->exact (+ (/ 1 2) (sqrt (* 2 n))))
+)
+
+
+;; Repeat n 2n times, starting from n=1:
+(define (A000194 n) (A002024 (+ 1 (/ (- n 1 (A000035 (- n 1))) 2))))
+;; (define (A000194 n) (A002024 (1+ (floor->exact (/ (-1+ n) 2)))))
+
+
+
+;; (map A002262 (cons 0 (iota 20))) --> (0 0 1 0 1 2 0 1 2 3 0 1 2 3 4 0 1 2 3 4 5)
+
+(define (A002262 n) (- n (A000217 (A003056 n)))) ;; a(n) = n - the largest triangular number <= n. (Murthy)
+
+
+(definec (A002262unreliable n) ;; The Y component (row) of square {0..inf} arrays
+  (- n (binomial_n_2 (floor->exact (flo:+ 0.5 (flo:sqrt (exact->inexact (* 2 (1+ n))))))))
+)
+
+
+(define (A002260 n) (+ 1 (A002262 (- n 1))))
+
 
 ;; (map A025581 (cons 0 (iota 20))) --> (0 1 0 2 1 0 3 2 1 0 4 3 2 1 0 5 4 3 2 1 0)
 
@@ -5315,31 +5508,21 @@
 ;; limited precision of IEEE 64-bit floating point numbers.
 ;; What is that point, and how to recode these with strictly fixnum-only
 ;; way? (I need a fixnum-only square root algorithm...)
-(definec (A025581 n) ;; The X component (column) of square {0..inf} arrays
+
+(define (A025581 n) (- (A003056 n) (A002262 n)))
+
+(definec (A025581unreliable n) ;; The X component (column) of square {0..inf} arrays
   (- (binomial_n_2 (1+ (floor->exact (flo:+ 0.5 (flo:sqrt (exact->inexact (* 2 (1+ n)))))))) (1+ n))
 )
 
 
 (define (A004736 n) (+ 1 (A025581 (- n 1))))
 
-;; (map A002262 (cons 0 (iota 20))) --> (0 0 1 0 1 2 0 1 2 3 0 1 2 3 4 0 1 2 3 4 5)
-(definec (A002262 n) ;; The Y component (row) of square {0..inf} arrays
-  (- n (binomial_n_2 (floor->exact (flo:+ 0.5 (flo:sqrt (exact->inexact (* 2 (1+ n))))))))
-)
 
-
-(define (A002260 n) (+ 1 (A002262 (- n 1))))
-
-(define (A002024 n) ;; repeat n n times, starting from n = 1.
-  (floor->exact (+ (/ 1 2) (sqrt (* 2 n))))
-)
 
 ;; Further reduced?
 (define (A236345 n) (+ (- (A002024 (A000290 n)) (A002024 n)) (abs (- (A002260 (A000290 n)) (A002260 n)))))
 
-
-;; Repeat n 2n times, starting from n=1:
-(define (A000194 n) (A002024 (1+ (floor->exact (/ (-1+ n) 2)))))
 
 ;; Integers 1 to 2k followed by integers 1 to 2(k+1) and so on.
 ;; 1,2,1,2,3,4,1,2,3,4,5,6,1,2,3,4,5,6,7,8,
@@ -5348,12 +5531,6 @@
 ;; Integers (2k)-1..0 followed by integers (2k)+1..0 and so on:
 ;; 1,0,3,2,1,0,5,4,3,2,1,0,7,6,5,4,3,2,1,0,...
 (define (A179753 n) (- (* 2 (A000194 n)) (A074294 n)))
-
-(define (A003056 n) ;; repeat n n+1 times, starting from n = 0.
-  (floor->exact (- (sqrt (* 2 (1+ n))) (/ 1 2)))
-)
-
-(define (A003059 n) (ceiling->exact (sqrt n))) ;; n appears 2n-1 times.
 
 (define (A135034 n) (if (zero? n) n (A003059 n))) ;; Nonnegative integers repeated n times, where n = A005408, with a leading 0.
 
@@ -5369,10 +5546,16 @@
 
 (define (A232397 n) (A068527 (A053699 n)))
 
-(define (A071797 n) (- n (expt (floor->exact (sqrt (- n 1))) 2)))
+
+(define (A048760 n) (A000290 (A000196 n))) ;; Largest square <= n. 
+
+(define (A053186 n) (- n (A000290 (A000196 n)))) ;; Square excess of n: difference between n and largest square <= n. 
+
+(define (A071797 n) (+ 1 (A053186 (- n 1)))) ;; Restart counting after each new odd integer (a fractal sequence) (o=1)
+
+;; (define (A071797 n) (- n (expt (floor->exact (sqrt (- n 1))) 2)))
 
 
-(define (square? n) (= n ((lambda (r) (* r r)) (floor->exact (sqrt n)))))
 
 
 (define (A001477 n) n)
