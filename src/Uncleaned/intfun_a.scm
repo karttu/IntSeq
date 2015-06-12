@@ -13,7 +13,8 @@
 ;;  Intel x86 architecture) under the URL:                                ;;
 ;;  http://www.swiss.ai.mit.edu/projects/scheme/                          ;;
 ;;                                                                        ;;
-;;  Last edited  May 19 2015 by Antti Karttunen.                          ;;
+;;  Last edited  Jun 05 2015 by Antti Karttunen.                          ;;
+;;  PSEUDOINVERSE2 is now LEFTINV-LEASTMONO                               ;;
 ;;                                                                        ;;
 ;;  Oct 02 2009: Changed macros MATCHING-POS, NONZERO-POS, ZERO-POS,      ;;
 ;;  DISTINCT-POS, DISTINCT-VALS, RECORD-POS, RECORDS-VALS, PARTIALSUMS    ;;
@@ -22,9 +23,9 @@
 ;;  searched/summed for.                                                  ;;
 ;;                                                                        ;;
 ;;  Oct 05 2009: Changed macros LEAST-EXCEEDING-I, PSEUDOINVERSE1,        ;;
-;;  PSEUDOINVERSE2 in similar way, to use soff1 and soff2.                ;;
+;;  LEFTINV-LEASTMONO in similar way, to use soff1 and soff2.             ;;
 ;;                                                                        ;;
-;;  May 19 2015: Created a new variant PSEUDOINVERSE2NONCACHED            ;;
+;;  May 19 2015: Created a new variant LEFTINV-LEASTMONO-NC2NC            ;;
 ;;  which uses binary search algorithm to find an inverse for any         ;;
 ;;  monotonic injective function, preferably one which is not cached      ;;
 ;;  itself, and is computed quickly (like e.g. A000217 and A000290).      ;;
@@ -39,7 +40,7 @@
 ;;  MATCHING-POS, NONZERO-POS,                                            ;;
 ;;  DISTINCT-POS, DISTINCT-VALS, RECORD-POS, RECORDS-VALS,                ;;
 ;;  NUMBER-OF-CHANGES, LEAST-EXCEEDING-I, PSEUDOINVERSE1                  ;;
-;;  PSEUDOINVERSE2 and COMPLEMENT.                                        ;;
+;;  LEFTINV-LEASTMONO and COMPLEMENT.                                     ;;
 ;;  These are still first-cut, to be polished. Need better names for some.;;
 ;;                                                                        ;;
 ;;  Added Jan 08 2007 a few sieving functions and eigen-convolutions.     ;;
@@ -433,15 +434,17 @@
 
 
 
+;;
+
 ;; XXX - Invent a more respectable name for PSEUDOINVERSE2 and the next one, it is our good friend.
 
 ;; Returns the largest i, such that (foo i) <= n.
 ;; soff1 = starting offset for this function to be defined.
 ;; soff2 = starting offset for fun_on_i (i.e. its domain is [soff2,infinity])
-(define (PSEUDOINVERSE2 soff1 soff2 fun_on_i) (compose-funs -1+ (LEAST-EXCEEDING-I soff1 soff2 fun_on_i)))
+(define (LEFTINV-LEASTMONO soff1 soff2 fun_on_i) (COMPOSE -1+ (LEAST-EXCEEDING-I soff1 soff2 fun_on_i)))
 
 
-(define (PSEUDOINVERSE2NONCACHED soff1 soff2 foo)
+(define (LEFTINV-LEASTMONO-NC2NC soff1 soff2 foo)
  (lambda (n)
   (let ((minind soff2)
         (maxind n) ;; Assuming foo is a monotonic injection, then foo(n) >= n, so we don't need search farther.
@@ -454,7 +457,7 @@
                             )
                         (cond ((< val imid)
                                  (error (format #f
-"PSEUDOINVERSE2NONCACHED: argument function returns f(~a) = ~a, thus it cannot be monotoninc injection!\n"
+"LEFTINV-LEASTMONO-NC2NC: argument function returns f(~a) = ~a, thus it cannot be monotoninc injection!\n"
                                                 imid val
                                         )
                                  )
@@ -546,7 +549,7 @@
 ;; Is there a way to do this with one cached function less?
 
 (define (COMPLEMENT soff fun_on_i) ;; soff = starting offset.
-  (let ((inv (PSEUDOINVERSE2 soff soff fun_on_i)))
+  (let ((inv (LEFTINV-LEASTMONO soff soff fun_on_i)))
     (MATCHING-POS soff soff
       (lambda (i) (let ((inv_i (inv i))) (or (< inv_i soff) (not (= i (fun_on_i inv_i))))))
     )
@@ -604,7 +607,14 @@
  )
 )
 
+;;;;;;;;;;;;;;;;;;;;;;
 
+;; (define define-for-backward-compatibility define)
+
+;; (define-for-backward-compatibility PSEUDOINVERSE2 LEAST_MONOTONIC_LEFT_INVERSE)
+;; (define-for-backward-compatibility PSEUDOINVERSE2NONCACHED LEAST_MONOTONIC_LEFT_INVERSE_NC2NC)
+
+;;;;;;;;;;;;;;;;;;;;;;
 
 (definec (add1 n) (1+ n)) ;; Our cached version.
 
@@ -626,7 +636,7 @@
 
 
 (definec (A000040 n) ((rowfun_n_for_Esieve n) 1))
-(define A000720 (PSEUDOINVERSE2 1 1 A000040)) ;; We have a more efficient definition somewhere...
+(define A000720 (LEFTINV-LEASTMONO 1 1 A000040)) ;; We have a more efficient definition somewhere...
 
 (define (A256956 n) (* (A000720 n) (A000720 (+ 1 n))))
 
@@ -836,7 +846,7 @@
 ;; When large values are needed, do:
 ;; (define A000959vec (read-b-file-to-vector "seqs/b000959_upto200000_from_OEIS.txt" 200001))
 ;; (define (A000959 n) (vector-ref A000959vec n))
-;; Also useful, before we get better implementation for things like PSEUDOINVERSE2 and COMPLEMENT:
+;; Also useful, before we get better implementation for things like LEFTINV-LEASTMONO and COMPLEMENT:
 
 (define (precompute Afun upto)
    (let loop ((i 1))
@@ -852,7 +862,7 @@
 (definec (A000959 n) ((rowfun_n_for_A000959sieve n) n))
 
 (define A050505 (COMPLEMENT 1 A000959)) ;; Unlucky numbers.
-(define A109497 (PSEUDOINVERSE2 1 1 A000959))
+(define A109497 (LEFTINV-LEASTMONO 1 1 A000959))
 (define (A145649 n) (if (< n 2) n (- (A109497 n) (A109497 (- n 1))))) ;; Characteristic function of lucky numbers (A000959).
 
 ;; (definec (A109497 n) (if (zero? n) n (+ (A145649 n) (A109497 (- n 1))))) ;; Number of lucky numbers <= n.
@@ -940,7 +950,7 @@
 
 (definec (A003309 n) (if (= 1 n) 1 ((rowfun_n_for_A003309sieve (- n 1)) 1)))
 (define A192607 (COMPLEMENT 1 A003309)) ;; Nonludic numbers.
-(define A192512 (PSEUDOINVERSE2 1 1 A003309)) ;; Number of ludic numbers <= n.
+(define A192512 (LEFTINV-LEASTMONO 1 1 A003309)) ;; Number of ludic numbers <= n.
 
 (define (A236863 n) (if (zero? n) n (- n (A192512 n)))) ;; Number of nonludic numbers <= n.
 
@@ -1969,9 +1979,9 @@
 (define A256450v3 (MATCHING-POS 1 1 (lambda (n) (= 1 (A257679 n)))))
 
 ;; Ah, the recurrence, even more naive than a similar one for A227187:
-(definec (A256450 n)
-   (if (= 1 n) n
-       (let ((prev (A256450 (- n 1))))
+(definec (A256450naive n)
+   (if (= 1 n) 1
+       (let ((prev (A256450naive (- n 1))))
            (cond ((even? prev) (+ 1 prev)) ;; Actually unnecessary, but optimizes for the next clause:
                  ((> (A257511 (+ 1 prev)) 0) (+ 1 prev))
                  (else (+ 2 prev))
@@ -1979,6 +1989,49 @@
        )
    )
 )
+
+;; XXX - Rethink changing the offset of A256450 to zero, which would entail changing
+;;  A257682, A257503, A257505, A255565 (description), A255566 and A255567.
+(definec (A256450off0 n)
+   (let* ((k (A258198 n))
+          (d (- n (A258199 n)))
+          (f (A000142 (+ 1 k)))
+         )
+      (cond ;; ((<= n 1) n)
+            ((< d f) (+ f d))
+            (else
+               (+ (* f (+ 2 (floor->exact (/ (- d f) (A258199 n)))))
+                  (A256450off0 (modulo (- d f) (A258199 n)))
+               )
+            )
+      )
+   )
+)
+
+
+(define (A256450 n) (A256450off0 (- n 1)))
+
+
+;; (define (A001563wrong n) (* n (! (1+ n)))) ;; First differences of A000142.
+(define (A001563 n) (* n (! n))) ;; /XFER IntSeq.facbase or IntSeq.core Row 1 of A257505.
+(define (A001563v2 n) (- (! (1+ n)) (! n)))
+
+
+;; (define A258198 (LEFTINV-LEASTMONO-NC2NC 0 0 A001563)) ;; Shooting flies with a cannon...
+;; (define (A258199 n) (A001563 (A258198 n)))
+
+(define (A258198 n) (let loop ((k 1) (f 1)) (if (> (* k f) n) (- k 1) (loop (+ k 1) (* (+ k 1) f)))))
+
+
+(define (A258199 n)
+    (let loop ((k 1) (f 1))
+          (if (> (* k f) n)
+              (* (- k 1) (/ f k))
+              (loop (+ k 1) (* (+ k 1) f))
+          )
+    )
+)
+
 
 
 (define (A257503bi row col) (if (= 1 row) (A256450 col) (A255411 (A257503bi (- row 1) col))))
@@ -2209,10 +2262,6 @@
 
 
   
-
-;; (define (A001563wrong n) (* n (! (1+ n)))) ;; First differences of A000142.
-(define (A001563 n) (* n (! n))) ;; /XFER IntSeq.facbase or IntSeq.core Row 1 of A257505.
-(define (A001563v2 n) (- (! (1+ n)) (! n)))
 
 (define (A001048 n) (+ (A000142 n) (A000142 (- n 1)))) ;; n! + (n-1)!.
 
@@ -2531,6 +2580,9 @@
 (define (A006370 n) (if (even? n) (/ n 2) (+ 1 n n n))) ;; Image of n under the `3x+1' map.
 (define (A139391 n) (A000265 (A006370 n)))  ;; Next odd term in Collatz trajectory with starting value n. 
 
+(definec (A258098 n) (if (zero? n) 79 (A006370 (A258098 (- n 1))))) ;; 3x + 1 sequence starting at 79.
+
+
 (define (A165355 n) (if (even? n) (+ n n n 1) (/ (+ n n n 1) 2)))
 
 (define (A007494 n) (/ (+ n n n (modulo n 2)) 2)) ;; Congruent to 0 or 2 mod 3. 
@@ -2828,6 +2880,18 @@
         (cond ((= k n) (pred? k)) ;; We came full circle?
 ;; Then the result just depends whether also the first one of the cycle also fulfills pred?
               ((not (pred? k)) #f) ;; Meanwhile, if in the middle of cycle we find a nonconformant number, then fail.
+              (else (loop (A080542 k)))
+        )
+  )
+)
+
+
+(define (for-any-nonmsb-bit-rotation? n pred?)
+  (let loop ((k (A080542 n)))
+        (cond
+ ;; If in the middle of cycle we find a conformant number or other non-false value, we return it immediately:
+              ((pred? k) => (lambda (x) x))
+              ((= k n) #f) ;; We came full circle, without finding any matching, return false.
               (else (loop (A080542 k)))
         )
   )
@@ -3704,12 +3768,23 @@
    )
 )
 
+(define (A059893 n)
+  (if (zero? n)
+      n
+      (let loop ((n n) (s 1))
+        (cond ((= 1 n) s)
+              (else (loop (/ (- n (A000035 n)) 2) (+ s s (A000035 n))))
+        )
+      )
+  )
+)
 
-(definec (A059893 n)
+
+(definec (A059893rec n)
   (if (<= n 1)
       n
       (let* ((k (- (A000523 n) 1))
-             (r (A059893 (- n (A000079 k)))))
+             (r (A059893rec (- n (A000079 k)))))
          (if (= 2 (floor->exact (/ n (A000079 k))))
              (* 2 r)
              (+ 1 r)
@@ -5245,7 +5320,9 @@
 (define (A000124 n) (1+ (A000217 n)))
 
 ;; Complement of A000217:
-(define (A014132 n) (A014132bi (A002260 n) (A004736 n))) ;; T(n,k) = ((n+k)^2 + n-k)/2, n, k > 0, read by antidiagonals. 
+(define (A014132 n) (+ n (A002024 n)))
+
+(define (A014132v2 n) (A014132bi (A002260 n) (A004736 n))) ;; T(n,k) = ((n+k)^2 + n-k)/2, n, k > 0, read by antidiagonals. 
 (define (A014132bi n k) (/ (+ (expt (+ n k) 2) n (- k)) 2))
 
 ;;;;;;;;;;;;
@@ -5313,7 +5390,7 @@
 
 (define (sqrt n) (error "Function sqrt disabled in IntSeq-library. Use A000196 instead to get correct floored-down integer values. Called with: " n)) ;; We don't deprecate, we disable!
 
-(define A000196 (PSEUDOINVERSE2NONCACHED 0 0 A000290)) ;; /XFER: core.squares
+(define A000196 (LEFTINV-LEASTMONO-NC2NC 0 0 A000290)) ;; /XFER: core.squares
 (define (A000196unreliable n) (floor->exact (sqrt n)))
 
 
@@ -5459,7 +5536,7 @@
 (define (A046092 n) (*  2 n (1+ n))) ;; This gives the central diagonal from zero-indexed arrays/tables.
 
 
-(define A003056 (PSEUDOINVERSE2NONCACHED 0 0 A000217))
+(define A003056 (LEFTINV-LEASTMONO-NC2NC 0 0 A000217))
 
 (define (A003056unreliable n) ;; repeat n n+1 times, starting from n = 0.
   (floor->exact (- (sqrt (* 2 (1+ n))) (/ 1 2)))
