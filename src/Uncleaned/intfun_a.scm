@@ -13,7 +13,7 @@
 ;;  Intel x86 architecture) under the URL:                                ;;
 ;;  http://www.swiss.ai.mit.edu/projects/scheme/                          ;;
 ;;                                                                        ;;
-;;  Last edited  Jun 05 2015 by Antti Karttunen.                          ;;
+;;  Last edited  Aug 16 2015 by Antti Karttunen.                          ;;
 ;;  PSEUDOINVERSE2 is now LEFTINV-LEASTMONO                               ;;
 ;;                                                                        ;;
 ;;  Oct 02 2009: Changed macros MATCHING-POS, NONZERO-POS, ZERO-POS,      ;;
@@ -616,6 +616,29 @@
 
 ;;;;;;;;;;;;;;;;;;;;;;
 
+;; Naive search, no caching:
+
+(define (FUN_FOR_NUMBER_OF_GREEDY_SUMMANDS monotonic_injection_with_a1_1)
+   (lambda (n)
+       (let outloop ((n n) (s 0))
+          (cond ((zero? n) s)
+                (else
+                  (let inloop ((i 2) (prev_k (monotonic_injection_with_a1_1 1)))
+                      (let ((k (monotonic_injection_with_a1_1 i)))
+                         (cond ((> k n) (outloop (- n prev_k) (+ 1 s)))
+                               (else (inloop (+ 1 i) k))
+                         )
+                      )
+                  )
+                )
+          )
+       )
+   )
+)
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+
 (definec (add1 n) (1+ n)) ;; Our cached version.
 
 (definec (rowfun_n_for_Esieve n) ;;
@@ -831,6 +854,26 @@
 ;;   leaving 1 3 7 9 13 ...;
 ;; now delete every 9th number; etc.
 
+
+(define (A258207 n) (A258207bi (A002260 n) (A004736 n)))
+(define (A258208 n) (A258207bi (A004736 n) (A002260 n)))
+
+(define (A258207bi row col) ((rowfun_n_for_A000959sieve row) col)) 
+
+(define (A047241v2 n) (A258207bi 2 n))
+(define A047241 A047241v2) ;; XXX - Copy from OEIS the original definition.
+
+(define (A016969 n) (+ (* 6 n) 5))
+
+
+(define (A258011 n) (A258207bi 3 n))
+
+(define (A258016 n) (A047241 (* 7 n)))
+(define (A258016v2 n) (A255543bi 3 n))
+
+(define (A260440 n) (A258011 (* 9 n)))
+(define (A260440v2 n) (A255543bi 4 n))
+
 (definec (rowfun_n_for_A000959sieve n) ;;
   (if (= 1 n)
       A005408shifted
@@ -859,7 +902,9 @@
    )
 )
 
-(definec (A000959 n) ((rowfun_n_for_A000959sieve n) n))
+(definec (A000959 n) (A258207bi n n)) ;; ((rowfun_n_for_A000959sieve n) n)
+
+(define (A031883 n) (- (A000959 (+ 1 n)) (A000959 n))) ;; First differences of lucky numbers.
 
 (define A050505 (COMPLEMENT 1 A000959)) ;; Unlucky numbers.
 (define A109497 (LEFTINV-LEASTMONO 1 1 A000959))
@@ -911,6 +956,141 @@
 (definec (A255553 n) (A255551 (A252460 n)))
 (definec (A255554 n) (A083221 (A255552 n)))
 
+;;
+
+(definec (A260438 n) ;; Row index to A255545.
+  (cond ((not (zero? (A145649 n))) (A109497 n)) ;; If n is a Lucky number, then return its index.
+        ((even? n) 1) ;; Optimization. All even numbers are on the row 1.
+        (else ;; We have to search for it, in a two naive loops. (XXX - Could use a binary search in inner one?)
+          (let searchrow ((row 2))
+             (let searchcol ((col 1))
+                (cond ((>= (A255543bi row col) n)
+                         (if (= (A255543bi row col) n)
+                             row
+                             (searchrow (+ 1 row))
+                         )
+                      )
+                      (else (searchcol (+ 1 col)))
+                )
+             )
+          )
+        )
+  )
+)
+
+(definec (A260429 n) ;; Column index to A255545.
+  (cond ((not (zero? (A145649 n))) 1) ;; If n is a Lucky number, then return 1.
+        ((even? n) (+ 1 (/ n 2))) ;; Optimization. All even numbers are on the row 1, after that 1.
+        (else ;; We have to search for it, in a two naive loops. (XXX - Could use a binary search in inner one?)
+          (let searchrow ((row 2))
+             (let searchcol ((col 1))
+                (cond ((>= (A255543bi row col) n)
+                         (if (= (A255543bi row col) n)
+                             (+ 1 col)
+                             (searchrow (+ 1 row))
+                         )
+                      )
+                      (else (searchcol (+ 1 col)))
+                )
+             )
+          )
+        )
+  )
+)
+
+
+(definec (A260439 n) ;; Column index to A255551.
+  (cond ((= 1 n) 0) ;; 1 is outside of A255551.
+        ((not (zero? (A145649 n))) 1) ;; If n is a Lucky number, then return 1.
+        ((even? n) (/ n 2)) ;; Optimization. All even numbers are on the row 1.
+        (else ;; We have to search for it, in a two naive loops. (XXX - Could use a binary search in inner one?)
+          (let searchrow ((row 2))
+             (let searchcol ((col 1))
+                (cond ((>= (A255543bi row col) n)
+                         (if (= (A255543bi row col) n)
+                             (+ 1 col)
+                             (searchrow (+ 1 row))
+                         )
+                      )
+                      (else (searchcol (+ 1 col)))
+                )
+             )
+          )
+        )
+  )
+)
+
+
+
+(definec (A260437 n) ;; Column index to A255543.
+  (cond ((not (zero? (A145649 n))) 0) ;; If n is a Lucky number, then return 0.
+        ((even? n) (/ n 2)) ;; Optimization. All even numbers are on the row 1.
+        (else ;; We have to search for it, in a two naive loops. (XXX - Could use a binary search in inner one?)
+          (let searchrow ((row 2))
+             (let searchcol ((col 1))
+                (cond ((>= (A255543bi row col) n)
+                         (if (= (A255543bi row col) n)
+                             col
+                             (searchrow (+ 1 row))
+                         )
+                      )
+                      (else (searchcol (+ 1 col)))
+                )
+             )
+          )
+        )
+  )
+)
+
+
+(definec (A260738 n) ;; Row index to A255127.
+  (cond ((= 1 n) 0) ;; 1 is outside of A255127.
+        ((even? n) 1) ;; Optimization. All even numbers are on the row 1.
+        (else ;; We have to search for it, in a two naive loops. (XXX - Could use a binary search in inner one?)
+          (let searchrow ((row 2))
+             (let searchcol ((col 1))
+                (cond ((>= (A255127bi row col) n)
+                         (if (= (A255127bi row col) n)
+                             row
+                             (searchrow (+ 1 row))
+                         )
+                      )
+                      (else (searchcol (+ 1 col)))
+                )
+             )
+          )
+        )
+  )
+)
+
+
+(definec (A260739 n) ;; Column index to A255127.
+  (cond ((= 1 n) 0) ;; 1 is outside of A255127.
+        ((even? n) (/ n 2)) ;; Optimization. All even numbers are on the row 1.
+        (else ;; We have to search for it, in a two naive loops. (XXX - Could use a binary search in inner one?)
+          (let searchrow ((row 2))
+             (let searchcol ((col 1))
+                (cond ((>= (A255127bi row col) n)
+                         (if (= (A255127bi row col) n)
+                             col
+                             (searchrow (+ 1 row))
+                         )
+                      )
+                      (else (searchcol (+ 1 col)))
+                )
+             )
+          )
+        )
+  )
+)
+
+(define (A260435 n) (if (<= n 1) n (A255127bi (A260438 n) (A260439 n))))
+
+(define (A260436 n) (if (<= n 1) n (A255551bi (A260738 n) (A260739 n))))
+
+(definec (A260741 n) (if (<= n 1) n (A255127bi (A260438 n) (A260741 (A260439 n)))))
+(definec (A260742 n) (if (<= n 1) n (A255551bi (A260738 n) (A260742 (A260739 n)))))
+
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
@@ -923,6 +1103,14 @@
 ;; Row 3 = 5,7,11,13,17,19,23,25,29,31,35,37,41,...
 ;; Row 4 = 7,11,13,17,23,25,29,31,37,41,...
 
+(define (A260717 n) (A260717bi (A002260 n) (A004736 n)))
+(define (A260718 n) (A260717bi (A004736 n) (A002260 n)))
+
+(define (A260717bi row col) ((rowfun_n_for_A003309sieve row) col))
+
+(define (A260714 n) (A260717bi 4 n))
+
+(define (A260715 n) (A260717bi 5 n))
 
 (definec (rowfun_n_for_A003309sieve n) ;;
   (if (= 1 n)
@@ -972,6 +1160,7 @@
 
 ;;;;;;;;;;;;;;;;;;;;
 
+
 ;; Each rowfun is zero-based. It's easier that way.
 (definec (rowfun_n_for_remaining_numbers n) ;;
   (if (= 1 n)
@@ -984,7 +1173,7 @@
   )
 )
 
-(definec (rowfun_n_for_A255127 n) ;;
+(definec (rowfun_n_for_A255127 n) ;; Should use A260717bi instead of rowfun_n_for_remaining_numbers
   (if (= 1 n)
       (lambda (n) (+ n n)) ;; We return even numbers as the first row, i.e. A005843.
       (let* ((rowfun_for_remaining (rowfun_n_for_remaining_numbers (- n 1)))
@@ -1019,6 +1208,10 @@
 
 (define (A256488 n) (/ (A256487 n) 2)) ;; Same halved.
 
+(define (A260722 n) (if (= 1 n) 0 (- (A003309 (+ 1 n)) (A000959 n)))) ;; Diff between n-th odd Ludic and n-th Lucky
+(define (A260721 n) (if (= 1 n) 0 (/ (- (A003309 (+ 1 n)) (A000959 n)) 2))) ;; Same halved.
+
+(define (A260723 n) (- (A003309 (+ 1 n)) (A003309 n)))
 
 ;; A255407-A255426 are now reserved for your use. 
 
@@ -1426,6 +1619,17 @@
 
 (define A000045 fibo)
 
+(define (A000071 n) (- (A000045 n) 1))
+
+;; A000129: Pell numbers: a(0) = 0, a(1) = 1; for n > 1, a(n) = 2*a(n-1) + a(n-2). 
+(definec (A000129 n) (if (<= n 1) n (+ (* 2 (A000129 (- n 1))) (A000129 (- n 2)))))
+
+;; A001045: Jacobsthal sequence (or Jacobsthal numbers): a(n) = a(n-1) + 2*a(n-2), with a(0) = 0, a(1) = 1. 
+(definec (A001045 n) (if (<= n 1) n (+ (A001045 (- n 1)) (* 2 (A001045 (- n 2))))))
+
+
+(definec (A178590 n) (cond ((<= n 1) n) ((even? n) (* 3 (A178590 (/ n 2)))) (else (+ (A178590 (/ (- n 1) 2)) (A178590 (/ (+ n 1) 2))))))
+
 (definec (A001177 n) ;; Fibonacci entry points: a(n) = least k such that n divides Fibonacci number F_k (=A000045(k)).
    (let loop ((k 1))
       (cond ((zero? (modulo (A000045 k) n)) k)
@@ -1460,8 +1664,8 @@
 
 (define (A003622 n) (+ n (A022342 n))) ;; One-based also. ;; Integers whose Z.E. ends with 1.
 
-(define (A022342 n) (- (A000201 n) 1)) ;; Note: one-based ;; Integers whose Z.E. ends with 0.
-(define (A022342v2 n) (A022290 (* 2 (A003714 (- n 1)))))
+(define (A022342 n) (A022290 (* 2 (A003714 (- n 1)))))
+(define (A022342dont_use_as_involves_floats n) (- (A000201 n) 1)) ;; Note: one-based ;; Integers whose Z.E. ends with 0.
 
 (definec (A002326 n) ;; Multiplicative order of 2 mod 2n+1. 
    (if (zero? n)
@@ -2666,6 +2870,19 @@
 (define (A254102biv2 row col) (A126760 (A254101bi row col)))
 
 
+;; (2n-1) * n^(2n-1) * 4^(n-1)
+
+(define (A067745 n) (numerator (/ (+ n n n -2) (* (expt n (+ n n -1)) (+ n n -1) (expt 4 (- n 1))))))
+(define (A067745v2 n) (denominator (/ (* (expt n (+ n n -1)) (+ n n -1) (expt 4 (- n 1))) (+ n n n -2))))
+
+(define (A067745conjectured n) (A000265 (+ n n n -2)))
+
+(define (A067745conjecturedv2 n) (/ (+ n n n -2) (expt 2 (A007814 (+ n n n -2)))))
+
+
+(define (A067746 n) (denominator (/ (+ n n n -2) (* (expt n (+ n n -1)) (+ n n -1) (expt 4 (- n 1))))))
+
+
 (define (A254047 n) ;; Inverse to A191450.
   (let ((x (A253887 n))
         (y (A254046 n))
@@ -2941,6 +3158,7 @@
      )
   )
 )
+
 
 (define (A053829 n) ;; Sum of digits of (n written in base 8).
   (let loop ((n n) (i 0))
@@ -3437,11 +3655,77 @@
   )
 )
 
-(definec (A054861 n) (if (zero? n) 0 (+ (A007949 n) (A054861 (- n 1)))))
+(define (A053735 n) ;; Sum of digits of (n written in base 3). 
+  (let loop ((n n) (s 0))
+     (if (zero? n)
+         s
+         (loop (floor->exact (/ n 3)) (+ s (modulo n 3)))
+     )
+  )
+)
+
+
+(define (A054861 n) (/ (- n (A053735 n)) 2))
+
+(definec (A054861rec n) (if (zero? n) 0 (+ (A007949 n) (A054861rec (- n 1)))))
 
 (define (A060828 n) (expt 3 (A054861 n)))
 
 (define (A118381 n) (* (A060818 n) (A060828 n)))
+
+(define (A122586 n) ;; Leading digit of n expressed in base 3.
+  (let loop ((n n) (lastm 0))
+     (if (zero? n)
+         lastm
+         (loop (floor->exact (/ n 3)) (modulo n 3))
+     )
+  )
+)
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; Beanstalks interlude for base-3:
+
+(definec (A261231 n) (if (zero? n) n (+ 1 (A261231 (* 2 (A054861 n))))))
+
+(definec (A261232 n) (if (zero? n) 1 (+ (A261234 (- n 1)) (A261232 (- n 1)))))
+(define (A261232v2 n) (A261231 (A000244 n))) ;; Zero-based.
+
+(definec (A261233 n) (if (zero? n) n (+ (A261234 (- n 1)) (A261233 (- n 1)))))
+(define (A261233v2 n) (A261231 (- (A000244 n) 1))) ;; Zero-based.
+
+
+;; How many steps from (3^(n+1))-1 to (3^n)-1 by iterating 2*A054861(n) ? Cf. also A213709, A261091.
+ 
+(definec (A261234 n) 
+ (let ((end (- (A000244 n) 1)))
+  (let loop ((k (- (A000244 (+ 1 n)) 1)) (s 0))
+        (if (= k end) s (loop (* 2 (A054861 k)) (+ 1 s)))
+  )
+ )
+)
+
+
+
+(define (A261234v2 n) (- (A261233 (+ 1 n)) (A261233 n))) ;; Zero-based.
+(define (A261234v3 n) (- (A261231 (A000244 (+ 1 n))) (A261231 (A000244 n))))
+
+(define (A261235 n) (- (A261234 (+ 1 n)) (A261234 n))) ;; First differences of A261234.
+
+
+;; How many steps are needed by iterating 2*A054861(n) to go from (3^(n+1))-1 to first such number whose base-3 representation begins with digit other than 2 ?
+ 
+(definec (A261237 n) 
+  (let loop ((k (- (A000244 (+ 1 n)) 1)) (s 0))
+        (if (< (A122586 k) 2) s (loop (* 2 (A054861 k)) (+ 1 s)))
+  )
+)
+
+(define (A261236 n) (- (A261234 n) (A261237 n)))
+
+(define (A261230 n) (- (A261236 n) (A261237 n)))
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
 
 
 (define (A112765 n)
@@ -5034,9 +5318,10 @@
 (define (A022290 n) ;; I.e. interpret_as_zeckendorf_expansion
   (let loop ((n n) (s 0) (i 2))
      (cond ((zero? n) s)
-           (else (loop (floor->exact (/ n 2))
-                       (+ s (* (modulo n 2) (fibo i)))
-                       (1+ i)
+           ((even? n) (loop (/ n 2) s (+ 1 i)))
+           (else (loop (/ (- n 1) 2)
+                       (+ s (A000045 i))
+                       (+ 1 i)
                  )
            )
      )
@@ -5052,9 +5337,20 @@
 
 ;; 1,2,3,4,5,6,7,8,9,A,B,C,D,E,F,         ,21
 ;; 1,2,3,3,4,4,4,5,5,5,5,5,6,6,6,6,6,6,6,6,7,...
-(define (A072649 n) ;; n occurs fibo(n) times.
+(define (A072649_dont_use_this_one n) ;; n occurs fibo(n) times. [This impl. uses floating point and log, DON'T USE!]
   (let ((b (A072648 n)))
      (+ -1 b (floor->exact (/ n (fibo (1+ b)))))
+  )
+)
+
+(define A072649auxiliary (LEFTINV-LEASTMONO-NC2NC 0 0 (COMPOSE A000045 1+))) ;; This involves only integer arithmetic.
+
+(define (A072649v2 n) (if (<= n 1) n (A072649auxiliary n))) ;; Doesn't work with large values (caching, memory?)
+
+(define (A072649 n) ;; Reasonably fast iterative one. Search the smallest k for which F(k) > n, and return k-2.
+  (if (<= n 3)
+      n
+      (let loop ((k 5)) (if (> (A000045 k) n) (- k 2) (loop (+ 1 k))))
   )
 )
 
@@ -5387,6 +5683,21 @@
 ;;
 
 (define (A016754 n) (A000290 (A005408 n))) ;; Odd squares, offset=0.
+
+(define (A000578 n) (* n n n)) ;; The cubes: a(n) = n^3. 
+
+(define (A048762 n) ;; Largest cube <= n. Do not use any floating point operations here. Should go quite quickly.
+  (let loop ((i 0))
+     (let ((k (expt i 3)))
+       (if (> k n) (expt (- i 1) 3) (loop (+ 1 i)))
+     )
+  )
+)
+
+(define (A055400 n) (- n (A048762 n)))
+
+(definec (A055401 n) (if (zero? n) n (+ 1 (A055401 (A055400 n)))))
+
 
 (define (sqrt n) (error "Function sqrt disabled in IntSeq-library. Use A000196 instead to get correct floored-down integer values. Called with: " n)) ;; We don't deprecate, we disable!
 

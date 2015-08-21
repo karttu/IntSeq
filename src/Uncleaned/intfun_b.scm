@@ -11,7 +11,7 @@
 ;;  Start with scheme --heap 13000                                        ;;
 ;;  if encountering "Out of memory" errors when compiling.                ;;
 ;;                                                                        ;;
-;;  Last edited 2015-06-06.                                               ;;
+;;  Last edited 2015-08-12.                                               ;;
 ;;                                                                        ;;
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
@@ -1726,6 +1726,69 @@
 
 (definec (A257807 n) (if (zero? n) n (+ (A257800 n) (A257807 (- n 1)))))
 (definec (A257808 n) (if (zero? n) n (+ (- 1 (A257800 n)) (A257808 (- n 1)))))
+
+;; Entanglement-permutations:
+
+(definec (A260431 n)
+  (cond ((<= n 1) n)
+        ((zero? (A257800 n)) (* 2 (A260431 (A257808 n))))
+        (else (+ 1 (* 2 (A260431 (+ -1 (A257807 n))))))
+  )
+)
+
+
+(definec (A260432 n)
+  (cond ((<= n 1) n)
+        ((even? n) (A257804 (A260432 (/ n 2))))
+        (else (A257803 (+ 1 (A260432 (/ (- n 1) 2)))))
+  )
+)
+
+
+(definec (A260433 n)
+  (cond ((<= n 1) n)
+        ((zero? (A257800 n)) (+ 1 (* 2 (A260433 (A257808 n)))))
+        (else (* 2 (A260433 (+ -1 (A257807 n)))))
+  )
+)
+
+
+(definec (A260434 n)
+  (cond ((<= n 1) n)
+        ((even? n) (A257803 (+ 1 (A260434 (/ n 2)))))
+        (else (A257804 (A260434 (/ (- n 1) 2))))
+  )
+)
+
+(definec (A260430 n)
+  (cond ((<= n 1) n)
+        ((zero? (A257800 n)) (A257803 (+ 1 (A260430 (A257808 n)))))
+        (else (A257804 (A260430 (+ -1 (A257807 n)))))
+  )
+)
+
+;;
+;; (same-intfuns1? A000027 (COMPOSE A260430 A260430) 1024) --> #t
+;; 
+;; (same-intfuns1? A000027 (COMPOSE A260432 A260431) 1024) --> #t
+;; (same-intfuns1? A000027 (COMPOSE A260431 A260432) 1024) --> #t
+;; (same-intfuns1? A000027 (COMPOSE A260433 A260434) 1024) --> #t
+;; (same-intfuns1? A000027 (COMPOSE A260434 A260433) 1024) --> #t
+;; 
+;; 
+;; (same-intfuns1? A260431 (COMPOSE A054429 A260433) 1024) --> #t
+;; (same-intfuns1? A260431 (COMPOSE A260433 A260430) 1024) --> #t
+;; 
+;; (same-intfuns1? A260432 (COMPOSE A260434 A054429) 1024) --> #t
+;; (same-intfuns1? A260432 (COMPOSE A260430 A260434) 1024) --> #t
+;; 
+;; (same-intfuns1? A260433 (COMPOSE A054429 A260431) 1024) --> #t
+;; (same-intfuns1? A260433 (COMPOSE A260431 A260430) 1024) --> #t
+;; 
+;; 
+;; (same-intfuns1? A260434 (COMPOSE A260432 A054429) 1024) --> #t
+;; (same-intfuns1? A260434 (COMPOSE A260430 A260432) 1024) --> #t
+;; 
 
 
 ;;;;;;;;;;;;;;;;;;;;
@@ -5389,8 +5452,69 @@
 
 (define (A219639 n) (A219641 (A035336v2off1 n))) ;; Numbers that occur only once in A219641. 1-based.
 
-(define (A219640 n) (A219641 (A022342off1 n))) ;; Distinct integers in A219641. One-based.
+(define (A219640off1 n) (A219641 (A022342off1 n))) ;; Distinct integers in A219641. One-based. Don't use this one.
 
+(define (A219640 n) (A219641 (A022342off1 (+ 1 n)))) ;; Distinct integers in A219641. Zero-based from 8.8.2015 onward.
+
+;; A261073-A261104 are now reserved for your use. 
+
+
+(definec (A261081 n) (if (zero? n) n (+ (A261091 n) (A261081 (- n 1)))))
+(define (A261081v2 n) (A219642 (- (A000045 (+ 2 n)) 1)))
+
+(definec (A261082 n) (if (zero? n) 1 (+ (A261091 n) (A261082 (- n 1)))))
+(define (A261082v2 n) (A219642 (A000045 (+ 2 n))))
+
+(definec (A261091 n)
+ (let ((end (- (A000045 (+ 1 n)) 1)))
+  (let loop ((k (- (A000045 (+ 2 n)) 1)) (s 0))
+        (if (= k end) s (loop (A219641 k) (+ 1 s)))
+  )
+ )
+)
+
+(define (A261090 n) (- (A261091 (+ n 1)) (A261091 n)))
+
+(define (A261092 n) (if (zero? n) 1 (- (A261093 n) (A261093 (- n 1)))))
+
+(define A261093 (LEFTINV-LEASTMONO-NC2NC 0 0 A219640))
+
+(define (A261094 n) (* (A261092 n) (A261093 n)))
+
+(define (A261095 n) (- (A219640 (+ 1 n)) (A219640 n)))
+
+(definec (A261076 n) ;; The infinite trunk of Zeckendorf (Fibonacci) beanstalk, with reversed subsections.
+  (cond ((<= n 2) n)
+        ((A219641 (A261076 (- n 1))) =>
+          (lambda (maybe_next)
+            (if (= 1 (A007895 (+ 1 maybe_next)))
+                (+ -1 (A000045 (+ 3 (A072649 (+ 1 maybe_next)))))
+                maybe_next
+            )
+          )
+        )
+  )
+)
+
+;; After zero, each n occurs A261091(n) times.
+(definec (A261101 n) (let loop ((k 0)) (if (>= (A261081 k) n) k (loop (+ 1 k)))))
+
+;; After [0] subranges to be reversed are given by A261082(n) - A261081(n+1)
+;; 0 1 2 3[4 5][6,7] [8   10] [11         15]
+;; 0 1 2 4 7 5 12 9  20 17 14 33 29 27 24 22 
+
+(define A261102apu (COMPOSE (lambda (n) (if (zero? n) n (- (+ 1 (A261081 (A261101 (+ n -1)))) n))) 1+))
+
+(define (A261102 n) (+ (A261102apu n) (if (zero? n) n (A261082 (+ -1 (A261101 n))))))
+
+(define (A219648 n) (A261076 (A261102 n)))
+
+(define (A261083 n) (- (A219648 n) (A219643 n)))
+
+(define (A261084 n) (- (A219645 n) (A219648 n)))
+
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (define Aux_for219636 (COMPLEMENT 1 A035336v2off1))
 (define (A219636 n) (if (= 1 n) 0 (Aux_for219636 (-1+ n))))

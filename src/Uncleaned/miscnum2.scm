@@ -1022,6 +1022,28 @@
 
 (definec (A076271 n) (if (= 1 n) n (+ (A076271 (- n 1)) (A006530 (A076271 (- n 1))))))
 
+(define (A028233 n) (expt (A020639 n) (A067029 n)))
+
+(define (A028234 n) (/ n (A028233 n)))
+
+(definec (A048675 n)
+  (cond ((= 1 n) (- n 1))
+        (else (+ (A000079 (- (A055396 n) 1))
+                 (A048675 (A032742 n))
+              )
+        )
+  )
+)
+
+(definec (A048675v2 n)
+  (cond ((= 1 n) (- n 1))
+        (else (+ (* (A067029 n) (A000079 (- (A055396 n) 1)))
+                 (A048675v2 (A028234 n))
+              )
+        )
+  )
+)
+
 ;; Even-indexed terms equal the preceding term plus its largest prime factor, odd-indexed terms equal the preceding term plus its smallest prime factor, a(1)=2. 
 (definec (A256393 n)
   (cond ((= 1 n) 2)
@@ -1199,10 +1221,173 @@
   )
 )
 
-(define (A065339 n) (A007949 (A065338 n))) ;; Number of primes congruent to 3 modulo 4 dividing n (with multiplicity).
+(define (A065339v2 n) (A007949 (A065338 n))) ;; Number of primes congruent to 3 modulo 4 dividing n (with multiplicity).
 
+
+(definec (A065339 n) (cond ((< n 3) 0) ((even? n) (A065339 (/ n 2))) (else (+ (/ (- (modulo (A020639 n) 4) 1) 2) (A065339 (A032742 n))))))
+
+(definec (A083025 n) (cond ((< n 3) 0) ((even? n) (A083025 (/ n 2))) (else (+ (/ (- 3 (modulo (A020639 n) 4)) 2) (A083025 (A032742 n))))))
+
+
+(definec (A065339r2 n) ;; Add exponents of 4k+3 primes (of prime factorization of n) together.
+    (cond ((< n 3) 0)
+          ((even? n) (A065339r2 (/ n 2)))
+          ((= 1 (modulo (A020639 n) 4)) (A065339r2 (A032742 n)))
+          (else (+ (A067029 n) (A065339r2 (A028234 n))))
+    )
+)
 
 (define A004613 (MATCHING-POS 1 1 (lambda (k) (= 1 (A065338 k)))))
+
+
+(definec (A260728 n) ;; (Bitwise-) Or exponents of 4k+3 primes (of prime factorization of n) together.
+    (cond ((< n 3) 0)
+          ((even? n) (A260728 (/ n 2)))
+          ((= 1 (modulo (A020639 n) 4)) (A260728 (A032742 n)))
+          (else (A003986bi (A067029 n) (A260728 (A028234 n))))
+    )
+)
+
+(definec (A097706 n) ;; Part of n composed of prime factors of form 4k+3.
+    (cond ((< n 3) 1)
+          ((even? n) (A097706 (/ n 2)))
+          ((= 1 (modulo (A020639 n) 4)) (A097706 (A032742 n)))
+          (else (* (A028233 n) (A097706 (A028234 n))))
+    )
+)
+
+
+(definec (A_mieti_uudestaan_apu n) ;; (Bitwise-) and exponents of 4k+3 primes (of prime factorization of n) together.
+    (cond ((< n 3) 0)
+          ((even? n) 0)
+          ((= 1 (modulo (A020639 n) 4)) 0)
+          ((= 1 (A028234 n)) (A067029 n))
+          (else (A004198bi (A067029 n) (A_mieti_uudestaan_apu (A028234 n))))
+    )
+)
+
+(define (A_mieti_uudestaan_ n) (A_mieti_uudestaan_apu (A097706 n))) ;; (Bitwise-) and exponents of 4k+3 primes (of prime factorization of n) together.
+
+
+(define A260730 (MATCHING-POS 1 1 (lambda (n) (> (A065339 n) (A260728 n)))))
+;; (define A260730 (NONZERO-POS 1 1 (lambda (n) (- (A065339 n) (A260728 n)))))
+
+
+(define (A229062 n) (- 1 (A000035 (A260728 n)))) ;; 1 if n is representable as sum of two nonnegative squares. 
+;; Characteristic function of A001481.
+
+(define (isA001481? n) (even? (A260728 n)))
+
+(define A001481 (MATCHING-POS 1 0 isA001481?)) ;; Numbers that are the sum of 2 squares. 
+
+
+(define (isA022544? n) (odd? (A260728 n)))
+
+(define A022544 (MATCHING-POS 1 1 isA022544?)) ;; Numbers that are not the sum of 2 squares. 
+
+(define (A072401 n) (cond ((zero? n) 0) ((and (even? (A007814 n)) (= 7 (modulo (A000265 n) 8))) 1) (else 0))) ;; 1 iff n is of the form 4^m*(8k+7). 
+
+
+(define A004215 (ZERO-POS 1 1 (COMPOSE -1+ A072401)))
+
+;; Least number of squares that add up to n. This formula after _Charles R Greathouse IV_'s Jul 19 2011 PARI-code:
+(define (A002828 n) (cond ((zero? n) n) ((= 1 (A010052 n)) 1) ((= 1 (A229062 n)) 2) (else (+ 3 (A072401 n)))))
+
+(define (A255131 n) (- n (A002828 n)))
+
+
+(definec (A260731 n) (if (zero? n) n (+ 1 (A260731 (A255131 n)))))
+
+(definec (A260732 n) (if (<= n 1) n (+ (A260734 (- n 1)) (A260732 (- n 1)))))
+(define (A260732v2 n) (A260731 (* n n))) ;; Zero-based.
+
+
+(definec (A260733 n) (if (= 1 n) 0 (+ (A260734 (- n 1)) (A260733 (- n 1)))))
+(define (A260733v2 n) (A260731 (- (* n n) 1))) ;; One-based.
+
+
+;; How many steps from (A000290(n+1))-1 to (n^2)-1 by iterating A255131(n) ? Cf. also A213709, A261091, A261224, A261234
+ 
+(definec (A260734 n) ;; One-based.
+ (let ((end (- (A000290 n) 1)))
+  (let loop ((k (- (A000290 (+ 1 n)) 1)) (s 0))
+        (if (= k end) s (loop (A255131 k) (+ 1 s)))
+  )
+ )
+)
+
+(define (A260734v1 n) (- (A260732 (+ 1 n)) (A260732 n)))
+(define (A260734v2 n) (- (A260733 (+ 1 n)) (A260733 n))) ;; One-based.
+(define (A260734v3 n) (- (A260731 (- (A000290 (+ 1 n)) 1)) (A260731 (- (A000290 n) 1))))
+(define (A260734v4 n) (- (A260731 (A000290 (+ 1 n))) (A260731 (A000290 n))))
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+(define (A260740v2 n) (- n (A053610 n)))
+(definec (A260740 n) (if (zero? n) n (+ -1 (A048760 n) (A260740 (- n (A048760 n))))))
+
+ ;; A261216-A261237 are now reserved for your use. 
+
+(definec (A261221 n) (if (zero? n) n (+ 1 (A261221 (A260740 n)))))
+
+
+(definec (A261222 n) (if (<= n 1) n (+ (A261224 (- n 1)) (A261222 (- n 1)))))
+(define (A261222v2 n) (A261221 (* n n))) ;; Zero-based.
+
+
+(definec (A261223 n) (if (= 1 n) 0 (+ (A261224 (- n 1)) (A261223 (- n 1)))))
+(define (A261223v2 n) (A261221 (- (* n n) 1))) ;; One-based.
+
+
+;; How many steps from (A000290(n+1))-1 to (n^2)-1 by iterating A260740(n) ? Cf. also A213709, A261091, A260734, A261234
+ 
+(definec (A261224 n) ;; One-based.
+ (let ((end (- (A000290 n) 1)))
+  (let loop ((k (- (A000290 (+ 1 n)) 1)) (s 0))
+        (if (= k end) s (loop (A260740 k) (+ 1 s)))
+  )
+ )
+)
+
+(define (A261224v2 n) (- (A261223 (+ 1 n)) (A261223 n))) ;; One-based.
+(define (A261224v3 n) (- (A261221 (A000290 (+ 1 n))) (A261221 (A000290 n))))
+
+
+;;;;;;;;
+;; For cube-beanstalks:
+
+(definec (A261225 n) (if (zero? n) n (+ -1 (A048762 n) (A261225 (- n (A048762 n))))))
+(define (A261225v2 n) (- n (A055401 n)))
+
+;; Not A003108 Number of partitions of n into cubes (!)
+(definec (A261226 n) (if (zero? n) n (+ 1 (A261226 (A261225 n)))))
+
+
+(definec (A261227 n) (if (<= n 1) n (+ (A261229 (- n 1)) (A261227 (- n 1)))))
+(define (A261227v2 n) (A261226 (* n n n))) ;; Zero-based.
+
+
+(definec (A261228 n) (if (= 1 n) 0 (+ (A261229 (- n 1)) (A261228 (- n 1)))))
+(define (A261228v2 n) (A261226 (- (* n n n) 1))) ;; One-based.
+
+
+;; How many steps from ((n+1)^3)-1 to (n^3)-1 by iterating A261225(n) ? Cf. also A261224.
+ 
+(definec (A261229 n) ;; One-based.
+ (let ((end (- (A000578 n) 1)))
+  (let loop ((k (- (A000578 (+ 1 n)) 1)) (s 0))
+        (if (= k end) s (loop (A261225 k) (+ 1 s)))
+  )
+ )
+)
+
+(define (A261229v2 n) (- (A261228 (+ 1 n)) (A261228 n))) ;; One-based.
+(define (A261229v3 n) (- (A261226 (A000578 (+ 1 n))) (A261226 (A000578 n))))
+
+
+
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (definec (A057521 n)
    (fold-left (lambda (prod p.e) (* prod (expt (car p.e) (cdr p.e))))
@@ -1416,6 +1601,58 @@
 (definec (A108951 n) (if (= 1 n) n (* n (A108951 (A064989 n)))))
 
 (definec (A200746 n) (if (<= n 2) n (* n (A064989 n))))
+
+
+(definec (A206296 n) ;; Numbers matched to the Fibonacci polynomials.
+  (cond ((<= n 1) (+ 1 n))
+        (else (* (A003961 (A206296 (- n 1))) (A206296 (- n 2))))
+  )
+)
+
+;; A073491 Numbers having no prime gaps in their factorization. 
+(definec (isA073491? n)
+  (cond ((= 1 n) #t)
+        ((= 1 (A010051 n)) #t)
+        ((> (- (A055396 (A032742 n)) (A055396 n)) 1) #f)
+        (else (isA073491? (A032742 n)))
+  )
+)
+
+(define A073491 (MATCHING-POS 1 1 isA073491?))
+
+
+;; A260443: a(0) = 1, a(1) = 2, a(2n) = A003961(a(n)), a(2n+1) = a(n)*a(n+1).
+;; The exponents in the prime factorization of term a(n) give the coefficients of the n-th Stern polynomial. See A125184.
+
+(definec (A260443 n)
+  (cond ((<= n 1) (+ 1 n))
+        ((even? n) (A003961 (A260443 (/ n 2))))
+        (else (* (A260443 (/ (- n 1) 2)) (A260443 (/ (+ n 1) 2))))
+  )
+)
+
+
+
+(define (A104244 n) (A104244bi (A002260 n) (A004736 n)))
+
+(define (A104245 n) (A104244bi (A004736 n) (A002260 n)))
+
+(define (A104244bi row col)
+   (fold-left (lambda (sum p.e) (+ sum (* (cdr p.e) (expt row (- (A000720 (car p.e)) 1)))))
+              0
+              (if (= 1 col) (list) (elemcountpairs (ifactor col))) ;; (sort (factor n) <)
+   )
+)
+
+(define (A048675v3 n) (A104244bi 2 n))
+
+(define (A054841 n) (A104244bi 10 n))
+
+(definec (A090880 n) (if (= 1 n) (- n 1) (+ (expt 3 (- (A055396 n) 1)) (A090880 (A032742 n)))))
+(definec (A090881 n) (if (= 1 n) (- n 1) (+ (expt 4 (- (A055396 n) 1)) (A090881 (A032742 n)))))
+(definec (A090882 n) (if (= 1 n) (- n 1) (+ (expt 5 (- (A055396 n) 1)) (A090882 (A032742 n)))))
+
+(define (A090883 n) (A104244bi n n))
 
 
 (define (A181812 n) (A108951 (A064216 n))) ;; !!! - Check!
@@ -2573,7 +2810,22 @@
 
 (definec (A234742 n) (if (zero? n) n (reduce * 1 (GF2Xfactor n))))
 
+(definec (A260712 n) (let ((next (A234742 n))) (if (= next n) 0 (+ 1 (A260712 next)))))
+(definec (A260712loop n) (let loop ((n (A234742 n)) (prev_n n) (i 0)) (if (= n prev_n) i (loop (A234742 n) n (+ 1 i)))))
+
+(define (A260713 n) (A260712 (A236844 n)))
+
 (definec (A244323 n) (if (zero? n) 23 (A234742 (A244323 (- n 1)))))
+
+(definec (A260729 n) (if (zero? n) 29 (A234742 (A260729 (- n 1)))))
+
+(definec (A260735 n) (if (zero? n) 455 (A234742 (A260735 (- n 1)))))
+
+(definec (A260441 n) (if (zero? n) 1361 (A234742 (A260441 (- n 1)))))
+
+(define (A260719 n) (A091222 (A260735 n)))
+(define (A260720 n) (A091222 (A260441 n)))
+
 
 ;; Rest transferred to intfun_a.scm : (and now transferred back!)
 
