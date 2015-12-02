@@ -13,7 +13,7 @@
 ;;  Intel x86 architecture) under the URL:                                ;;
 ;;  http://www.swiss.ai.mit.edu/projects/scheme/                          ;;
 ;;                                                                        ;;
-;;  Last edited  Jul 29 2010 by Antti Karttunen.                          ;;
+;;  Last edited  Aug 26 2015 by Antti Karttunen.                          ;;
 ;;                                                                        ;;
 ;;                                                                        ;;
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -29,6 +29,7 @@
 
 (load "../Schemuli/gf2xfuns")
 
+(load "../Schemuli/permfuns")
 
 
 (define A000120grs (FUN_FOR_NUMBER_OF_GREEDY_SUMMANDS (COMPOSE A000079 -1+)))

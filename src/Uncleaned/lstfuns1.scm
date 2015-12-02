@@ -8,7 +8,7 @@
 ;;   is a certain kind of fish, believe it or not).                     ;;
 ;;                                                                      ;;
 ;;  Coded by Antti Karttunen (my_firstname.my_surname@gmail.com), 2002- ;;
-;;  Last edited Mar 30 2015.                                            ;;
+;;  Last edited Sep 26 2015.                                            ;;
 ;;                                                                      ;;
 ;;  This Scheme-code is in Public Domain and runs (at least)            ;;
 ;;  in MIT Scheme Release 7.6.0, for which one can find documentation   ;;
@@ -614,5 +614,29 @@
           (else (apply-n-times fun (-1+ n) (fun x)))
     )
 )
+
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+
+(define (filter-matching-terms-from-term-file matches? infile outfun)
+   (call-with-input-file infile
+     (lambda (inport)
+            (let loop ((count 0) (term (read inport)))
+               (cond ((eof-object? term) count)
+                     ((matches? term)
+                        (begin (outfun term) (loop (+ 1 count) (read inport)))
+                     )
+                     (else (loop count (read inport)))
+               )
+            )
+     )
+   )
+)
+
+(define (output-matching-terms-from-file matches? infile)
+   (filter-matching-terms-from-term-file matches? infile (lambda (x) (display x) (newline)))
+)
+
 
 

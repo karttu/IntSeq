@@ -17,7 +17,7 @@
 ;;  (some sequences to be renumbered). Also, the current hasty            ;;
 ;;  implementation of A258012 fails with larger values of n.              ;;
 ;;                                                                        ;;
-;;  Last edited June 11 2015.                                             ;;
+;;  Last edited August 30 2015.                                           ;;
 ;;                                                                        ;;
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
@@ -62,6 +62,11 @@
 ;; (define (A055089 n) (vector-ref (A055089permvec (+ 1 (A084558 (A220658 n))) (A220658 n)) (A220659 n)))
 
 (define (A060118 n) (vector-ref (permute-A060118 (make-initialized-vector (+ 1 (A084558 n)) 1+) (+ 1 (A084558 n)) (A220658 n)) (A220659 n)))
+
+(define (A060118permvec-short rank) (permute-A060118 (make-initialized-vector (+ 1 (A084558 rank)) 1+) (+ 1 (A084558 rank)) rank))
+
+(define (A060117permvec-short rank) (permvec1inverse-of (permute-A060118 (make-initialized-vector (+ 1 (A084558 rank)) 1+) (+ 1 (A084558 rank)) rank)))
+
 
 (define (A030298 n) (vector-ref (A030298permvec (A084556 (A084557 n)) (A220660 (A084557 n))) (A220663 n)))
 
@@ -208,6 +213,240 @@
 
 (define (A030298permvec size rank) (vector-reverse (vector1invert (A055089permvec size rank))))
 
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+;; (same-intfuns0? A001477 (COMPOSE permutation->a055089rank A055089permvec-short) 40320) --> #t
+
+(define (permutation->A055089rank orgperm)
+  (let ((perm (vector-copy orgperm)))
+   (let outloop ((j (+ -1 (vector-length perm)))
+                 (rank 0)
+                )
+        (cond ((zero? j) rank)
+              (else (let inloop ((i 0))
+                       (cond ((= i j) (outloop (- j 1) (+ rank (* (- (+ 1 j) (vector-ref perm j)) (A000142 j)))))
+                             (else
+                                (if (> (vector-ref perm i) (vector-ref perm j))
+                                    (vector-set! perm i (- (vector-ref perm i) 1))
+                                )
+                                (inloop (+ 1 i))
+                             )
+                       )
+                    )
+              )
+        )
+   )
+  )
+)
+
+(define (A261096 n) (A261096bi (A002262 n) (A025581 n)))
+(define (A261097 n) (A261097bi (A002262 n) (A025581 n)))
+(define (A261097v2 n) (A261096bi (A025581 n) (A002262 n)))
+
+(define (A261096bi row col) ;; Other needed funs in permfuns.scm
+   (let* ((a (A055089permvec-short row))
+          (b (A055089permvec-short col))
+          (c (permulvecs a b))
+         )
+     (permutation->a055089rank c)
+   )
+)
+
+(define (A261097bi row col) ;; Other needed funs in permfuns.scm
+   (let* ((a (A055089permvec-short row))
+          (b (A055089permvec-short col))
+          (c (permulvecs b a))
+         )
+     (permutation->a055089rank c)
+   )
+)
+
+;; (same-intfuns0? A261096  (lambda (n) (A056019 (A261097bi (A056019 (A002262 n)) (A056019 (A025581 n))))) 10441) --> #t
+
+
+(define (A261098 n) (A261096bi 1 n)) ;; Self-inverse.
+
+(define (A004442v2 n) (A261096bi n 1))
+
+(define (A261099 n) (A261096bi n n))
+
+(define A014489 (ZERO-POS 0 0 A261099))
+
+;;   0,  1,  2,  3,  4,  5,  6,  7,  8,  9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23
+;;   1,  0,  4,  5,  2,  3,  7,  6, 10, 11,  8,  9, 18, 19, 20, 21, 22, 23, 12, 13, 14, 15, 16, 17
+;;   2,  3,  0,  1,  5,  4, 12, 13, 14, 15, 16, 17,  6,  7,  8,  9, 10, 11, 19, 18, 22, 23, 20, 21
+;;   3,  2,  5,  4,  0,  1, 13, 12, 16, 17, 14, 15, 19, 18, 22, 23, 20, 21,  6,  7,  8,  9, 10, 11
+;;   4,  5,  1,  0,  3,  2, 18, 19, 20, 21, 22, 23,  7,  6, 10, 11,  8,  9, 13, 12, 16, 17, 14, 15
+;;   5,  4,  3,  2,  1,  0, 19, 18, 22, 23, 20, 21, 13, 12, 16, 17, 14, 15,  7,  6, 10, 11,  8,  9
+;;   6,  7,  8,  9, 10, 11,  0,  1,  2,  3,  4,  5, 14, 15, 12, 13, 17, 16, 20, 21, 18, 19, 23, 22
+;;   7,  6, 10, 11,  8,  9,  1,  0,  4,  5,  2,  3, 20, 21, 18, 19, 23, 22, 14, 15, 12, 13, 17, 16
+;;   8,  9,  6,  7, 11, 10, 14, 15, 12, 13, 17, 16,  0,  1,  2,  3,  4,  5, 21, 20, 23, 22, 18, 19
+;;   9,  8, 11, 10,  6,  7, 15, 14, 17, 16, 12, 13, 21, 20, 23, 22, 18, 19,  0,  1,  2,  3,  4,  5
+;;  10, 11,  7,  6,  9,  8, 20, 21, 18, 19, 23, 22,  1,  0,  4,  5,  2,  3, 15, 14, 17, 16, 12, 13
+;;  11, 10,  9,  8,  7,  6, 21, 20, 23, 22, 18, 19, 15, 14, 17, 16, 12, 13,  1,  0,  4,  5,  2,  3
+;;  12, 13, 14, 15, 16, 17,  2,  3,  0,  1,  5,  4,  8,  9,  6,  7, 11, 10, 22, 23, 19, 18, 21, 20
+;;  13, 12, 16, 17, 14, 15,  3,  2,  5,  4,  0,  1, 22, 23, 19, 18, 21, 20,  8,  9,  6,  7, 11, 10
+;;  14, 15, 12, 13, 17, 16,  8,  9,  6,  7, 11, 10,  2,  3,  0,  1,  5,  4, 23, 22, 21, 20, 19, 18
+;;  15, 14, 17, 16, 12, 13,  9,  8, 11, 10,  6,  7, 23, 22, 21, 20, 19, 18,  2,  3,  0,  1,  5,  4
+;;  16, 17, 13, 12, 15, 14, 22, 23, 19, 18, 21, 20,  3,  2,  5,  4,  0,  1,  9,  8, 11, 10,  6,  7
+;;  17, 16, 15, 14, 13, 12, 23, 22, 21, 20, 19, 18,  9,  8, 11, 10,  6,  7,  3,  2,  5,  4,  0,  1
+;;  18, 19, 20, 21, 22, 23,  4,  5,  1,  0,  3,  2, 10, 11,  7,  6,  9,  8, 16, 17, 13, 12, 15, 14
+;;  19, 18, 22, 23, 20, 21,  5,  4,  3,  2,  1,  0, 16, 17, 13, 12, 15, 14, 10, 11,  7,  6,  9,  8
+;;  20, 21, 18, 19, 23, 22, 10, 11,  7,  6,  9,  8,  4,  5,  1,  0,  3,  2, 17, 16, 15, 14, 13, 12
+;;  21, 20, 23, 22, 18, 19, 11, 10,  9,  8,  7,  6, 17, 16, 15, 14, 13, 12,  4,  5,  1,  0,  3,  2
+;;  22, 23, 19, 18, 21, 20, 16, 17, 13, 12, 15, 14,  5,  4,  3,  2,  1,  0, 11, 10,  9,  8,  7,  6
+;;  23, 22, 21, 20, 19, 18, 17, 16, 15, 14, 13, 12, 11, 10,  9,  8,  7,  6,  5,  4,  3,  2,  1,  0
+
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+;;
+;; After the following Maple-code: (From: https://oeis.org/A060125 )
+;; 
+;; with(group); 
+;; permul := (a, b) -> mulperms(b, a); 
+;; 
+;; swap := (p, i, j) -> convert(permul(convert(p, 'disjcyc'), [[i, j]]), 'permlist', nops(p));
+;; 
+;; PermRank3Aux := proc(n, p, q)
+;;   if(1 = n) then RETURN(0);
+;;     else
+;;       RETURN((n-p[n])*((n-1)!) + PermRank3Aux(n-1, swap(p, n, q[n]), swap(q, n, p[n])));
+;;   fi;
+;; end;
+;; 
+;; PermRank3R := p -> PermRank3Aux(nops(p), p, convert(invperm(convert(p, 'disjcyc')), 'permlist', nops(p)));
+;; 
+;; PermRank3L := p -> PermRank3Aux(nops(p), convert(invperm(convert(p, 'disjcyc')), 'permlist', nops(p)), p); 
+;; 
+
+(define (permutation->A060117rank orgperm)
+  (let ((p (vector-copy orgperm))
+        (q (permvec1inverse-of orgperm))
+       )
+   (let loop ((j (+ -1 (vector-length p)))
+              (rank 0)
+             )
+        (cond ((zero? j) rank)
+              (else
+                (let* ((old_p_j (vector-ref p j))
+                       (old_q_j (vector-ref q j))
+                       (old_p_q_j (vector-ref p (- old_q_j 1)))
+                       (old_q_p_j (vector-ref q (- old_p_j 1)))
+                      )
+                   (vector-set! p j old_p_q_j)
+                   (vector-set! p (- old_q_j 1) old_p_j)
+                   (vector-set! q j old_q_p_j)
+                   (vector-set! q (- old_p_j 1) old_q_j)
+                   (loop (- j 1) (+ rank (* (- (+ 1 j) old_p_j) (A000142 j))))
+                )
+              )
+        )
+   )
+  )
+)
+
+(define (permutation->A060118rank orgperm)
+  (let ((q (vector-copy orgperm))
+        (p (permvec1inverse-of orgperm))
+       )
+   (let loop ((j (+ -1 (vector-length p)))
+              (rank 0)
+             )
+        (cond ((zero? j) rank)
+              (else
+                (let* ((old_p_j (vector-ref p j))
+                       (old_q_j (vector-ref q j))
+                       (old_p_q_j (vector-ref p (- old_q_j 1)))
+                       (old_q_p_j (vector-ref q (- old_p_j 1)))
+                      )
+                   (vector-set! p j old_p_q_j)
+                   (vector-set! p (- old_q_j 1) old_p_j)
+                   (vector-set! q j old_q_p_j)
+                   (vector-set! q (- old_p_j 1) old_q_j)
+                   (loop (- j 1) (+ rank (* (- (+ 1 j) old_p_j) (A000142 j))))
+                )
+              )
+        )
+   )
+  )
+)
+
+
+;; (same-intfuns0? A001477 (COMPOSE permutation->A060118rank A060118permvec-short) 40320) --> #t
+
+(define (A056019 n) (permutation->A055089rank (permvec1inverse-of (A055089permvec-short n))))
+
+(define (A060125 n) (permutation->A060117rank (A060118permvec-short n)))
+
+;; (same-intfuns0? A060125 (COMPOSE A060126 A056019 A060119) (! 8)) --> #t
+
+(define (A261216 n) (A261216bi (A002262 n) (A025581 n)))
+(define (A261217 n) (A261217bi (A002262 n) (A025581 n)))
+(define (A261217v2 n) (A261216bi (A025581 n) (A002262 n)))
+
+(define (A261216bi row col) ;; Other needed funs in permfuns.scm
+   (let* ((a (A060117permvec-short row))
+          (b (A060117permvec-short col))
+          (c (permulvecs a b))
+         )
+     (permutation->a060117rank c)
+   )
+)
+
+(define (A261217bi row col) ;; Other needed funs in permfuns.scm
+   (let* ((a (A060118permvec-short row))
+          (b (A060118permvec-short col))
+          (c (permulvecs a b))
+         )
+     (permutation->a060118rank c)
+   )
+)
+
+;; (same-intfuns0? A261216 (lambda (n) (A060125 (A261217bi (A060125 (A002262 n)) (A060125 (A025581 n))))) 10440) -> #t
+;; (same-intfuns0? A261216 (lambda (n) (A060126 (A261096bi (A060119 (A002262 n)) (A060119 (A025581 n))))) 10440) -> #t
+;; (same-intfuns0? A261216 (lambda (n) (A060127 (A261097bi (A060120 (A002262 n)) (A060120 (A025581 n))))) 10440) -> #t
+
+;; (same-intfuns0? A261096 (lambda (n) (A060119 (A261216bi (A060126 (A002262 n)) (A060126 (A025581 n))))) 10440) -> #t
+;; (same-intfuns0? A261096 (lambda (n) (A060120 (A261217bi (A060127 (A002262 n)) (A060127 (A025581 n))))) 10440) -> #t
+
+;; (same-intfuns0? A261097 (lambda (n) (A060119 (A261217bi (A060126 (A002262 n)) (A060126 (A025581 n))))) 10440) -> #t
+;; (same-intfuns0? A261097 (lambda (n) (A060120 (A261216bi (A060127 (A002262 n)) (A060127 (A025581 n))))) 10440) -> #t
+
+;; (same-intfuns0? A261217 (lambda (n) (A060125 (A261216bi (A060125 (A002262 n)) (A060125 (A025581 n))))) 10440) -> #t
+;; (same-intfuns0? A261217 (lambda (n) (A060126 (A261097bi (A060119 (A002262 n)) (A060119 (A025581 n))))) 10440) -> #t
+;; (same-intfuns0? A261217 (lambda (n) (A060127 (A261096bi (A060120 (A002262 n)) (A060120 (A025581 n))))) 10440) -> #t
+
+;; (same-intfuns0? A261098 (COMPOSE A060119 A261218 A060126) 40320) -> #t
+;; (same-intfuns0? A261218 (COMPOSE A060126 A261098 A060119) 40320) -> #t
+
+;; (same-intfuns0? A261099 (COMPOSE A060119 A261219 A060126) 40320) -> #t
+;; (same-intfuns0? A261219 (COMPOSE A060126 A261099 A060119) 40320) -> #t
+
+
+(define (A004442v3 n) (A261216bi n 1))
+
+(define (A261218 n) (A261216bi 1 n))
+
+(define (A261219 n) (A261216bi n n))
+
+(define A261220 (ZERO-POS 0 0 A261219))
+
+;; (same-intfuns0? A001477 (COMPOSE A261218 A261218) 5040) --> #t
+
+
+(define (A060119 n) (permutation->A055089rank (A060117permvec-short n)))
+
+(define (A060126 n) (permutation->A060117rank (A055089permvec-short n)))
+
+
+(define (A060120 n) (permutation->A055089rank (A060118permvec-short n)))
+
+(define (A060127 n) (permutation->A060118rank (A055089permvec-short n)))
+
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 
 (define (gen_partitions m colfun) ;; Adapted by AK from Kreher & Stinson, CAGES, p. 68, Algorithm 3.1.

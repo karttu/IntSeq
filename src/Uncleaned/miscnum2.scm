@@ -100,6 +100,8 @@
 
 (define (A036689 n) (* (A000040 n) (- (A000040 n) 1))) ;; Product of a prime and the previous number.
 (define (A008837 n) (/ (A036689 n) 2)) ;; p(p-1)/2 for p prime. 
+
+(define A001359 (MATCHING-POS 1 1 (lambda (n) (and (= 1 (A010051 n)) (= 1 (A010051 (+ 2 n))))))) ;; Lesser of twin primes.
  
 (definec (A002110 n) (if (zero? n) 1 (* (A000040 n) (A002110 (- n 1)))))
 
@@ -212,6 +214,55 @@
 )
 
 (define (A252375v2 n) (let ((x (A251725 n))) (if (= 1 x) 2 x)))
+
+;; An interlude:
+(define A261073 (MATCHING-POS 1 1 (lambda (n) (and (= 2 (A001222 n)) (= (A000523 (A020639 n)) (A000523 (A006530 n))) (= 1 (A101080bi (A020639 n) (A006530 n)))))))
+
+(define A261074 (MATCHING-POS 1 1 (lambda (n) (and (= 2 (A001222 n)) (= (A000523 (A020639 n)) (A000523 (A006530 n))) (= 2 (A101080bi (A020639 n) (A006530 n)))))))
+
+(define A261075 (MATCHING-POS 1 1 (lambda (n) (and (= 2 (A001222 n)) (= (A000523 (A020639 n)) (A000523 (A006530 n))) (= 3 (A101080bi (A020639 n) (A006530 n)))))))
+
+(define A261077 (MATCHING-POS 1 1 (lambda (n) (and (= 2 (A001222 n)) (= 1 (A101080bi (A020639 n) (A006530 n)))))))
+
+(define A261078 (MATCHING-POS 1 1 (lambda (n) (and (= 2 (A001222 n)) (pow2? (- (A006530 n) (A020639 n)))))))
+
+
+(definec (A260737 n)
+   (let loop ((s 0) (pfs (ifactor n)))
+      (cond ((or (null? pfs) (null? (cdr pfs))) s)
+            (else (loop (fold-left (lambda (a p) (+ a (A101080bi (car pfs) p))) s (cdr pfs))
+                        (cdr pfs)
+                  )
+            )
+      )
+   )
+)
+
+(definec (A261079 n)
+   (let loop ((s 0) (pfs (ifactor n)))
+      (cond ((or (null? pfs) (null? (cdr pfs))) s)
+            (else (loop (fold-left (lambda (a p) (+ a (abs (- (A000720 (car pfs)) (A000720 p))))) s (cdr pfs))
+                        (cdr pfs)
+                  )
+            )
+      )
+   )
+)
+
+(define A261080 (MATCHING-POS 1 1 (lambda (n) (and (= 1 (A260737 n)) (= 1 (A261079 n))))))
+
+;; (definec (A260737 n)
+;;    (let loop ((s 0) (pfs (ifactor n)))
+;;       (cond ((or (null? pfs) (null? (cdr pfs))) s)
+;;             (else (loop (+ s (fold-left (lambda (a p) (+ a (A101080bi (car pfs) p))) 0 (cdr pfs)))
+;;                         (cdr pfs)
+;;                   )
+;;             )
+;;       )
+;;    )
+;; )
+
+
 
 (define A251726 (MATCHING-POS 1 2 (lambda (n) (< (A006530 n) (A000290 (A020639 n))))))
 (define A251726v1 (MATCHING-POS 1 2 (lambda (n) (< (A252375 n) (+ 1 (A006530 n))))))
@@ -1014,6 +1065,11 @@
 
 (define (A032742 n) (/ n (A020639 n))) ;; a(1) = 1; for n > 1, a(n) = largest proper divisor of n.
 
+(define (A060681 n) (- n (A032742 n))) ;; Our version starts from n=1, with a(1) = 0.
+
+(definec (A064097 n) (if (= 1 n) 0 (+ 1 (A064097 (A060681 n)))))
+
+
 (define (A006530 n) (if (< n 2) n (last (ifactor n)))) ;; Gpf(n): greatest prime dividing n (with a(1)=1). 
 
 (define (A066048 n) ( * (A020639 n) (A006530 n))) ;; Product of smallest and greatest prime factors of n.
@@ -1295,6 +1351,32 @@
 
 (define (A255131 n) (- n (A002828 n)))
 
+(definec (A262689 n) (if (= 1 (A010052 n)) (A000196 n) (let ((t (- (A002828 n) 1))) (let loop ((k (A000196 n))) (if (= t (A002828 (- n (* k k)))) k (loop (- k 1)))))))
+
+
+(definec (A262689v2 n)
+ (let ((k (A000196 n)))
+   (if (= 1 (A010052 n))
+       k
+       (let loop ((k k) (m #f) (mk #f))
+          (cond ((zero? k) mk)
+                (else
+                   (let* ((c (A002828v2 (- n (* k k)))))
+                     (if (or (not m) (< c m)) (loop (- k 1) c k) (loop (- k 1) m mk))
+                   )
+                )
+          )
+       )
+   )
+ )
+)
+
+(definec (A002828v2 n) (if (zero? n) n (+ 1 (A002828v2 (- n (A000290 (A262689v2 n)))))))
+
+
+(define (A262690 n) (A000290 (A262689 n))) ;; Largest square k <= n such that A002828(n-k) = A002828(n)-1.
+
+(define (A262678 n) (- n (A262690 n)))
 
 (definec (A260731 n) (if (zero? n) n (+ 1 (A260731 (A255131 n)))))
 
@@ -2539,6 +2621,7 @@
 ;; A066247 is in GF2Xfuns.scm:
 (define (A066246 n) (* (A066247 n) (- n (A000720 n) 1))) ;; 0 unless n is a composite number A002808(k) when a(n) = k.
 
+(define (A066136 n) (+ (A049084 n) (A066246 n)))
 
 (define (A234750 n) (A193231 (A014580 n))) ;; Blue-code restricted to irreducible GF(2)[X]-polynomials
 (define (A234751 n) (A091227 (A234750 n))) ;; ... and a self-inverse permutation of integers induced by that.
@@ -3452,6 +3535,18 @@
 (define (A249821 n) (A249821bi (A002260 n) (A004736 n)))
 (define (A249822 n) (A249822bi (A002260 n) (A004736 n)))
 
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;;
+;; Interlude:
+;; Like A249818 and A250248, do similar cross-ref permutations between A095904 (or its transpose: A179216
+;;   Permutation of triangular array of numbers (greater than 1) arranged by prime signature)
+;;
+;; by comparing with (a) A083221 and (b) A246278 and (c) a similar array but dispersing with A253550 and A253563.
+;;
+;; As all these have primes as their leftmost column, and apart from A083221 all others have squares of primes
+;; as their second column.
+;;
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; A251717-A251728 are now reserved for your use. 
 
 (define (A251721bi row col) (A249822bi row (A249821bi (+ row 1) col)))

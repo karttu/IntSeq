@@ -13,7 +13,9 @@
 ;;  Intel x86 architecture) under the URL:                                ;;
 ;;  http://www.swiss.ai.mit.edu/projects/scheme/                          ;;
 ;;                                                                        ;;
-;;  Last edited  Aug 16 2015 by Antti Karttunen.                          ;;
+;;  Last edited  Dec 02 2015 by Antti Karttunen.                          ;;
+;;  Last version before starting break-up to smaller modules.             ;;
+;;                                                                        ;;
 ;;  PSEUDOINVERSE2 is now LEFTINV-LEASTMONO                               ;;
 ;;                                                                        ;;
 ;;  Oct 02 2009: Changed macros MATCHING-POS, NONZERO-POS, ZERO-POS,      ;;
@@ -683,77 +685,78 @@
 
 (define A138042 (MATCHING-POS 1 1 (lambda (n) (= 2 (/ (+ (A000040 n) (A000040 (+ n 3))) (A000040 (+ n 2)))))))
 (define A066495 (MATCHING-POS 1 1 (lambda (n) (and (> n 2) (= (A001223 n) (+ (A001223 (- n 1)) (A001223 (- n 2))))))))
-(define (A066495v2 n) (+ 2 (A138042 n)))
+;; (define (A066495v2 n) (+ 2 (A138042 n)))
 
 (define (A117876 n) (A000040 (A066495 (+ 1 n))))
 
 ;; Some .... what would be needed for A227421
-(define Aalussa
-    (MATCHING-POS 1 1
-        (lambda (n)
-           (let loop ((k 3))
-                (cond ((= (A000040 (+ n 1)) (/ (+ (A000040 n) (A000040 (+ n k))) 2)) #t)
-                      ((< (A000040 (+ n 1)) (/ (+ (A000040 n) (A000040 (+ n k))) 2)) #f)
-                      (else (loop (+ k 1)))
-                )
-           )
-        )
-    )
-)
+;; (define Aalussa
+;;     (MATCHING-POS 1 1
+;;         (lambda (n)
+;;            (let loop ((k 3))
+;;                 (cond ((= (A000040 (+ n 1)) (/ (+ (A000040 n) (A000040 (+ n k))) 2)) #t)
+;;                       ((< (A000040 (+ n 1)) (/ (+ (A000040 n) (A000040 (+ n k))) 2)) #f)
+;;                       (else (loop (+ k 1)))
+;;                 )
+;;            )
+;;         )
+;;     )
+;; )
+;; 
+;; 
+;; (define Alopussa ;; Differs from A138042 for the first time at n=28, as A138042(28)=625 and Alopussa(28)=571
+;;     (MATCHING-POS 1 1
+;;         (lambda (n)
+;;            (let loop ((k 3))
+;;                 (cond ((= (A000040 (+ n k -1)) (/ (+ (A000040 n) (A000040 (+ n k))) 2)) #t)
+;;                       ((> (A000040 (+ n k -1)) (/ (+ (A000040 n) (A000040 (+ n k))) 2)) #f)
+;;                       (else (loop (+ k 1)))
+;;                 )
+;;            )
+;;         )
+;;     )
+;; )
+;; 
+;; 
+;; (define (Aprime_offset_over_1 n)
+;;     (let loop ((k 2))
+;;          (cond ((= (A000040 (+ n k -1)) (/ (+ (A000040 n) (A000040 (+ n k))) 2)) k)
+;;                ((> (A000040 (+ n k -1)) (/ (+ (A000040 n) (A000040 (+ n k))) 2)) 0)
+;;                (else (loop (+ k 1)))
+;;          )
+;;     )
+;; )
+;; 
+;; (define (Aprime_offset_over_2 n)
+;;     (let loop ((k 3))
+;;          (cond ((= (A000040 (+ n k -1)) (/ (+ (A000040 n) (A000040 (+ n k))) 2)) k)
+;;                ((> (A000040 (+ n k -1)) (/ (+ (A000040 n) (A000040 (+ n k))) 2)) 0)
+;;                (else (loop (+ k 1)))
+;;          )
+;;     )
+;; )
+;; 
+;; (define Aeka_apu (COMPOSE Aprime_offset_over_1 (NONZERO-POS 1 1 Aprime_offset_over_1)))
+;; (define Atoinenapu (COMPOSE Aprime_offset_over_2 (NONZERO-POS 1 1 Aprime_offset_over_2)))
+;; 
+;; 
+;; (define Anew_primes_and_composited_convolved (CONVOLVE 1 A000040 A002808)) ;; Noise?
+;; (define Anew_primes_and_nonprimes_convolved (CONVOLVE 1 A000040 A018252)) ;; More of the same, noise?
 
-
-(define Alopussa ;; Differs from A138042 for the first time at n=28, as A138042(28)=625 and Alopussa(28)=571
-    (MATCHING-POS 1 1
-        (lambda (n)
-           (let loop ((k 3))
-                (cond ((= (A000040 (+ n k -1)) (/ (+ (A000040 n) (A000040 (+ n k))) 2)) #t)
-                      ((> (A000040 (+ n k -1)) (/ (+ (A000040 n) (A000040 (+ n k))) 2)) #f)
-                      (else (loop (+ k 1)))
-                )
-           )
-        )
-    )
-)
-
-
-(define (Aprime_offset_over_1 n)
-    (let loop ((k 2))
-         (cond ((= (A000040 (+ n k -1)) (/ (+ (A000040 n) (A000040 (+ n k))) 2)) k)
-               ((> (A000040 (+ n k -1)) (/ (+ (A000040 n) (A000040 (+ n k))) 2)) 0)
-               (else (loop (+ k 1)))
-         )
-    )
-)
-
-(define (Aprime_offset_over_2 n)
-    (let loop ((k 3))
-         (cond ((= (A000040 (+ n k -1)) (/ (+ (A000040 n) (A000040 (+ n k))) 2)) k)
-               ((> (A000040 (+ n k -1)) (/ (+ (A000040 n) (A000040 (+ n k))) 2)) 0)
-               (else (loop (+ k 1)))
-         )
-    )
-)
-
-(define Aeka_apu (COMPOSE Aprime_offset_over_1 (NONZERO-POS 1 1 Aprime_offset_over_1)))
-(define Atoinenapu (COMPOSE Aprime_offset_over_2 (NONZERO-POS 1 1 Aprime_offset_over_2)))
-
-
-(define Anew_primes_and_composited_convolved (CONVOLVE 1 A000040 A002808)) ;; Noise?
-(define Anew_primes_and_nonprimes_convolved (CONVOLVE 1 A000040 A018252)) ;; More of the same, noise?
-
-(definec (A000010slow n) ;; A slow implementation. Faster implementation in miscnum2.scm
-  (let loop ((i n) (s 0))
-       (cond ((zero? i) s)
-             (else
-               (let ((a (gcd n i)))
-                 (loop (-1+ i)
-                       (+ s (if (= 1 (gcd n i)) 1 0))
-                 )
-               )
-             )
-       )
-  )
-)
+;; (definec (A000010slow n) ;; A slow implementation. Faster implementation in miscnum2.scm
+;;   (let loop ((i n) (s 0))
+;;        (cond ((zero? i) s)
+;;              (else
+;;                (let ((a (gcd n i)))
+;;                  (loop (-1+ i)
+;;                        (+ s (if (= 1 (gcd n i)) 1 0))
+;;                  )
+;;                )
+;;              )
+;;        )
+;;   )
+;; )
+;; 
 
 ;; In real life we would implement A010051 with some probabilistic or deterministic
 ;; primeness function, and then have:
@@ -1239,6 +1242,10 @@
 (define (A255419 n) (A255127bi 9 n))
 
 ;;;;;;;;;;;;;;;;;;;;
+
+
+;;;;;;;;;;;;;;;;;;;;;
+
 
 (definec (A237126 n)  ;; Inverse: A237427. Cf. A227413
    (cond ((< n 2) n)
@@ -1865,6 +1872,9 @@
 (define A003987bi  (obtain-integer-bitwise-function bit-string-xor))
 (define A004198bi  (obtain-integer-bitwise-function bit-string-and))
 
+(define (A101080bi x y)  (A000120 (A003987bi x y)))
+(define (A101080 n) (A101080bi (A002262 n) (A025581 n)))
+
 
 
 (definec (nth-row-of-A047999 n)
@@ -2149,6 +2159,7 @@
 
 (definec (A257696 n) (if (zero? n) n (gcd (A060130 n) (A257696 (A257684 n)))))
 
+(definec (A260736 n) (if (zero? n) 0 (+ (A000035 n) (A260736 (A257684 n)))))
 
 (define (A257685 n) (* (- 1 (A257680 n)) (A257684 n)))
 
@@ -3413,6 +3424,742 @@
 
 (define (A080675 n) (/ (- (* 5 (expt 4 n)) 8) 6))
 
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;;
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+(definec (A005179 n) (let loop ((k 1)) (if (= n (A000005 k)) k (loop (+ 1 k))))) ;; Smallest number with exactly n divisors.
+
+
+(definec (A036459 n) (if (<= n 2) 0 (+ 1 (A036459 (A000005 n))))) ;; Number of iterations required to reach stationary value when repeatedly applying d, the number of divisors function (A000005)
+
+
+(define A182859 (MATCHING-POS 1 1 (COMPOSE even? A036459))) ;; Numbers n such that A036459(n) is even. 
+
+(define A080218 (MATCHING-POS 1 1 (COMPOSE odd? A036459))) ;; Numbers n such that A036459(n) is odd. 
+
+(define (A262683 n) (- 1 (A000035 (A036459 n)))) ;; Characteristic function for A182859
+(define (A262684 n) (A000035 (A036459 n))) ;; Characteristic function for A080218.
+
+(definec (A262685 n) (if (zero? n) n (+ (A262683 n) (A262685 (- n 1))))) ;; Least monotonic left inverse for A182859
+(definec (A262685off1 n) (if (= 1 n) n (+ (A262683 n) (A262685off1 (- n 1))))) ;; In OEIS with offset=1.
+
+;; entanglement permutations:
+
+(definec (A262691 n)
+  (cond ((<= n 1) n)
+        ((zero? (A262684 n)) (* 2 (A262691 (+ -1 (A262685 n))))) ;; One of A182859 > 1, mapped to even numbers.
+        (else (+ 1 (* 2 (A262691 (- n (A262685 n)))))) ;; One of A080218, 3, 5, 6, 7, 8, 10, mapped to odd numbers.
+  )
+)
+
+
+(definec (A262692 n)
+  (cond ((<= n 1) n)
+        ((even? n) (A182859 (+ 1 (A262692 (/ n 2)))))
+        (else (A080218 (A262692 (/ (- n 1) 2))))
+  )
+)
+
+;; (same-intfuns1? A000027 (COMPOSE A262691 A262692) 256) --> #t
+;; (same-intfuns1? A000027 (COMPOSE A262692 A262691) 256) --> #t
+
+
+(define (A049820 n) (- n (A000005 n)))
+
+(define A245388 (MATCHING-POS 1 0 (lambda (n) (square? (A049820 n)))))
+
+(define (A099777 n) (A000005 (+ n n))) ;; Number of divisors of 2n. 
+(define (A099774 n) (A000005 (+ n n -1))) ;; Number of divisors of 2*n-1.
+
+(define (A263084 n) (- (A263086 n) (A263085 n)))
+
+(definec (A263085 n) (if (= 1 n) (A099774 n) (+ (A099774 n) (A263085 (- n 1))))) ;; Partial sums of A099774.
+(definec (A263086 n) (if (= 1 n) (A099777 n) (+ (A099777 n) (A263086 (- n 1))))) ;; Partial sums of A099777.
+
+
+;; (define A002182 (RECORD-POS 1 1 A000005))
+(define A002182 (RECORD-POS 1 1 (lambda (n) (A000005 n)))) ;; Because A000005 is not loaded until after this module.
+
+(definec (A002183 n) (A000005 (A002182 n)))
+
+(define (A054481 n) (gcd (A002182 (+ 1 n)) (A002182 n))) ;; Note the offset in OEIS!
+
+;; A262501-A262522 are now reserved for your use. 
+(define (A262501 n) (- (A002182 (+ 1 n)) (A002182 n)))
+
+
+(define A261100 (LEFTINV-LEASTMONO 1 1 A002182))
+
+(define (A261100v2 n) (let loop ((k 1)) (if (> (A002182 k) n) (- k 1) (loop (+ 1 k)))))
+
+(definec (A070319 n) (if (= 1 n) n (max (A000005 n) (A070319 (- n 1)))))
+
+(define (A070319v2 n) (A002183 (A261100 n))) ;; Max( tau(k) : k=1,2,3,...,n ) where tau(n)=A000005(n) is the number of divisors of x. 
+
+(define (A263096 n) (A000196 (A002182 n)))
+
+(define (A263097 n) (- (A263096 (+ n 1)) (A263096 n)))
+
+(define (A263098 n) (A070319 (A000290 n)))
+
+(definec (A155043 n) (if (zero? n) n (+ 1 (A155043 (A049820 n)))))
+
+
+(define (A262518 n) (A155043 (+ n n))) ;; Even bisection, offset=0.
+
+(define (A262519 n) (A155043 (+ n n 1))) ;; Odd bisection, offset=0.
+
+(define (A262520 n) (- (A262519 n) (A262518 n)))
+
+(define A262521 (MATCHING-POS 1 1 (COMPOSE negative? A262520)))
+;; (112 113 544 545 684 760 930 1306 1514 1522)
+;; Not: (113 221 223 338 512 518 545 547 578 613 764 930 1013 1301 1303 1513 1515 1625 1627 1985 1987)
+
+(definec (A262676 n) (if (zero? n) n (+ (- 1 (A000035 n)) (A262676 (A049820 n))))) ;; How many even numbers
+(definec (A262677 n) (if (zero? n) n (+ (A000035 n) (A262677 (A049820 n))))) ;; and odd numbers encountered on path?
+
+;; (same-intfuns0? A155043 (lambda (n) (+ (A262676 n) (A262677 n))) 1024) --> #t
+
+;; How many times a perfect square > 0 is encountered on path? (Including the initial term if it is a square, but excluding the terminal zero.) How many times the parity of terms on the path change?
+;; Is even for even terms, odd for odd terms.
+;; If A262514 is an infinite sequence (and A259934 unique), then the values grow without limit, i.e. there exists
+;; an ever-increasing lower bound for each a(n):
+(definec (A262680 n) (if (zero? n) n (+ (A010052 n) (A262680 (A049820 n)))))
+
+
+(define (A262681 n) (A262680 (+ n n 1))) ;; Odd bisection, offset=0.
+(define (A262682 n) (A262680 (+ n n))) ;; Even bisection, offset=0.
+
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+;; Run this first:
+;; (define vecA259934 (read-b-file-to-vector "seqs/b259934_upto64800_from_Robert_Israel.txt" 64801))
+
+(define (A259934 n) (vector-ref vecA259934 n)) ;; Falcao, (unique?) infinite trunk
+
+(define (A259935 n) (- (A259934 n) (A259934 (- n 1))))
+
+(definec (A262679 n)
+  (cond ((= 1 (A262693 n)) n)
+        (else (A262679 (A049820 n)))
+  )
+)
+
+(definec (A262904 n)
+  (cond ((= 1 (A262693 n)) (A262694 n))
+        (else (A262904 (A049820 n)))
+  )
+)
+
+(define (A262904v2 n) (A262694 (A262679 n)))
+
+(definec (A263254 n) (if (= 1 (A262693 n)) 0 (+ 1 (A263254 (A049820 n)))))
+(define (A263254v2 n) (- (A155043 n) (A262904 n)))
+
+;; (same-intfuns0? A263254 A263254v2 32769) --> #t
+
+(definec (A263275 n) (if (= 1 (A262693 n)) 1 (+ 1 (A263275 (A049820 n))))) ;; Row for n in A263255. Cf. A263274.
+(define (A263275v2 n) (+ 1 (A263254 n)))
+
+
+(define (A263255 n) (A263255bi (A002262 n) (+ 1 (A025581 n)))) ;; Zero-based.
+(define (A263256 n) (A263255bi (A025581 n) (+ 1 (A002262 n))))
+
+(define (A263255bi row col) ((rowfun-for-A263255 row) col))
+
+(definec (rowfun-for-A263255 n) (if (zero? n) (COMPOSE A259934 -1+) (MATCHING-POS 1 0 (lambda (k) (= n (A263254 k))))))
+
+(definec (A263274 n) ;; Column-index for n in A263255. Cf. A262904, A263275.
+  (let ((rowf (rowfun-for-A263255 (A263254 n))))
+           (let loop ((i 1)) (if (= n (rowf i)) i (loop (+ 1 i))))
+  )
+)
+
+
+(definec (A263274old n) ;; Column-index for n in A263255. Cf. A262904.
+  (cond ((= 1 (A262693 n)) (+ 1 (A262694 n))) ;; Unnecessary clause.
+        (else
+          (let ((rowf (rowfun-for-A263255 (A263254 n))))
+             (let loop ((i 1)) (if (= n (rowf i)) i (loop (+ 1 i))))
+          )
+        )
+  )
+)
+
+;; (map A263274 (iota0 45))
+;; (1 1 2 1 2 1 3 1 2 2 3 3 4 3 4 4 5 2 5 1 6 2 6 1 3 4 5 1 6 1 7 1 5 2 8 1 2 1 7 2 7 1 9 1 6 2)
+
+
+;; (map (lambda (row) (map (lambda (col) (A263255bi row col)) (iota 14))) (iota0 19))
+;;    0,   2,   6,  12,  18,  22,  30,  34,  42,  46,  54,  58,  62,  70
+;;    1,   9,  10,  25,  26,  28,  38,  49,  52,  66,  68,  74,  76,  80
+;;    3,   4,  11,  14,  32,  44,  48,  81,  86,  88, 116, 130, 135, 175
+;;    5,   8,  13,  15,  16,  20,  40,  50,  56,  60,  83,  85,  92, 134
+;;    7,  17,  24,  72,  87,  98, 139, 141, 142, 150, 202, 208, 225, 228
+;;   19,  21,  84,  89,  91, 143, 145, 146, 147, 148, 206, 220, 227, 301
+;;   23,  93,  95,  96, 100, 149, 153, 154, 160, 212, 229, 240, 305, 356
+;;   27,  97,  99, 104, 108, 151, 158, 224, 248, 307, 309, 379, 381, 385
+;;   29,  36, 101, 105, 120, 155, 164, 232, 260, 264, 311, 324, 383, 387
+;;   31,  33, 103, 107, 128, 132, 157, 159, 276, 280, 313, 389, 391, 453
+;;   35, 109, 111, 136, 140, 161, 165, 393, 395, 399, 461, 465, 532, 540
+;;   37,  39, 113, 115, 117, 163, 167, 171, 397, 401, 403, 405, 463, 467
+;;   41,  45, 119, 173, 407, 471, 473, 475, 568, 571, 572, 573, 575, 659
+;;   43,  47, 123, 177, 409, 411, 477, 483, 484, 577, 578, 579, 580, 585
+;;   51, 179, 413, 415, 479, 481, 495, 581, 583, 587, 589, 594, 671, 676
+;;   53,  55, 181, 183, 417, 485, 591, 595, 602, 612, 673, 681, 877, 879
+;;   57, 185, 187, 189, 419, 423, 487, 489, 593, 610, 683, 685, 693, 881
+;;   59,  63,  64, 191, 195, 196, 421, 425, 427, 491, 493, 597, 614, 618
+;;   61, 193, 197, 429, 435, 497, 599, 603, 622, 691, 705, 893, 895, 897
+;;   65, 199, 201, 431, 499, 501, 601, 605, 626, 628, 695, 711, 899, 901
+
+(define A263257 (RECORD-POS 0 0 A263254))
+(define (A263257v2 n) (A263255bi n 1)) ;; First column, zero-based. All terms odd after 0, and in monotone order?
+
+
+(define (A263258 n) (A049820 (A263257 n))) ;; One-based.
+
+;;
+;; Claim 1:
+;;  Sequence is strictly increasing.
+;;
+;; Remark: First recall that the function A049820(n),
+;; even though it holds that A049820(n) < n for all n >= 1,
+;; it still does not generally imply that if a < b, then A049820(a) < A049820(b).
+;, E.g. as a counter-example we have: A049820(81) = 76 and A049820(79) = 77.
+
+;; Proof for claim 1, by contradiction:
+;;   Suppose we had a(n+1) < a(n)
+;;   then we would have A049820(a(n+1)) < a(n) as well,
+;;   but by the definition of A253255 (how the table is organized) we know
+;;   that for all terms k of row n, A263254(k) = n,
+;;   and that A263254(A049820(a(n+1))) = A263254(a(n+1))-1 = A263254(a(n)) = n
+;;   which in this case means that A049820(a(n+1)) should have been
+;;   listed instead of a(n) as the earliest representative of all numbers k with A263254(k) = n,
+;;   thus it cannot be true that a(n+1) < a(n) for any n.
+;;
+;; Claim 2:
+;;  Sequence A049820(a(n+1)) is strictly increasing.
+;;
+;; Proof.
+;;  a(n) < a(n+1) for all n. [Proved above.]
+;; Either A049820(a(n+1)) = a(n) [a(n+1) is a(n)'s direct descendant],
+;; or A049820(a(n+1)) is in some other column (than the first one) at row n,
+;; but as all rows are by definition monotonic, we have:
+;;  a(n) <= A049820(a(n+1)). As A049820(n) < n, we get
+;; a strict inequality: A049820(a(n)) < A049820(a(n+1)).
+;; QED.
+
+;; Maybe a shorter proof: By definition of table A263255, the metric A263254(k) grows when going
+;;  downwards each column, and on the other hand, terms k on each row are listed
+;;  in strictly increasing order.
+
+;;
+;; Do we have any cases such as a(n) = A049820(^d)(a(n+d)), where d > 1,
+;; but between at a(n+1) .. a(n+d-1) there would be nodes from some other branches?
+;;
+;; That is, there would be trajectory of A049820(^k)(a(x)) that applying column index of A263255
+;; to its members would not be a monotonic function, but would move among columns back and forth?
+;;
+
+
+
+;; Yes, A263257 is strictly increasing, because ...
+;; (An attempt of proof follows):
+;;
+;; At least we know that A049820(n) < n,
+;; and if there were any a(n+1) < a(n) [this does not necessarily imply A049820(a(n+1)) < A049820(a(n)) !]
+;; then A049820(a(n+1)) < a(n) as well, but A263254(A049820(a(n+1))) = A263254(a(n+1))-1
+;; which means that A049820(a(n+1)) should have been listed as A263257(n), instead
+;; of what it really is, unless A049820(a(n+1)) >= A049820(a(n)),
+;; and on the other hand, it cannot be A049820(a(n+1)) = a(n), because a(n+1) < a(n).
+;; So we are concerned about the case A049820(a(n+1)) >= A049820(a(n)), is it possible?
+;; The equivalence A049820(a(n+1)) = A049820(a(n)) is not possible, because
+;; A263254(A049820(a(n+1))) = n but A263254(A049820(a(n))) = n-1.
+
+;; So is it possible to have a(n+1) < a(n), but A049820(a(n+1)) > A049820(a(n)) 
+;; In that case A049820(a(n+1)) should have been listed instead of A049820(a(n))
+;; as the term a(n-1).
+
+;; If we have a(n) > a(n+1), then a(n) cannot be a direct descendant of a(n+1). (because A049820 always subtracts)
+;; 
+;; Also if we apply A049820 same number of times to both of them, it cannot make them
+;; equal, because their distance to the main trunk is different.
+;; But if a(n) > a(n+1), then a(n) > A049820(a(n+1)) as well, and
+;; thus A049820(a(n+1)) [which must be a different node than a(n), see above]
+;; should have been listed here as the n-th term instead of a(n).
+
+;; Does a(n) < a(n+1) [proved above] imply that A049820(a(n)) < A049820(a(n+1)) ?
+;; (in all cases, even at positions where one branch is finished, and the next
+;; term is picked from some other branch?)
+
+;; A049820(A263257(n+1)) is either A263257(n) (= a(n) in this notation) or in some other column in
+;; row n, but as all rows are by definition monotonic, we have:
+;; a(n) <= A049820(a(n+1)). As A049820 always subtracts, we have A049820(a(n)) < A049820(a(n+1)). QED.
+;;
+
+;; By definition, A263254(A049820(a(n+1))) = n, A263254(A049820(a(n))) = n-1.
+;;
+;; Reductio ad absurdum?
+
+;; Also after repeated applications of A049820 ? And after applying A262904 ?
+(define (Ajokutus1 n) (A263255bi n 2)) ;; Second column, zero-based.
+
+(define (Ajokutus2 n) (A262904 (A263257 n))) ;; The point where connects to the A259934. Must be monotonic?
+
+;; Another array: Apply A049820 to all rows. (Shifts the row 0 one right. Term at the topleft corner, keep as zero?).
+
+(define A263261 (MATCHING-POS 1 0 (lambda (n) (= 1 (A263254 n)))))
+(define A263262 (MATCHING-POS 1 0 (lambda (n) (= 2 (A263254 n)))))
+(define A263263 (MATCHING-POS 1 0 (lambda (n) (= 3 (A263254 n)))))
+(define A263264 (MATCHING-POS 1 0 (lambda (n) (= 4 (A263254 n)))))
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+(definec (A262905 n) (if (zero? n) n (+ 1 (A262905 (A262904 n)))))
+
+(define (A262906 n) (- n (A262904 n)))
+
+(definec (A262907 n) (if (zero? (A262904 n)) 0 (+ 1 (A262907 (A262906 n)))))
+
+(define A262694 (LEFTINV-LEASTMONO 0 0 A259934))
+
+(define (A262693 n) (if (zero? n) 1 (- (A262694 n) (A262694 (- n 1)))))
+
+
+(definec (A262522 n)
+  (cond ((= 1 (A262693 n)) 0)
+        ((= 0 (A060990 n)) n)
+        (else
+           (let loop ((m 0) (k (A262686 n)))
+              (cond ((<= k n) m)
+                    ((= n (A049820 k)) (loop (max m (A262522 k)) (- k 1)))
+                    (else (loop m (- k 1)))
+              )
+           )
+        )
+  )
+)
+
+(definec (A262695 n)
+  (cond ((= 1 (A262693 n)) 0)
+;;      ((= 0 (A060990 n)) 1) ;; Actually, unnecessary!
+        (else
+           (let loop ((s 0) (k (A262686 n)))
+              (cond ((<= k n) (+ 1 s))
+                    ((= n (A049820 k)) (loop (max s (A262695 k)) (- k 1)))
+                    (else (loop s (- k 1)))
+              )
+           )
+        )
+  )
+)
+
+
+(definec (A262696 n)
+  (cond ((= 1 (A262693 n)) 0)
+        ((= 0 (A060990 n)) 1)
+        (else
+           (let loop ((s 0) (k (A262686 n)))
+              (cond ((<= k n) s)
+                    ((= n (A049820 k)) (loop (+ s (A262696 k)) (- k 1)))
+                    (else (loop s (- k 1)))
+              )
+           )
+        )
+  )
+)
+
+
+(definec (A262697 n)
+  (cond ((= 1 (A262693 n)) 0)
+;;      ((= 0 (A060990 n)) 1) ;; Actually, unnecessary!
+        (else
+           (let loop ((s 0) (k (A262686 n)))
+              (cond ((<= k n) (+ 1 s))
+                    ((= n (A049820 k)) (loop (+ s (A262697 k)) (- k 1)))
+                    (else (loop s (- k 1)))
+              )
+           )
+        )
+  )
+)
+
+
+
+(define (A263087 n) (A060990 (A000290 n)))
+(define (A263088 n) (A262697 (A000290 n)))
+
+;; A263250 - A263281 reserved for you.
+
+;; A263250 - A263252: Starting offset 0.
+(define (A263250 n) (A263087 (+ n n)))
+(define (A263251 n) (A263087 (+ n n 1)))
+
+(definec (A263252 n) (if (zero? n) (A263250 n) (+ (A263250 n) (A263252 (- n 1)))))
+(definec (A263253 n) (if (zero? n) (A263251 n) (+ (A263251 n) (A263253 (- n 1)))))
+
+
+(define A263092 (NONZERO-POS 0 0 A263087))
+
+(define A263093 (ZERO-POS 1 0 A263087))
+(define A263093v2 (ZERO-POS 1 0 (COMPOSE -1+ A263088)))
+
+
+
+;; A262888-A262909 
+
+;; (same-intfuns0? A262890 (lambda (n) (+ (A262888 n) (A262889 n))) 8107) --> #t
+
+(definec (A262888 n)
+  (let ((t (A259934 n)))
+    (let loop ((s 0) (k (A259934 (+ 1 n))))
+         (cond ((<= k t) s)
+               ((= t (A049820 k)) (loop (+ s (A262697 k)) (- k 1)))
+               (else (loop s (- k 1)))
+         )
+    )
+  )
+)
+
+(definec (A262889 n)
+  (let ((t (A259934 n)) (u (A259934 (+ 1 n))))
+    (let loop ((s 0) (k (A262686 t)))
+         (cond ((<= k u) s)
+               ((= t (A049820 k)) (loop (+ s (A262697 k)) (- k 1)))
+               (else (loop s (- k 1)))
+         )
+    )
+  )
+)
+
+(definec (A262890 n)
+  (let ((t (A259934 n)))
+    (let loop ((s 0) (k (A262686 t)))
+         (cond ((<= k t) s)
+               ((= t (A049820 k)) (loop (+ s (A262697 k)) (- k 1)))
+               (else (loop s (- k 1)))
+         )
+    )
+  )
+)
+
+(define (A262891 n) (A060990 (A259934 n))) ;; Branching degree for nodes in the infinite trunk of Falcao's tree.
+
+(define A262892 (ZERO-POS 1 0 (COMPOSE -1+ A262891)))
+(define A262892v2 (ZERO-POS 1 0 A262890))
+
+;; (same-intfuns1? A262892 A262892v2 120) --> #t
+
+
+(definec (A262893 n) (if (zero? n) (A262890 0) (+ (A262893 (- n 1)) (A262890 n)))) ;; Partial sums of A262890. Cf. A255333
+
+(define (A262894 n) (- (A262888 n) (A262889 n))) ;; Cf. A255331.
+
+(definec (A262895 n) (if (zero? n) (A262894 0) (+ (A262895 (- n 1)) (A262894 n)))) ;; Partial sums of A262894. Cf. A255332
+
+(definec (A262896 n) ;; A259934(n) = A262679(A262896(n)).
+  (let ((t (A259934 n)))
+    (let loop ((m t) (k (A262686 t)))
+         (cond ((<= k t) m)
+               ((= t (A049820 k)) (loop (max m (A262522 k)) (- k 1)))
+               (else (loop m (- k 1)))
+         )
+    )
+  )
+)
+
+(define (A262897 n) (A259934 (A262892 n)))
+(define A262897v2 (MATCHING-POS 1 0 (lambda (n) (and (= 1 (A060990 n)) (= 1 (A262693 n))))))
+
+(define (A262898 n) (A262898bi (A002260 n) (A004736 n)))
+
+(define (A262898bi row col) (if (= 1 row) (A045765 col) (if (zero? (A262898bi (- row 1) col)) 0 (A049820 (A262898bi (- row 1) col)))))
+
+(define (A262899 n) (A262898bi (A004736 n) (A002260 n)))
+
+(definec (A262900 n)
+   (let loop ((s 0) (k (A262686 n)))
+         (cond ((<= k n) s)
+               ((= n (A049820 k)) (loop (+ s (if (zero? (A060990 k)) 1 0))  (- k 1)))
+               (else (loop s (- k 1)))
+         )
+   )
+)
+
+(define A262901 (NONZERO-POS 1 0 A262900))
+
+
+(define (A262902 n) (A049820 (A045765 n)))
+
+(define A262903 (MATCHING-POS 1 0 (lambda (n) (and (not (zero? (A060990 n))) (= (A060990 n) (A262900 n))))))
+(define A262903v2 (MATCHING-POS 1 0 (lambda (n) (= 2 (A262695 n)))))
+
+
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+
+;; A262676-A262697 are now reserved for your use.
+
+
+(define (A261085 n) (A155043 (A000040 n)))
+
+(define A261086 (MATCHING-POS 1 1 (lambda (n) (and (> n 1) (> (A261085 (- n 1)) (A261085 n))))))
+
+(define (A261087 n) (A000040 (A261086 n)))
+
+(define (A261088 n) (A155043 (A000290 n)))
+
+
+(define A261089 (RECORD-POS 0 0 A155043))
+
+(definec (A261089v2 n) (let loop ((k 0)) (if (= n (A155043 k)) k (loop (+ 1 k)))))
+
+(define (A261103 n) (- (A259934 n) (A261089 n)))
+
+(definec (A261104 n) (if (zero? n) n (+ 1 (A261104 (- n (A070319 n))))))
+
+(define A262502 (RECORD-POS 0 0 A261104))
+(definec (A262502v2 n) (let loop ((k 0)) (if (= n (A261104 k)) k (loop (+ 1 k)))))
+
+(definec (A262503 n) (let loop ((k (A262502 (+ 2 n)))) (if (= (A155043 k) n) k (loop (- k 1)))))
+
+(define (A262504 n) (- (A262502 (+ 1 n)) (A262502 n)))
+
+(define (A262505 n) (- (A262503 n) (A261089 n)))
+
+(define (A262506 n) (- (A262503 n) (A259934 n)))
+
+(define (A262509 n) (A261089 (A262508 n)))
+
+;; (same-intfuns0? A262509  (COMPOSE A262503 A262508) 38) --> #t
+;; (same-intfuns0? A262509  (COMPOSE A259934 A262508) 38) --> #t
+
+(definec (A262908 n)
+  (let ((t (A262509 n)))
+    (let loop ((k (A002183 (+ 2 (A261100 t)))))
+          (cond ((<= (A049820 (+ t k)) t) k)
+                (else (loop (- k 1)))
+          )
+    )
+  )
+)
+
+(definec (A262909 n)
+  (let* ((u (A262509 n))
+         (t (A155043 u))
+        )
+    (let loop ((k u))
+          (cond ((< (A155043 (+ u k)) t) k)
+                (else (loop (- k 1)))
+          )
+    )
+  )
+)
+
+
+(definec (A060990 n) (if (zero? n) 2 (add (lambda (k) (if (= (A049820 k) n) 1 0)) n (+ n (A002183 (+ 2 (A261100 n)))))))
+
+(definec (A262507 n) (add (lambda (k) (if (= (A155043 k) n) 1 0)) n (A262502 (+ 2 n))))
+
+;;;;;;;;;;;;;;;;;;;;;;;;
+
+(define A263089 (LEFTINV-LEASTMONO 0 0 A261089))
+
+(definec (A263259 n)
+   (cond ((zero? n) 1)
+         ((= 1 (- (A263089 n) (A263089 (- n 1)))) 1)
+         (else
+           (let ((d (A155043 n)))
+             (let loop ((k (- n 1)))
+                (if (= (A155043 k) d)
+                    (+ 1 (A263259 k))
+                    (loop (- k 1))
+                )
+             )
+           )
+         )
+   )
+)
+
+(definec (A263260 n) (if (zero? n) (A262507 n) (+ (A262507 n) (A263260 (- n 1)))))
+
+(define (A263279 n) (A263259 (A259934 n)))
+(define (A263280 n) (- (A262507 n) (A263279 n)))
+
+(define A263270 (COMPOSE 1+ (LEFTINV-LEASTMONO 0 0 A263260)))
+
+;; For preparing big b-files, say first:
+;; (define vecA262507 (read-b-file-to-vector "seqs/b262507_upto110880.txt" 110881))
+;; 
+;; (define A262507old A262507)
+;; 
+;; (define (A262507 n) (vector-ref vecA262507 n))
+
+(definec (A263265 n) ;; Was defineperm1
+   (cond ((zero? n) n)
+         ((= 1 (- (A263270 n) (A263270 (- n 1)))) (A261089 (A263270 n)))
+         (else
+           (let ((p (A263265 (- n 1))) (d (A263270 n))) ;; d = (A155043 p)
+             (let loop ((k (+ p 1)))
+                (if (= (A155043 k) d)
+                    k
+                    (loop (+ k 1))
+                )
+             )
+           )
+         )
+   )
+)
+
+(definec (A263265row n)
+   (cond ((zero? n) (list n))
+         (else
+           (let ((end (A263260 (- n 1))))
+             (let loop ((k (+ -1 (A263260 n)))
+                        (terms (list))
+                       )
+               (cond ((= k end) (cons (A263265 k) terms))
+                     (else (loop (- k 1) (cons (A263265 k) terms)))
+               )
+             )
+           )
+         )
+   )
+)
+
+
+(define (children-of-n-in-A049820-tree n)
+  (let loop ((k (A262686 n)) (children (list)))
+        (cond ((<= k n) children)
+              ((= (A049820 k) n) (loop (- k 1) (cons k children)))
+              (else (loop (- k 1) children))
+        )
+  )
+)
+
+
+(define (A263271bi row col)
+  (cond ((zero? col) row)
+        ((A262686 row) =>
+           (lambda (lad)
+             (if (zero? lad)
+                 lad 
+                 (A263271bi lad (- col 1))
+             )
+           )
+        )
+  )
+)
+
+(define (A263271 n) (A263271bi (A002262 n) (A025581 n)))
+
+
+;; A264965-A264996 are now reserved for your use. 
+
+(definec (A264970 n) (cond ((A262686 n) => (lambda (lad) (if (zero? lad) 0 (+ 1 (A264970 lad)))))))
+(definec (A264971 n) (cond ((A262686 n) => (lambda (lad) (if (zero? lad) 1 (+ 1 (A264971 lad)))))))
+
+
+(define (A263267list_up_to_n_iterations_slow n)
+  (let ((terms-produced (list 0)))
+    (let loop ((listp terms-produced) (k n))
+           (cond ((zero? k) terms-produced)
+                 (else
+                    (begin
+                       (append! terms-produced (children-of-n-in-A049820-tree (car listp)))
+                       (loop (cdr listp) (- k 1))
+                    )
+                 )
+           )
+    )
+  )
+)
+
+;; The above is of course much less than optimal with large values of n, so here's an improved version,
+;; keeping another list-pointer (endp) pointing to the last non-empty children-list (which are never
+;; that long, so their end is found quickly by append!):
+
+(define (A263267list_up_to_n_terms_at_least n)
+  (let ((terms-produced (list 0)))
+    (let loop ((startp terms-produced) (endp terms-produced) (k (- n 1)))
+           (cond ((<= k 0) terms-produced)
+                 (else
+                    (let ((children (children-of-n-in-A049820-tree (car startp))))
+                       (cond ((null? children) (loop (cdr startp) endp k))
+                             (else
+                                (begin
+                                    (append! endp children)
+                                    (loop (cdr startp) children (- k (length children)))
+                                )
+                             )
+                       )
+                    )
+                 )
+           )
+    )
+  )
+)
+
+;; Say: (define listA263267 (A263267list_up_to_n_iterations_slow 10411)) ;; A263260(1000) = 10411, (length listaA263267) = 10426
+
+;; Or:  (define listA263267 (A263267list_up_to_n_terms_at_least 10426))
+
+(defineperm1 (A263267 n) (list-ref listA263267 n))
+(define (A263268 n) (A263267 (- n)))
+
+;; (define (A263266 n) (A263265 (- n)))
+
+(definec (A263266 n) (if (zero? n) n (+ -1 (A263259 n) (A263260 (- (A155043 n) 1)))))
+
+(define A263281 (FIXED-POINTS 0 0 A263266))
+
+
+(define (A263269 n) (A263267 (- (A263260 n) 1))) ;; The right edge of A263267.
+(define (A264988 n) (if (zero? n) n (A263267 (A263260 (- n 1))))) ;; The left edge of A263267.
+
+;;;;;;;;;;;;;;;;;;;;;;;;
+
+(define A262511 (ZERO-POS 1 1 (COMPOSE -1+ A060990)))
+
+(define A045765 (ZERO-POS 1 1 A060990)) ;; n - d(n) never takes these values. 
+
+(define A263095 (MATCHING-POS 1 1 (lambda (n) (and (= 1 (A010052 n)) (zero? (A060990 n)))))) ;; Squares in A045765.
+
+(define A236562 (NONZERO-POS 1 0 A060990)) ;; Numbers n such that A049820(x) = n has a solution.
+
+(definec (A262512 n) (let ((s (A262511 n))) (let loop ((k s)) (if (= s (A049820 k)) k (loop (+ 1 k))))))
+
+;; (same-intfuns1? A262512  (COMPOSE A082284 A262511) 128) --> #t
+;; (same-intfuns1? A262512  (COMPOSE A262686 A262511) 128) --> #t
+
+;; (same-intfuns1? A262511 (COMPOSE A049820 A262512) 1024) --> #t
+
+(define A262513 (MATCHING-POS 1 1 (lambda (n) (= 1 (A060990 (A049820 n))))))
+
+;; a(n) = smallest number k such that k - tau(k) = n, or 0 if no such number exists. 
+(definec (A082284 n) (if (zero? n) 1 (let ((u (+ n (A002183 (+ 2 (A261100 n)))))) (let loop ((k n)) (cond ((= (A049820 k) n) k) ((> k u) 0) (else (loop (+ 1 k))))))))
+
+;; a(n) = largest number k such that k - tau(k) = n, or 0 if no such number exists.
+(definec (A262686 n) (if (zero? n) 2 (let ((u (+ n (A002183 (+ 2 (A261100 n)))))) (let loop ((k u)) (cond ((= (A049820 k) n) k) ((< k n) 0) (else (loop (- k 1))))))))
+
+
+(define A263079 (MATCHING-POS 1 1 (COMPOSE negative? (lambda (n) (A263078 n)))))
+
+(definec (A263082 n) (if (zero? n) n (max (A262503 n) (A263082 (- n 1)))))
+
+
+(definec (A263077 n)
+  (let ((t (A155043 n)))
+    (let loop ((k (A263082 (+ -1 (A155043 n)))))
+         (if (< (A155043 k) t) k (loop (- k 1)))
+    )
+  )
+)
+
+
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Some binary stuff transferred from intfun_b.scm 2013-07-09:
@@ -3425,7 +4172,7 @@
 (define (A163575 n) (floor->exact (/ n (expt 2 (A136480 n)))))
 
 (definec (A005187 n) (if (< n 2) n (+ n (A005187 (floor->exact (/ n 2))))))
-(define A005187v2 (PARTIALSUMS 1 1 A001511))
+;; (define A005187v2 (PARTIALSUMS 1 1 A001511))
 
 (define (A257126 n) (- (A055938 n) (A005187 n)))
 
@@ -3445,10 +4192,10 @@
 (define (A249151 n) (A055881 (A001142 n)))
 
 (define (A249152 n) (* 2 (A143157 (floor->exact (/ n 2)))))
-(define (A249152v2 n) (A007814 (A002109 n)))
+;; (define (A249152v2 n) (A007814 (A002109 n)))
 
 (define (A249153 n) (* 2 (A143157 n)))
-(define (A249153v2 n) (A249152 (+ n n))) ;; a(n) = 2*A143157(n).
+;; (define (A249153v2 n) (A249152 (+ n n))) ;; a(n) = 2*A143157(n).
 
 (define (A060818 n) (expt 2 (A011371 n)))
 
@@ -5667,7 +6414,7 @@
 
 
 ;; The smallest m such that the m-th triangular number is greater than or equal to half the n-th triangular number. 
-(define (A257175unreliable n) (ceiling->exact (/ (+ -1 (sqrt (+ (* 2 n n) n n 1))) 2))) ;; By Greathouse's formula
+;; (define (A257175unreliable n) (ceiling->exact (/ (+ -1 (sqrt (+ (* 2 n n) n n 1))) 2))) ;; By Greathouse's formula
 (define (A257175 n) (let ((t_per_2 (/ (A000217 n) 2))) (let loop ((m 0)) (if (>= (A000217 m) t_per_2) m (loop (+ 1 m))))))
 
 (define (A000290 n) (* n n)) ;; The squares: a(n) = n^2.
@@ -5702,7 +6449,7 @@
 (define (sqrt n) (error "Function sqrt disabled in IntSeq-library. Use A000196 instead to get correct floored-down integer values. Called with: " n)) ;; We don't deprecate, we disable!
 
 (define A000196 (LEFTINV-LEASTMONO-NC2NC 0 0 A000290)) ;; /XFER: core.squares
-(define (A000196unreliable n) (floor->exact (sqrt n)))
+;; (define (A000196unreliable n) (floor->exact (sqrt n)))
 
 
 
@@ -5713,7 +6460,7 @@
 (define (square? n) (not (zero? (A010052 n)))) ;; If somebody ever uses this one...
 
 (define (A003059 n) (+ (A000196 n) (- 1 (A010052 n)))) ;; Add one to A000196 when n is not a square.
-(define (A003059unreliable n) (ceiling->exact (sqrt n))) ;; n appears 2n-1 times.
+;; (define (A003059unreliable n) (ceiling->exact (sqrt n))) ;; n appears 2n-1 times.
 
 
 (define (A000330 n) (* (/ 1 6) n (+ n 1) (+ n n 1))) ;; Square pyramidal numbers: 0^2 + 1^2 + 2^2 +...+ n^2 = n*(n+1)*(2*n+1)/6.
@@ -5849,17 +6596,17 @@
 
 (define A003056 (LEFTINV-LEASTMONO-NC2NC 0 0 A000217))
 
-(define (A003056unreliable n) ;; repeat n n+1 times, starting from n = 0.
-  (floor->exact (- (sqrt (* 2 (1+ n))) (/ 1 2)))
-)
+;; (define (A003056unreliable n) ;; repeat n n+1 times, starting from n = 0.
+;;  (floor->exact (- (sqrt (* 2 (1+ n))) (/ 1 2)))
+;; )
 
 (define (A083920 n) (- n (A003056 n))) ;; Number of nontriangular numbers <= n.
 
 (define (A002024 n) (+ 1 (A003056 (- n 1))))
 
-(define (A002024unreliable n) ;; repeat n n times, starting from n = 1.
-  (floor->exact (+ (/ 1 2) (sqrt (* 2 n))))
-)
+;; (define (A002024unreliable n) ;; repeat n n times, starting from n = 1.
+;;  (floor->exact (+ (/ 1 2) (sqrt (* 2 n))))
+;; )
 
 
 ;; Repeat n 2n times, starting from n=1:
@@ -5873,9 +6620,9 @@
 (define (A002262 n) (- n (A000217 (A003056 n)))) ;; a(n) = n - the largest triangular number <= n. (Murthy)
 
 
-(definec (A002262unreliable n) ;; The Y component (row) of square {0..inf} arrays
-  (- n (binomial_n_2 (floor->exact (flo:+ 0.5 (flo:sqrt (exact->inexact (* 2 (1+ n))))))))
-)
+;; (definec (A002262unreliable n) ;; The Y component (row) of square {0..inf} arrays
+;;  (- n (binomial_n_2 (floor->exact (flo:+ 0.5 (flo:sqrt (exact->inexact (* 2 (1+ n))))))))
+;; )
 
 
 (define (A002260 n) (+ 1 (A002262 (- n 1))))
@@ -5899,9 +6646,9 @@
 
 (define (A025581 n) (- (A003056 n) (A002262 n)))
 
-(definec (A025581unreliable n) ;; The X component (column) of square {0..inf} arrays
-  (- (binomial_n_2 (1+ (floor->exact (flo:+ 0.5 (flo:sqrt (exact->inexact (* 2 (1+ n)))))))) (1+ n))
-)
+;; (definec (A025581unreliable n) ;; The X component (column) of square {0..inf} arrays
+;;  (- (binomial_n_2 (1+ (floor->exact (flo:+ 0.5 (flo:sqrt (exact->inexact (* 2 (1+ n)))))))) (1+ n))
+;; )
 
 
 (define (A004736 n) (+ 1 (A025581 (- n 1))))
