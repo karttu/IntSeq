@@ -1,4 +1,6 @@
 
+;; Last edited 2015-12-09 by Antti Karttunen, added yet more unsorted functions to this old MIT/GNU-Scheme module.
+
 (declare (usual-integrations))
 
 (load "definech")
@@ -2817,8 +2819,254 @@
 ;; Fully multiplicative in GF(2)[X], of course:
 ;; (uniq (map (lambda (n) (- (A057889 (A048720bi (A002262 n) (A025581 n))) (A048720bi (A057889 (A002262 n)) (A057889 (A025581 n)))))  (iota0 1024))) -- >  (0)
 
-(define (A246200 n) (/ (A057889 (* 3 n)) 3))
+(define (A246200 n) (/ (A057889 (* 3 n)) 3)) ;; XXX - Base-3 analogue of A057889 and applied to 2n. ? is now A263272
 
+(define (A240025 n) (if (zero? n) 1 (- (A000267 n) (A000267 (- n 1))))) ;; XFER: Squares/squares-quarter.ss together with A000267 from intfun_a.scm
+(define (A002620 n) (floor->exact (/ (A000290 n) 4))) ;; o=0: XFER: Squares/squares-quarter.ss
+(define (A033638 n) (+ 1 (A002620 n))) ;; o=0: XFER: Squares/squares-quarter.ss
+
+(definec (A265400 n) (cond ((<= n 3) 0) ((<= n 8) (- 1 (A000035 n))) ((= 1 (A240025 (- n 1))) 0) ((= 1 (A240025 (- n 2))) (A033638 (- (A000267 n) 4))) (else (+ 1 (A265400 (- n 1)))))) ;; XFER: Squares/squares-quarter.ss
+
+(definec (A265410 n) (cond ((= 1 n) 0) ((<= n 7) 1) ((= 1 (A240025 (- n 1))) (A033638 (- (A000267 n) 4))) ((= 1 (A240025 (- n 2))) (A265410 (- n 1))) (else (+ 1 (A265410 (- n 1))))))
+
+(define (A265410v2 n) (cond ((= 1 n) 0) ((<= n 7) 1) ((= 1 (A240025 (- n 1))) (A033638 (- (A000267 n) 4))) (else (A265400 n))))
+
+(define (A265411 n) (cond ((zero? n) 1) ((= 1 n) 7) ((= 1 (A240025 (- n 1))) 3) (else 1)))
+
+(definec (A265412 n) (if (zero? n) 1 (+ (A265411 n) (A265412 (- n 1))))) ;; o=
+
+(define (A265413 n) (if (zero? n) 1 (+ 1 (A265412 (- n 1))))) ;; o=0: Positions of records in A265410.
+(define A265413v2 (RECORD-POS 0 1 A265410)) ;; 
+
+(define A265410v3 (LEFTINV-LEASTMONO 1 0 A265413))
+
+(define (A265400v2 n) (if (= 1 (A240025 (- n 1))) 0 (A265410v3 n)))
+
+(define (u-pairs-same-no-zeros? a0 a1 b0 b1)
+  (and (not (zero? a0)) (not (zero? a1)) (not (zero? b0)) (not (zero? b1))
+       (or (and (= a0 b0) (= a1 b1)) (and (= a0 b1) (= a1 b0)))
+  )
+)
+
+
+;; Here we tacitly assume that A260643(0) = 0, to avoid extra checks when A265400 returns zero.
+;; Also, by using memoizing-macro definec, this is not so slow as otherwise one might think of.
+;; But it's still quadratic, or sort of, and yes, it is so slow. But at least the terms match.
+(definec (A260643 n)
+  (if (<= n 1) n
+     (let ((b0 (A260643 (- n 1))) (b1 (A260643 (A265400 n))))
+;; Candidate k will be chosen if neither pair {k,b0} and {k,b1} occur anywhere in the spiral constructed so far.
+        (let outerloop ((k 1))
+          (if (or (= k b0) (= k b1))
+              (outerloop (+ k 1)) ;; Would be equal to either neighbour, skip this k.
+;; Otherwise start checking whether either {k,b0} or {k,b1} already occur somewhere:
+              (let innerloop ((j (- n 1)))
+                (let ((c0 (A260643 j))
+                      (c1 (A260643 (- j 1)))
+                      (c2 (A260643 (A265400 j)))
+                     )
+                   (cond ((= 1 j) k) ;; No conflicting pairs found, return the least conflict-free k found.
+                         ((u-pairs-same-no-zeros? k b0 c0 c1) (outerloop (+ 1 k)))
+                         ((u-pairs-same-no-zeros? k b0 c0 c2) (outerloop (+ 1 k)))
+                         ((u-pairs-same-no-zeros? k b1 c0 c1) (outerloop (+ 1 k)))
+                         ((u-pairs-same-no-zeros? k b1 c0 c2) (outerloop (+ 1 k)))
+                         (else (innerloop (- j 1)))
+                   )
+                )
+              )
+          )
+        )
+     )
+  )
+)
+
+
+(definec (A030102 n) ;; XFER: Base-3/base3-core.ss
+  (let loop ((z 0) (n n))
+    (if (zero? n)
+        z
+        (loop (+ (* 3 z) (modulo n 3))
+              (floor->exact (/ n 3))
+        )
+    )
+  )
+)
+
+;; A030103 in intfun_a.scm XFER Base-2/base2-base4.ss
+
+(define (A030104 n) ;; XFER: Base-5/base3-core.ss
+  (let loop ((z 0) (n n))
+    (if (zero? n)
+        z
+        (loop (+ (* 5 z) (modulo n 5))
+              (floor->exact (/ n 5))
+        )
+    )
+  )
+)
+
+
+(definec (A030108 n) ;; Base 9 reversal of n (written in base 10). ;; XFER: Base-3/base3-base9.ss ??? Should have b(n) = A263273 analogue, and then another sequence b(8n)/8.
+  (let loop ((z 0) (n n))
+    (if (zero? n)
+        z
+        (loop (+ (* 9 z) (modulo n 9))
+              (floor->exact (/ n 9))
+        )
+    )
+  )
+)
+
+(define (A038500 n) (A000244 (A007949 n))) ;; o=1: Highest power of 3 dividing n. ;; XFER: Base-3/base3-core.ss
+
+(define (A038502 n) (/ n (A038500 n))) ;; o=1: Remove 3's from n. ;; XFER: Base-3/base3-core.ss
+
+(define (A263272 n) (/ (A263273 (+ n n)) 2))
+
+(define (A263273 n) (if (zero? n) n (* (A030102 (A038502 n)) (A038500 n)))) ;; o=0:  ;; XFER: Base-3/base3-core.ss
+
+(define (A234957 n) (let loop ((k 4)) (if (not (zero? (modulo n k))) (/ k 4) (loop (* 4 k))))) ;; o=1: Highest power of 4 dividing n.
+
+;; A065883 Remove factors of 4 from n (i.e. write n in base 4, drop final zeros, then rewrite in decimal).
+(define (A065883 n) (/ n (A234957 n))) ;; o=1 /XFER Base-2/base2-base4.ss
+
+(define (A060904 n) (expt 5 (A112765 n))) ;; o=1: Exact power of 5 that divides the n-th Fibonacci number (A000045), which is the same as the exact power of 5 that divides n. /XFER Base-5/base5-core.ss
+
+(define (A264994 n) (if (zero? n) n (* (A030103 (A065883 n)) (A234957 n)))) ;; o=0: Bijective base-4 reverse.
+(define (A264995 n) (if (zero? n) n (* (A030104 (A132739 n)) (A060904 n)))) ;; o=0: Bijective base-5 reverse.
+
+(define (A264981 n) (let loop ((k 9)) (if (not (zero? (modulo n k))) (/ k 9) (loop (* 9 k))))) ;; o=1: Highest power of 9 dividing n. XFER Base-3/base3-base9.ss
+
+(define (A264993 n) (/ (A264994 (* 3 n)) 3)) ;; o=0: XFER Base-2/base2-base4.ss
+(define (A265335 n) (/ (A264994 (* 5 n)) 5)) ;; o=0: XFER Base-2/base2-base4.ss
+
+(define (A264979 n) (if (zero? n) n (* (A030108 (/ n (A264981 n))) (A264981 n)))) ;; o=0: Bijective base-9 reverse.
+
+;; A265329-A265370 are now reserved for your use. 
+
+(define (A265338 n) (/ (A264979 (* 8 n)) 8))
+
+
+(definec (A265330 n) (if (odd? n) 0 (+ 1 (A265330 (A265352 (/ n 2)))))) ;; o=1. Zero-based row index to A265345.
+
+(definec (A265331 n) (if (odd? n) 1 (+ 1 (A265331 (A265352 (/ n 2)))))) ;; o=1. One-based row index to A265345.
+
+;; (same-intfuns1? A265330 (COMPOSE A007814 A263273) 65537) --> #t ;; Because A263273 is an involution?
+;; (same-intfuns1? A265331 (COMPOSE A001511 A263273) 65537) --> #t
+
+;; (same-intfuns1?  (COMPOSE A007814 A265351)  (COMPOSE A007814 A265352) 128) --> 16
+
+;; (map (lambda (n) (- (A007814 (A263272 n)) (A007814 (A263273 n)))) (iota 64))
+;; --> (0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 1 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 -2 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 1 0 0 0 1 0 0 0 0 0 0 0 0 0 0 0 -3)
+
+;; Compare to:
+;; (same-intfuns1? A007814 (COMPOSE A007814 A057889) 1024) --> #t
+;; (same-intfuns1? A057889  (lambda (n) (/ (A057889 (* 8 n)) 8)) 1024) --> #t
+
+
+(definec (A265410 n) (if (odd? n) (A265354 (/ (- n 1) 2)) (A265410 (A265352 (/ n 2))))) ;; o=1. Zero-based col index.
+(define (A265411 n) (+ 1 (A265410 n))) ;; o=1. One-based colum index to A265345.
+
+(define (A265412 n) (+ (A265330 n) (A265410 n))) ;; Manhattan distance to ? + 1 ? Same as A265340 ?
+
+(define A264990 (ZERO-POS 1 1 A265410)) ;; o=1. A264980 sorted into ascending order.
+
+;; A265404-A265415 are now reserved for your use. 
+
+;; Cross-compose A263273 with A249813 / A249814 ? (or similar ones) or with A163511 (too much range there) etc.
+
+
+(define (A265339 n) (A263273 (A004526 (A263273 n)))) ;; XXX- Submit!
+
+(definec (A265340 n) (if (zero? n) 0 (+ 1 (A265340 (A265339 n)))))  ;; XXX- Submit!
+
+(define (A265340v2 n) (if (zero? n) 0 (A070939 (A263273 n))))
+
+(define (A265341 n) (+ 1 (* 2 (A265353 n)))) ;; o=0: 
+(define (A265342 n) (* 2 (A265351 n))) ;; o=0: 
+
+(define (A265345 n) (A265345bi (A002262 (+ -1 n)) (A025581 (+ -1 n)))) ;; o=1.
+(define (A265345bi row col) (if (= 0 row) (A265341 col) (A265342 (A265345bi (- row 1) col)))) ;; row>=0, col>=0.
+
+(define (A265347 n) (A265345bi (A025581 (+ -1 n)) (A002262 (+ -1 n)))) ;; o=1. Transpose of A265345.
+
+
+(define (A265343 n) (A264978 (A263272 n))) ;; XXX - compose with A265363 and A265364 in some "twisted" order
+(define (A265344 n) (A263272 (A264978 n)))
+
+(define (A265351 n) (A263272 (A263273 n))) ;; o=0: Composition of A263273 with its even bisection. 
+(define (A265351v2 n) (A264974 (A265367 n)))
+
+(define (A265352 n) (A263273 (A263272 n))) ;; o=0: Composition of A263273 with its even bisection. 
+(define (A265352v2 n) (A265368 (A264974 n)))
+
+(define (A265353 n) (A264985 (A263273 n))) ;; o=0: Composition of A263273 with its odd bisection. 
+(define (A265354 n) (A263273 (A264985 n))) ;; o=0: Composition of A263273 with its odd bisection. 
+
+(define (A265355 n) (A263272 (A264985 n))) ;; o=0: Composition of bisections of A263273.
+(define (A265356 n) (A264985 (A263272 n))) ;; o=0: Composition of bisections of A263273.
+
+(define (A265357 n) (A264989 (A263272 n))) ;; o=0: Composition of A263272 with its odd bisection.
+(define (A265358 n) (A263272 (A264989 n))) ;; o=0: Composition of A263272 with its odd bisection.
+
+(define (A265361 n) (A264974 (A264989 n))) ;; o=0: Composition of bisections of A263272. 
+(define (A265362 n) (A264989 (A264974 n))) ;; o=0: Composition of bisections of A263272. 
+
+(define (A265363 n) (A264974 (A263273 n))) ;; o=0: Composition of A263273 with its quadrisection.
+(define (A265364 n) (A263273 (A264974 n))) ;; o=0: Composition of A263273 with its quadrisection.
+
+(define (A265365 n) (A264978 (A263273 n))) ;; o=0: Composition of A263273 with its octisection. 
+(define (A265366 n) (A263273 (A264978 n))) ;; o=0: Composition of A263273 with its octisection. 
+
+(define (A265367 n) (A264974 (A263272 (A263273 n))))
+(define (A265367v2 n) (A264974 (A265351 n)))
+(define (A265367v3 n) (A264975 (A263273 n)))
+
+(define (A265368 n) (A263273 (A263272 (A264974 n))))
+(define (A265368v2 n) (A265352 (A264974 n)))
+(define (A265368v3 n) (A263273 (A264976 n)))
+
+;;;;;;;;;;;;;;;;;
+
+
+(define (A264965 n) (A263273 (A057889 n)))
+(define (A264966 n) (A057889 (A263273 n)))
+
+(define (A264967 n) (A263272 (A246200 n)))
+(define (A264968 n) (A246200 (A263272 n)))
+
+(define (A264974 n) (/ (A263273 (* 4 n)) 4))
+(define (A264974v2 n) (/ (A264986 n) 2))
+(define (A264974v3 n) (/ (A263272 (* 2 n)) 2))
+
+(define (A264978 n) (/ (A263273 (* 8 n)) 8))
+(define (A264978v2 n) (/ (A263272 (* 4 n)) 4))
+(define (A264978v3 n) (/ (A264974 (* 2 n)) 2))
+
+(define (A264975 n) (A264974 (A263272 n)))
+(define (A264975v2 n) (/ (A263273 (* 2 (A263273 (* 2 n)))) 4))
+(define (A264975v3 n) (/ (A264984 (A264984 n)) 4))
+(define (A264975v4 n) (/ (A263272 (A264984 n)) 2))
+
+(define (A264976 n) (A263272 (A264974 n)))
+(define (A264976v2 n) (/ (A263273 (/ (A263273 (* 4 n)) 2)) 2)) ;; a(n) = A263273(A263273(4*n) / 2)) / 2.
+
+(define (A264983 n) (A263273 (+ 1 n n))) ;; Odd bisection of A263273.
+(define (A264984 n) (A263273 (+ n n))) ;; Even bisection of A263273.
+
+(define (A264985 n) (/ (- (A264983 n) 1) 2))
+
+(define (A264986 n) (A263272 (+ n n)))
+(define (A264987 n) (A263272 (+ 1 n n)))
+
+(define (A264989 n) (/ (- (A264987 n) 1) 2))
+(define (A264989v2 n) (/ (- (A263273 (A016825 n)) 2) 4))
+
+(define (A264991 n) (A264989 (A264985 n)))
+(define (A264992 n) (A264985 (A264989 n)))
+
+;; Transfer to Base-3 somewhere, those above.
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 ;; A235041: Special "cross-multiplicative" isomorphism from integers to GF2X-polynomials:
 ;, E.g. map A091206 ("Primes that are also irreducible GF(2)[X]-polynomials") to itself
@@ -4500,4 +4748,35 @@
 (define (A254876bi n k) (/ (A000142 n) (mul A000027 (- n (floor->exact (/ (* 2 n) (expt 3 k)))) (- n (floor->exact (/ n (expt 3 k)))))))
 
 (define (A088488 n) (add (lambda (k) (floor->exact (/ (A254876bi n k) (A254876bi (- n 1) k)))) 1 8)) ;; Bagula
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+;; Say first:
+;; (define vecA265388 (read-b-file-to-vector "seqs/b265388_upto6520.txt" 6521)) ;; Michel Marcus, a(n) = gcd{k=0..n-1} binomial(2*n, 2*k).
+
+(define (A265388fast n) (vector-ref vecA265388 n))
+
+;; Or use this one:
+(define (A265388 n)
+ (let loop ((z (gcd (A007318tr (+ n n) 2)))
+            (k 2)
+           )
+        (cond ((>= k n) z)
+              ((= 1 z) z) ;; No need to continue.
+              (else (loop (gcd z (A007318tr (* 2 n) (* 2 k))) (+ k 1)))
+        )
+ )
+)
+
+;; A265394-A265403 are now reserved for your use. 
+
+(define A265394 (RECORD-POS 1 1 A265388))
+
+(define (A265395 n) (A265388 (A265394 n)))
+
+(define A265401 (ZERO-POS 1 1 (COMPOSE -1+ A265388)))
+
+(define A265402 (FIXED-POINTS 1 1 A265388))
+
+(define A265403 (MATCHING-POS 1 1 (lambda (n) (= (+ n n -1) (A265388 n)))))
 
