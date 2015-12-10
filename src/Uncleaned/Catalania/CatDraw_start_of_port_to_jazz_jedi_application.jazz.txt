@@ -1,0 +1,1276 @@
+;;;==============
+;;;  JazzScheme
+;;;==============
+;;;
+;;;; App
+;;;
+
+
+(module app.application jazz
+
+
+(import (jazz.jml)
+        (jazz.library)
+        (jazz.platform)
+        (jazz.system)
+        (jazz.system.application)
+        (jazz.ui))
+
+
+(import (jazz.geometry)
+        (jazz.graphic)
+        (jazz.platform.cairo)
+        (jazz.ui.view)
+        (jazz.ui.window))
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+;;;
+;;;; Animation
+;;;
+
+
+(define animation-done?
+  #t)
+
+
+(define (start-animation view)
+  (when animation-done?
+    (set! animation-done? #f)
+    (thread-start!
+      (new-thread
+        (lambda ()
+          (animate view))
+        'animate))))
+
+
+(define (stop-animation view)
+  (unless animation-done?
+    (set! animation-done? #t)))
+
+
+(define (toggle-animation view)
+  (if animation-done?
+      (start-animation view)
+    (stop-animation view)))
+
+
+(define (animate view)
+  ;; get animation surface
+  (with-view-surface~ view
+    (lambda (surface)
+      (let ((context (get-context~ surface)))
+        ;; erase background
+        (execute-event
+          (lambda ()
+;;          (cairo_set_source_rgba context 0. 0. 0. 1.)
+            (cairo_set_source_rgba context 1. 1. 1. 1.)
+            (cairo_rectangle context 0. 0. (cast <fl> (get-width~ view)) (cast <fl> (get-height~ view)))
+            (cairo_fill context)))
+        ;; animation loop
+        (let (loop)
+          (unless animation-done?
+            (let ((width (get-width~ view))
+                  (height (get-height~ view))
+                  (ox 100.0)
+                  (oy 100.0))
+              (define (random-in max)
+                (* max (random-real)))
+              
+              (cairo_save context)
+              (draw-polygon-triangularization context '((() (()) ())) ox oy 30.0 #f)
+              (draw-qq-chords context '(((()) (() ()))) ox oy 40.0 0.6 0.7)
+              (cairo_restore context)
+;;            (cairo_translate context (- ox) (- oy))
+;;            (cairo_translate context 0.0 0.0)
+
+              ;; add line
+              (or #t
+                (lambda ()
+;;                (cairo_set_source_rgba context (random-real) (random-real) (random-real) 1.)
+                  (cairo_set_source_rgba context (random-real) 0.0 0.0 1.0)
+                  (cairo_set_line_width context 2.)
+                  (cairo_arc context (random-in width) (random-in height) (random-in 20.0) 0.0 (* 1.9 3.14159))
+;;                (cairo_move_to context (random-in width) (random-in height))
+;;                (cairo_line_to context (random-in width) (random-in height))
+                  (cairo_stroke context)))
+              (loop))))))))
+
+
+;;;
+;;;; View
+;;;
+
+
+(class Animation-View extends View
+  
+  
+  (form
+    (<install> background: {Color Black}))
+  
+  
+  (method override (destroy)
+    (stop-animation self)
+    (nextmethod))
+  
+  
+  (method override (draw surface context)
+    (let ((text "Click me!")
+          (font {Font Heading1})
+          (color {Color Red}))
+      (let ((size (get-size))
+            (extent (text-extent~ font text)))
+        (let ((pos (center extent size)))
+          (set-font~ surface font)
+          (set-text-color~ surface color)
+          (draw-text~ surface (get-h~ pos) (get-v~ pos) text)))))
+  
+  
+  (method override (mouse-down evt)
+    (toggle-animation self)))
+
+
+;;;
+;;;; Application
+;;;
+
+
+(class App-Application extends Application
+
+  
+  (method override (process-name)
+    "App")
+  
+  
+  (method override (new-toplevel)
+    (new App-Toplevel))
+  
+  
+  (method override (finish-process)
+    (nextmethod)
+    (maximize~ (current-stage))
+    (new-frame Animation-View host-title: "Animation")))
+
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+(define pi (* 2 (acos 0)))
+(define 2pi (* 2 pi))
+
+(define pt cons)
+
+(define pt.x car)
+(define pt.y cdr)
+
+
+(define (draw-polygon-triangularization context sexp ox oy radius chordwidth)
+    (draw-chords-with-or-without-circle context #f (bt->pt sexp) radius ox oy #f #f chordwidth #f 0 0 0)
+)
+
+
+(define (draw-n-chords context sexp ox oy radius chordwidth perimwidth)
+    (draw-chords-with-or-without-circle context #f (sexp->hs sexp) radius ox oy #t #t chordwidth perimwidth 1.0 0.0 0.0)
+)
+
+(define (draw-qq-chords context sexp ox oy radius chordwidth perimwidth)
+    (draw-chords-with-or-without-circle context #f (sexp->pp-qq-rr sexp) radius ox oy #t #f chordwidth perimwidth 0.0 0.0 1.0)
+)
+
+
+
+(define (draw-chords-with-or-without-circle context old-chords new-chords radius ox oy circle? curved? chordwidth perim_width r g b)
+   (let ((perimwidth (or perim_width 0.3)))
+          (execute-event
+             (lambda ()
+                (cairo_translate context ox oy) 
+                (cairo_set_line_width context (or chordwidth 0.5))
+                (if old-chords
+                    (begin
+                       (cairo_set_source_rgba context 1.0 1.0 1.0 1.0) ;; Draw with white, i.e. erase.
+                       (draw-chords context old-chords radius curved?)
+                    )
+                )
+
+                (cairo_set_source_rgba context 0.0 0.0 0.0 1.0) ;; Draw with black.
+                (draw-chords context new-chords radius curved?)
+                (cairo_stroke context)
+                (if circle?
+                    (begin
+                       (cairo_set_source_rgba context r g b 1.0)
+                       (cairo_set_line_width context perimwidth)
+                       (cairo_arc context 0.0 0.0 (+ radius perimwidth) 0.0 2pi)
+                    )
+                )
+                (cairo_stroke context)
+             )
+         )
+   )
+)
+
+
+;;
+;; The point 1 is a half-angle clockwise from the angle 3/2 pi
+;; The point 2 is one angle and half clockwise from the angle 3/2 pi
+;; The point n is a half-angle counter-clockwise from the angle 3/2 pi.
+;;
+;;
+;;
+
+;; angle = (3/2 pi + pi/n) - (v * (2pi/n))
+
+
+
+(define (compute-vert-angle v n)
+  (let ((a (- (+ (/ (* 3 pi) 2) (/ pi n)) ;; Subtract from the angle of n
+              (* v (/ 2pi n)) ;; ... the v * angle used.
+           )
+       ))
+     (if (< a 0.0) (+ a 2pi) a) ;; Ensure that it is positive angle.
+  )
+)
+
+(define (get-edge-point v n radius)
+  (let ((angle (compute-vert-angle v n)))
+     (pt (* radius (cos angle)) (* radius (sin angle)))
+  )
+)
+
+(define (draw-line context start-pt end-pt)
+  (cairo_move_to context (pt.x start-pt) (pt.y start-pt))
+  (cairo_line_to context (pt.x end-pt) (pt.y end-pt))
+)
+
+
+;; g1 and g2 are angles from the origo to the vertices v1 and v2
+;; respectively.
+;; angle = the mean of the angles g1 and g2, the angle from origo
+;; to antiorigo.
+;; h = height of equilateral triangle whose base is the line segment v1-v2,
+;; and 2h is distance between the origo and the antiorigo
+
+;; The angle between the first and the last vertices is straight down.
+
+(define (draw-anti-arc context v1 v2 n radius)
+  (let* ((g1 (compute-vert-angle
+               ((if (eq? (abs (- v1 v2)) (- n 1)) min max) v1 v2) n))
+         (g2 (compute-vert-angle
+               ((if (eq? (abs (- v1 v2)) (- n 1)) max min) v1 v2) n))
+         (h  (* radius (cos (/ pi n))))
+         (angle (compute-vert-angle
+                   (if (eq? (abs (- v1 v2)) (- n 1)) ;; First & the last vert?
+                       (/ 1 2) ;; Then straight down.
+                       (/ (+ v1 v2) 2) ;; Otherwise their average.
+                   )
+                   n
+                )
+         )
+         (antiorigo (pt (* 2 h (cos angle)) (* 2 h (sin angle))))
+        )
+     (cairo_arc context (pt.x antiorigo) (pt.y antiorigo) radius (+ pi g1) (+ pi g2))
+  )
+)
+
+
+(define (draw-chords context chords radius curved?)
+    (let ((n (find-max chords)))
+      (let loop ((chords chords))
+            (cond ((and (pair? chords) (pair? (car chords)))
+                    (begin
+                      (cond
+                         ((= (caar chords) (cdar chords)) ;; Point connected only with itself!?
+                            (let ((ep (get-edge-point (caar chords) n radius)))
+                              (cairo_arc context (pt.x ep) (pt.y ep) 0.5 0.0 2pi) ;; Draw a smallish circle.
+                            )
+                         )
+                         ((and curved?
+                               (> n 2)
+                               (memq (abs (- (caar chords) (cdar chords)))
+                                     (list 1 (- n 1)) ;; Neighbours?
+                               )
+                          )
+                            (draw-anti-arc context (caar chords) (cdar chords) n radius)
+                         )
+                         (else ;; A straight line.
+                            (draw-line
+                                  context
+                                  (get-edge-point (caar chords) n radius)
+                                  (get-edge-point (cdar chords) n radius)
+                            )
+                         )
+                      ) ;; cond
+                      (loop (cdr chords))
+                    )
+                  )
+            )
+      )
+    )
+)
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+;; Some utility functions, should be moved to some library file:
+
+
+(define attach! ; Borrowed from Franz lisp, is like destructive cons.
+  (lambda (elem lista)
+     (set-cdr! lista (cons (car lista) (cdr lista)))
+     (set-car! lista elem)
+     lista
+  )
+)
+
+
+
+(define (nthcdr n lista)
+  (if (or (zero? n) (null? lista))
+      lista
+      (nthcdr (- n 1) (cdr lista))
+  )
+)
+
+
+(define (count-pars a)
+    (cond ((not (pair? a)) 0)
+          (else (+ 1 (count-pars (car a)) (count-pars (cdr a))))
+    )
+)
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+
+(define (1+ n) (+ 1 n))
+(define (-1+ n) (- n 1))
+
+(define (post-incr! n-list)
+   (let ((z (car n-list)))
+      (set-car! n-list (1+ z))
+      z
+   )
+)
+
+(define (monus1 n) (if (> n 0) (-1+ n) n))
+
+
+(define (find-max a)
+    (cond ((not (pair? a))
+               (if (number? a) a 0)
+          )
+          (else (max (find-max (car a)) (find-max (cdr a))))
+    )
+)
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+;; Some rotation-functions borrowed from gatomorf.scm:
+
+
+(define (app-to-xrt a b) ;; Append 'b' to the eXtreme Rightmost Tip of 'a'.
+  (cond ((null? a) b)
+        ((pair? (cdr a)) (cons (car a) (app-to-xrt (cdr a) b)))
+        (else (cons (app-to-xrt (car a) b) (cdr a)))
+  )
+)
+
+(define (app-to-xrt! a b) ;; Append 'b' to the eXtreme Rightmost Tip of 'a', physically.
+  (cond
+    ((null? a) b) ;; Only the ethereal () cannot be touched.
+    (else
+      (let recurse ((a a) (b b))
+         (cond ((and (not (pair? (car a))) (not (pair? (cdr a))))
+                   (set-car! a b)
+               )
+               ((pair? (cdr a)) (recurse (cdr a) b))
+               (else (recurse (car a) b))
+         )
+      )
+      a ;; Return the modified a.
+    )
+  )
+)
+
+
+(define (swap! s)
+  (let ((ex-car (car s)))
+     (set-car! s (cdr s))
+     (set-cdr! s ex-car)
+     s
+  )
+)
+
+;; robl! -- Rotate Binary tree Left. Inverse of robr!
+;; Convert (a . (b . rest)) to ((a . b) . rest) destructively
+;; (with no cons cells wasted).
+;; Like cons2top! but keeps the "point(er) of reference" same:
+
+(define (robl! s)
+  (let ((ex-car (car s)))         ;; <- a
+      (set-car! s (cddr s))       ;; (a . (b . rest)) -> (rest . (b . rest))
+      (set-cdr! (cdr s) ex-car)   ;; -> (rest . (b . a))
+      (swap! (cdr s))             ;; -> (rest . (a . b))
+      (swap! s)                   ;; -> ((a . b) . rest)
+      s
+  )
+)
+
+;; robr! -- Rotate Binary tree Right. Inverse of robl!
+;; Convert ((a . b) . rest) to (a . (b . rest)) destructively
+;; (with no cons cells wasted).
+
+(define (robr! s)
+  (let ((ex-cdr (cdr s)))         ;; <- rest
+      (set-cdr! s (caar s))       ;; ((a . b) . rest) -> ((a . b) . a)
+      (set-car! (car s) ex-cdr)   ;; -> ((rest . b) . a)
+      (swap! (car s))             ;; -> ((b . rest) . a)
+      (swap! s)                   ;; -> (a . (b . rest))
+      s
+  )
+)
+
+
+(define (*A057161 bt) ;; Was: RotateTriangularization
+  (let loop ((lt bt) (nt (list)))
+     (cond ((not (pair? lt)) nt)
+           (else (loop (car lt)
+                       (cons (cdr lt) nt)
+                 )
+           )
+     )
+  )
+)
+
+
+(define (*A057163 bt)
+  (cond ((not (pair? bt)) bt)
+        (else (cons (*A057163 (cdr bt))
+                    (*A057163 (car bt)))
+        )
+  )
+)
+
+(define (*A057163! s)
+  (cond ((pair? s) (*A069770! s) (*A057163! (car s)) (*A057163! (cdr s))))
+  s
+)
+
+
+(define (*A057162 bt) ;; Was: RotateTriangularizationInv
+  (let loop ((lt bt) (nt (list)))
+     (cond ((not (pair? lt)) nt)
+           (else (loop (cdr lt)
+                       (cons nt (car lt))
+                 )
+           )
+     )
+  )
+)
+
+
+(define (*A057164 s)
+  (if (null? s) s (append (*A057164 (cdr s)) (list (*A057164 (car s)))))
+)
+
+
+(define (*A057164! s) ;; Was DeepRev1!
+  (cond ((pair? s)
+              (*A057164! (car s))
+              (*A057164! (cdr s))
+              (*A057509! s)
+        )
+  )
+  s
+)
+
+(define (*A057501 s)
+  (cond ((null? s) (list))
+        (else (append (car s) (list (cdr s))))
+  )
+)
+
+
+(define (*A057501! s)
+  (cond ((not (pair? s)))
+        ((not (pair? (car s))) (swap! s))
+        (else
+              (robr! s)
+              (*A057501! (cdr s))
+        )
+  )
+  s
+)
+
+(define (*A057502! s)
+  (cond ((not (pair? s)))
+        ((not (pair? (cdr s))) (swap! s))
+        (else
+              (*A057502! (cdr s))
+              (robl! s)
+        )
+  )
+  s
+)
+
+(define (RotateHandshakes_n_steps s n)
+  (cond ((zero? n) s)
+        (else (RotateHandshakes_n_steps (*A057501 s) (- n 1)))
+  )
+)
+
+
+(define (*A069771 s) (RotateHandshakes_n_steps s (count-pars s)))
+
+
+(define (*A057508! s)
+  (cond ((pair? s)
+              (*A057508! (cdr s))
+              (*A057509! s)
+        )
+  )
+  s
+)
+
+
+(define (*A057509! s) ;; Was: Rol!
+  (cond ((pair? s)
+              (swap! s)
+              (*A057501! s)
+        )
+  )
+  s
+)
+
+(define (*A057510! s) ;; Was: Ror!
+  (cond ((pair? s)
+              (*A057502! s)
+              (swap! s)
+        )
+  )
+  s
+)
+
+
+(define (*A057511! s)
+  (cond ((pair? s)
+              (*A072796! s)
+              (*A057511! (car s))
+              (*A057511! (cdr s))
+        )
+  )
+  s
+)
+
+
+(define (*A057512! s)
+  (cond ((pair? s)
+              (*A057512! (car s))
+              (*A057512! (cdr s))
+              (*A072796! s)
+        )
+  )
+  s
+)
+
+(define (*A069770! s) ;; Name was: SwapBinTree!
+  (cond ((not (pair? s)))
+        (else
+              (swap! s)
+        )
+  )
+  s
+)
+
+
+
+
+
+;; -> (0 1 2 3 4 6 5 7 8 9 10 14 16 19 11 15 12 17 18 13 20 21 22 23 24 25 26 27 37 ...)
+(define (*A072796! s)
+  (cond ((not (pair? s)) s)
+        ((not (pair? (cdr s))) s)
+        (else (swap! s)
+              (robr! s)
+              (swap! (cdr s))
+              s
+        )
+  )
+)
+
+;; -> (0 1 2 3 4 5 7 6 8 9 10 11 12 13 17 18 16 14 15 20 19 21 22 23 24 25 26 27 28 ...)
+(define (*A072797! s)
+  (cond ((not (pair? s)) s)
+        ((not (pair? (car s))) s)
+        (else (swap! s)
+              (robl! s)
+              (swap! (car s))
+              s
+        )
+  )
+)
+
+
+;; Rotate interpretations (pp), (qq) & (rr) of Stanley
+;; (i.e. non-crossing partitions and Murasaki diagrams)
+;; (cf. 42 non-crossing ones of 52 "genji-mon" in "Genji monogatari")
+
+(define (*A085159 s)
+  (cond ((null? s) s)
+        (else (app-to-xrt (car s) (append (cdr s) (list (list)))))
+  )
+)
+
+
+
+;; This version is properly side-effective, i.e. s is guaranteed
+;; to be structurally modified to the intended shape:
+;; (not just the result returned):
+(define (*A085159! s)
+  (cond ((null? s) s)
+        ((null? (car s)) (*A057509! s))
+        (else
+           (let* ((car-s (car s))
+                  (org-caar (car car-s))
+                  (org-cdar (cdr car-s))
+                 )
+             (set-car! car-s (list))
+             (set-cdr! car-s (cdr s))
+             (*A057509! car-s)
+             (set-car! s org-caar)
+             (set-cdr! s org-cdar)
+             (app-to-xrt! s car-s)
+           )
+        )
+  )
+)
+
+(define (*A085160 s)  (*A085161 (*A085159 (*A085161 s))))
+(define (*A085160! s) (*A085161! (*A085159! (*A085161! s))))
+
+
+;; Here the orbit counts is A007123, same as for A057164.
+;; (and fixed counts is A001405 = C(n,[n/2]).)
+(define (*A085161 s)
+  (cond ((null? s) s)
+        (else
+          (let ((u (reverse s)))
+             (app-to-xrt (*A085161 (car u))
+                         (append (map *A085161 (cdr u)) (list (list)))
+             )
+          )
+        )
+  )
+)
+
+(define (*A085161! s)
+  (cond ((null? s) s)
+        (else
+          (let ((u (reverse! s)))
+             (app-to-xrt! (*A085161! (car u))
+                          (append! (map *A085161! (cdr u)) (list (list)))
+             )
+          )
+        )
+  )
+)
+
+(define (*A085162! s) (*A057163! (*A085161! (*A057163! s))))
+
+
+(define (*A086429 s) (*A057164 (*A085159 (*A057164 s))))
+(define (*A086430 s) (*A057164 (*A085160 (*A057164 s))))
+
+
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;;                                                                          ;;
+;;         Catalan_Interpretations_conversion_functions.scm                 ;;
+;;                                                                          ;;
+;; This Scheme-code is Copyright (C) 2002-2011 by Antti Karttunen           ;;
+;; (E-mail: <my_firstname>.<my_surname>@gmail.com) and is placed under      ;;
+;;              The OEIS Contributor's License Agreement                    ;;
+;; (see: http://oeis.org/wiki/The_OEIS_Contributor%27s_License_Agreement )  ;;
+;;                                                                          ;;
+;; For an older version of this module, see URL:                            ;;
+;; http://web.archive.org/web/20050831130158/http://ndirty.cute.fi/~karttu/matikka/Nekomorphisms/gatocout.scm
+;; The first version written by Antti Karttunen April, 2002                 ;;
+;; Last modified June 17 2011.                                              ;;
+;;                                                                          ;;
+;; These functions convert s-expressions (which can be viewed either as     ;;
+;; parenthesizations or (planar & rooted) car/cdr-binary trees) to          ;;
+;; structures better suited for the output of the certain combinatorial     ;;
+;; interpretations of Catalan numbers desribed in Stanley's exercise 19.    ;;
+;;                                                                          ;;
+;; This module is independent of the actual graphics library used.          ;;
+;;                                                                          ;;
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+
+;; Transferred from gatorank.scm:
+;; (p->Lw p) converts a parenthesization 'p'to Lukasiewicz word
+;; (in car-branch first, depth-first order, discarding the last zero).
+;;
+
+;; (output_seq (map (lambda (L) (baselist->n 10 L)) (map p->Lw (map BinTree2Tree (map A014486->parenthesization (map A014486 (iota0 64)))))))
+;; --> 0,20,2020,2200,202020,202200,220020,220200,222000,... gives A071152.
+
+;; (output_seq (map (lambda (L) (baselist->n 10 L)) (map p->Lw (map A014486->parenthesization (map A014486 (iota0 64))))))
+;; --> 0,1,20,11,300,201,210,120,111,... gives A071153.
+
+;; (output_seq (sort (map (lambda (L) (baselist->n 10 L)) (map p->Lw (map A014486->parenthesization (map A014486 (iota0 64))))) <))
+;; -> 0,1,11,20,111,120,201,210,300,... gives A071154.
+
+;; Calling this for the Figure 1: (A plane tree) shown in Stanley's
+;; Hipparchus, Plutarch, Schröder and Hough, Am. Math. Monthly, Vol. 104,
+;; No. 4, p. 344, 1997. (See http://www-math.mit.edu/~rstan/papers.html)
+;; we obtain:
+;;
+;; (p->Lw '((() ()) ( (()()()()()) () (()()) ) (() () (() ()))))
+;; (3 2 0 0 3 5 0 0 0 0 0 0 2 0 0 3 0 0 2 0)
+
+(define (p->Lw p)
+  (reverse! (cdr (reverse
+    (let recurse ((p p))
+           (cond ((null? p) (list 0))
+                 (else ;; it is a list.
+                    (append! (list (length p))
+                             (apply append! (map recurse p))
+                    )
+                 )
+           )
+    )
+  )))
+)
+
+
+
+;; From the interpretation d (plane binary trees with 2n+1 vertices (i.e. n+1 endpoints))
+;; to the interpretation a (triangularizations of a convex (n + 2)-gon
+;; into n triangles by n-1 diagonals that do not intersect in their interiors).
+;;
+;; (A014486->parenthesization (A014486 1)) --> (())
+;; (bt->pt '(()))       --> ((1 . 2) (2 . 3) (1 . 3))
+;; (A014486->parenthesization (A014486 2)) --> (() ())
+;; (bt->pt '(() ()))    --> ((1 . 2) (2 . 3) (3 . 4) (2 . 4) (1 . 4))
+;; (A014486->parenthesization (A014486 3)) --> ((()))
+;; (bt->pt '((())))     --> ((1 . 2) (2 . 3) (1 . 3) (3 . 4) (1 . 4))
+;; (A014486->parenthesization (A014486 4)) --> (() () ())
+;; (bt->pt '(() () ())) --> ((1 . 2) (2 . 3) (3 . 4) (4 . 5) (3 . 5) (2 . 5) (1 . 5))
+
+;; Note that the recursion order is important
+;; (car-branch before the cdr-branch) because
+;; of the side-effects of c we are playing with.
+;; The largest n upto which we have drawn the edge segments
+;; can always be found from the cdr-part of the first
+;; pair in c, i.e. with (cdar c)
+;;
+;; The corners of the polygon are numbered clockwise
+;; from 1 to n (where n = the number of leaves (here: ()'s)
+;; in the binary tree + 1 for the root fork), so that
+;; the corner 1 is at the left end and the corner n is
+;; at the right end of the bottom ('root') edge
+;; of the polygon.
+
+(define (bt->pt bt)
+  (let ((c (list (cons 0 1))))
+     (let recurse ((bt bt) (sel +)) ;; + is playing the role of id. Not used.
+        (cond ((not (pair? bt)) ;; A leaf -> The next onto edge.
+                 (attach! (cons (cdar c) (1+ (cdar c))) c)
+              )
+              (else ;; It's a fork, so we need a diameter.
+                 (let ((left-min (recurse (car bt) min)))
+                    (attach! (cons left-min (recurse (cdr bt) max)) c)
+                 )
+              )
+        )
+        (sel (caar c) (cdar c))
+     )
+     (cdr (reverse! c))
+  )
+)
+
+;; From the interpretation n (non-crossing handshakes, i.e. nonintersecting
+;; chords joining 2n points on the circumference of a circle) to the
+;; interpretation kk (fixed-point free and non-crossing involutions of [2n]):
+
+;; (sexp->hs '())             -> ()
+;; (sexp->hs '(()))           -> ((1 . 2))
+;; (sexp->hs '(() ()))        -> ((1 . 2) (3 . 4))
+;; (sexp->hs '((())))         -> ((1 . 4) (2 . 3))
+;; (sexp->hs '(() () ()))     -> ((1 . 2) (3 . 4) (5 . 6))
+;; (sexp->hs '(() (())))      -> ((1 . 2) (3 . 6) (4 . 5))
+;; (sexp->hs '((()) ()))      -> ((1 . 4) (2 . 3) (5 . 6))
+;; (sexp->hs '((() ())))      -> ((1 . 6) (2 . 3) (4 . 5))
+;; (sexp->hs '(((()))))       -> ((1 . 6) (2 . 5) (3 . 4))
+
+;; Could be cleaner, probably:
+
+(define (sexp->hs p)
+  (let ((c (list (cons 0 0)))
+        (maxnode (list 0))
+       )
+     (let recurse ((p p))
+        (cond ((pair? p)
+                 (let ((this-trans (cons (1+ (car maxnode)) 0)))
+                    (set-car! maxnode (1+ (car maxnode)))
+                    (attach! this-trans c)
+                    (recurse (car p))
+                    (set-car! maxnode (1+ (car maxnode)))
+                    (set-cdr! this-trans (car maxnode))
+                    (recurse (cdr p))
+                 )
+              )
+        )
+     ) ; let recurse
+     (cdr (reverse! c))
+  ) ; let
+)
+
+;; From John Fiorillo's http://spectacle.berkeley.edu/~fiorillo/7genjimon.html
+
+;; Genji crests ('genji-mon') or Genji incense ('genji-kô')
+;; were emblems associated with the 54 chapters of the
+;; 'Genji monogatari' ("The Tale of Genji"), written by
+;; Murasaki Shikibu in the first quarter of the eleventh century.
+
+;; See also: http://plaza27.mbn.or.jp/~921/kumiko/genjiko/genjikou.html
+;; by Kazuhiro Kunii.
+
+;; Both linked from http://www.research.att.com/projects/OEIS?Anum=A000110
+
+;; From Stanley's http://www-math.mit.edu/~rstan/ec/catsol.ps.gz page 7:
+;; (Solutions to the 27 page excerpt from his "Enumerative Combinatorics",
+;; see: http://www-math.mit.edu/~rstan/ec/catalan.ps.gz)
+
+;; (rr) Obvious bijection with (pp). (Vertical lines are in the same block
+;; if they are connected by a horizontal line.) As mentioned in the Notes
+;; to Chapter 1, Murasaki diagrams were used in The Tale of Genji
+;; to represent the 52 partitions of a five-element set.
+;; The noncrossing Murasaki diagrams correspond exactly to the
+;; noncrossing partitions. The statement that noncrossing Murasaki diagrams
+;; are enumerated by Catalan numbers seems first to have been observed
+;; by H. W. Gould, who pointed it out to M. Gardner, leading to its
+;; mention in [27]. Murasaki diagrams were not actually used by
+;; Lady Murasaki herself. It wasn't until the Wasan period of old
+;; Japanese mathematics, from the late 1600s well into the 1700s,
+;; that the Wasanists started attaching the Murasaki diagrams
+;; (which were actually incense diagrams) to illustrated editions
+;; of The Tale of Genji.
+
+;; Works like this:
+;; Old order was like this:
+;; (sexp->pp-qq-rr-cycles '())         --> ()
+;; (sexp->pp-qq-rr-cycles '(()))       --> ((1))
+;; (sexp->pp-qq-rr-cycles '(()()))     --> ((1 2))
+;; (sexp->pp-qq-rr-cycles '((())))     --> ((1) (2))
+;; (sexp->pp-qq-rr-cycles '(() () ())) --> ((1 2 3))
+;; (sexp->pp-qq-rr-cycles '(() (())))  --> ((1 2) (3))
+;; (sexp->pp-qq-rr-cycles '((()) ()))  --> ((1 3) (2))
+;; (sexp->pp-qq-rr-cycles '((()())))   --> ((1) (2 3))
+;; (sexp->pp-qq-rr-cycles '(((()))))   --> ((1) (2) (3))
+
+(define (sexp->pp-qq-rr-cycles-old-order s)
+  (let ((res (list (list (list))))
+        (pos 0)
+       )
+    (let recurse ((s s) (depth 0) (newstick? #t))
+          (cond ((pair? s)
+                   (cond (newstick?
+                            (set! pos (1+ pos))
+                            (attach! (list depth pos) res)
+                         )
+                         ((assoc depth res) ;; Always found!
+                            => (lambda (c) (set! pos (1+ pos)) (attach! pos (cdr c)))
+                         )
+                         (else (error "sexp->pp-qq-rr-cycles: no list beginning with " depth
+                                      " found from " res " pos=" pos)
+                         )
+                   )
+                   (cond ((pair? (car s))
+                            (recurse (car s) (1+ depth) #t)
+                         )
+                   )
+                   (recurse (cdr s) depth #f)
+                )
+          )
+    )
+    (map reverse! (map cdr (cdr (reverse! res))))
+  )
+)
+
+
+;;
+;; (sexp->pp-qq-rr-cycles '(()()))     --> ((1 2))
+;; (sexp->pp-qq-rr-cycles '((())))     --> ((2) (1))
+;; (sexp->pp-qq-rr-cycles '(()()()))   --> ((1 2 3))
+;; (sexp->pp-qq-rr-cycles '(()(())))   --> ((1 3) (2))
+;; (sexp->pp-qq-rr-cycles '((())()))   --> ((2 3) (1))
+;; (sexp->pp-qq-rr-cycles '((()())))   --> ((3) (1 2))
+;; (sexp->pp-qq-rr-cycles '(((()))))   --> ((3) (2) (1))
+;; And:
+;; (sexp->pp-qq-rr-cycles '((() (() (()()()) (())))))   --> ((10) (1 9) (2 6 8) (7) (3 4 5))
+;; (sexp->pp-qq-rr-cycles '((() (() (()(())) (())))))   --> ((10) (1 9) (2 6 8) (7) (3 5) (4))
+;; (sexp->pp-qq-rr-cycles '((() (() ((())()) (())))))   --> ((10) (1 9) (2 6 8) (7) (4 5) (3))
+;;
+
+;; Could be more elegant & symmetric, I think.
+;; Map according to the descending (right-side) edge, so thus call DeepReverse first:
+
+;; Borrowed from gatomorf.scm:
+(define (*A057164 s) ;; Was: DeepRev
+   (cond ((not (pair? s)) s)
+         ((null? (cdr s)) (cons (*A057164 (car s)) (list)))
+         (else (append (*A057164 (cdr s))
+                       (*A057164 (cons (car s) (list))))
+         )
+   )
+)
+
+(define (sexp->pp-qq-rr-cycles s)
+  (let ((res (list (list (list))))
+        (pos (1+ (count-pars s)))
+       )
+    (let recurse ((s (*A057164 s)) (depth 0) (newstick? #t))
+          (cond ((pair? s)
+                   (cond (newstick?
+                            (set! pos (-1+ pos))
+                            (attach! (list depth pos) res)
+                         )
+                         ((assoc depth res) ;; Always found!
+                            => (lambda (c) (set! pos (-1+ pos)) (attach! pos (cdr c)))
+                         )
+                         (else (error "sexp->pp-qq-rr-cycles: no list beginning with " depth
+                                      " found from " res " pos=" pos)
+                         )
+                   )
+                   (cond ((pair? (car s))
+                            (recurse (car s) (1+ depth) #t)
+                         )
+                   )
+                   (recurse (cdr s) depth #f)
+                )
+          )
+    )
+    (map cdr (cdr (reverse! res)))
+  )
+)
+
+
+(define (cycle->pairs cycle)
+   (let loop ((res (list (last-pair cycle))) (cycle cycle))
+       (cond ((null? cycle) (cdr (reverse! res)))
+             (else (loop (cons (cons (car cycle) (caar res)) res) (cdr cycle)))
+       )
+   )
+)
+
+;; Map according to the descending (right-side) edge, so thus call DeepReverse first:
+(define (sexp->pp-qq-rr s) (append-map cycle->pairs (sexp->pp-qq-rr-cycles s))) ;; Used append-map! before
+
+;; Find the first "hole" in the ascending list of integers, #f is there is no hole:
+;; (next-hole '(3 4 5)) -> #f
+;; (next-hole '(3 4 7)) -> 5
+;;
+
+(define (next-hole lista)
+   (cond ((null? lista) #f)
+         ((null? (cdr lista)) #f)
+         ((> (cadr lista) (1+ (car lista))) (1+ (car lista)))
+         (else (next-hole (cdr lista)))
+   )
+)
+
+
+;; (find-all-holes '(1 3 5 10 12)) --> '(2 4 6 7 8 9 11)
+
+(define (find-all-holes lista)
+ (if (pair? lista)
+     (let loop ((res (list)) (lista (cdr lista)) (a (1+ (car lista))))
+        (cond ((null? lista) (reverse! res))
+              ((> (car lista) a) (loop (cons a res) lista (1+ a)))
+              (else (loop res (cdr lista) (1+ a))) ;; Otherwise a = (car lista)
+        )
+     )
+     lista
+ )
+)
+
+;; It's mandatory that each partition in partitions is sorted in ascending order,
+;; from the least to the largest! partitions list itself don't need to be sorted.
+
+;; (add-depths-to-rr-parts! (sexp->pp-qq-rr-cycles '((() (() (()()()) (())))))) --> '((0 1 9) (1 2 6 8) (2 3 4 5) (2 7) (0 10))
+;; (add-depths-to-rr-parts! (sexp->pp-qq-rr-cycles '((() (() (()(())) (())))))) --> '((0 1 9) (1 2 6 8) (2 3 5) (3 4) (2 7) (0 10))
+;; (add-depths-to-rr-parts! (sexp->pp-qq-rr-cycles '((() (() ((())()) (())))))) --> '((0 1 9) (1 2 6 8) (2 3) (2 4 5) (2 7) (0 10))
+
+(define (add-depths-to-rr-parts! partitions)
+  (let ((res (list (list))))
+    (let aihvus ((pos 1) (depth 0))
+          (cond ((assoc pos partitions)
+                  => (lambda (c)
+                       (attach! (attach! depth c) res)           ;; Transfer depth-prefixed partition c to the front of res
+                       (set! partitions (remove! c partitions))  ;; and delete from partitions. (XXX - was delete!)
+                       (let ((positions-inside (find-all-holes c)))
+                          (for-each (lambda (pos)
+                                      (aihvus pos (1+ depth))
+                                    )
+                                    positions-inside
+                          )
+                          (aihvus (1+ (car (last-pair c))) depth)
+                       )
+                     )
+                )
+          )
+    )
+    (cdr (reverse! res))
+  )
+)
+
+;; Borrowed from gatoaltr.scm:
+
+
+(define (p->code1 p)
+  (let ((cs (list (list))))
+     (let recurse ((p p) (level 0))
+        (cond
+          ((pair? p)
+              (cond ((pair? (car p))
+                       (attach! (1+ level) cs)
+                       (recurse (car p) (1+ level))
+                    )
+              )
+              (cond ((pair? (cdr p))
+                       (attach! level cs)
+                       (recurse (cdr p) level)
+                    )
+              )
+          )
+        )
+     ) ;; let recurse
+     (cdr (reverse! cs))
+  )
+)
+
+;; I.e. add one to each, and concatenate 1 to the front: (I have forgotten why...)
+(define (p->zerofree-code1 p)
+   (p->code1 (cons p '()))
+)
+
+(define (p->factbase p)
+   (factbaseR->n (p->zerofree-code1 p))
+)
+
+(define (sexp->A071157 s) (reverse! (p->zerofree-code1 s)))
+
+(define (sexp->A071155 s) (p->factbase s))
+
+(define (sexp->A071158 s) (reverse! (p->zerofree-code1 (*A057164 s))))
+(define (sexp->A071156 s) (sexp->A071155 (*A057164 s)))
+
+;; 
+;; (sexp->A071158 '(()()())) --> '(1 1 1)  (sexp->A071156 '(()()())) --> 9
+;; (sexp->A071158 '(()(()))) --> '(1 2 1)  (sexp->A071156 '(()(()))) --> 11
+;; (sexp->A071158 '((())())) --> '(2 1 1)  (sexp->A071156 '((())())) --> 15
+;; (sexp->A071158 '((()()))) --> '(2 2 1)  (sexp->A071156 '((()()))) --> 17
+;; (sexp->A071158 '(((())))) --> '(3 2 1)  (sexp->A071156 '(((())))) --> 23
+;;
+
+;; Borrowed and modified from http://www.iki.fi/~kartturi/Schemuli/intfuns1.scm
+(define (factbaseR->n rex) ;; Convert the reversed factorial expansion list to an integer.
+   (let loop ((rex rex) (n 0) (i 1) (fn 1))
+      (cond ((null? rex) n)
+            (else (loop (cdr rex) (+ n (* fn (car rex))) (+ 1 i) (* fn (+ 1 i))))
+      )
+   )
+)
+
+
+
+;; Does either of these implement (accidentally) any of the
+;; algorithms mentioned in "Drawing trees nicely with TeX",
+;; by A. Brüggemann-Klein and D. Wood, available at:
+;; http://cajun.cs.nott.ac.uk/compsci/epo/papers/volume2/issue2/epabk022.pdf ??
+;;
+;; See also: Jeremy Gibbons, Deriving Tidy Drawings of Trees.
+;; Journal of Functional Programming, 6(3) p535-562, 1996.
+;; http://web.comlab.ox.ac.uk/oucl/work/jeremy.gibbons/publications/drawing.ps.gz
+;;
+
+;; For the "optimized" output of the binary trees we first construct
+;; a breadth-first-wise "spread-tree" (cf. spreadsheet) of the
+;; car/cdr-tree to be output (with the function construct-coordinate-tree),
+;; and then "instantiate" its nodes with clash-free X-coordinates
+;; using the function fill-cordtree-x-coordinates!
+
+;;
+;; Construct a list structure like:
+;; (construct-coordinate-tree '(a . (b . c)))
+;; --> (((0 . 0)) (((0 . 0)) ((0 . 0))) ((((0 . 0))) (((0 . 0)))))
+;;
+;; (construct-coordinate-tree '((a . b) . c))
+;; --> (((0 . 0)) (((0 . 0)) ((0 . 0))) ((((0 . 0)) ((0 . 0))) (((0 . 0)) ((0 . 0)))))
+;;
+
+(define (construct-coordinate-tree bt)
+  (let ((cs (list (list (cons 0 0))))) ;; The root at x-position 0.
+   ((lambda (recfun)
+      (cond ((pair? bt)
+        (recfun (cdr bt) 1)
+        (recfun (car bt) 1)
+      ))
+      cs
+    )
+     (letrec ((recurse (lambda (bt depth)
+                (let ((this-level (nthcdr depth cs))
+                      (prev-level (list-ref cs (- depth 1)))
+                     )
+
+                 (if (pair? this-level) ;; Not the first of this level.
+                     (set-car! this-level (cons prev-level (car this-level)))
+                     (append! cs (list (list prev-level)))
+                 )
+                 (cond ((pair? bt)
+                          (recurse (cdr bt) (1+ depth))
+                          (recurse (car bt) (1+ depth))
+                       )
+                 ) ; cond
+                ) ; let
+             )))
+           recurse
+     ) ; letrec
+   ) ; lambda
+  ) ; let
+)
+
+
+(define (repl-parent-pointers-with-coord-pairs! lista x-displ)
+   (cond ((pair? lista)
+            (set-car! lista (cons (+ (caaar lista) x-displ) (caaar lista)))
+            (repl-parent-pointers-with-coord-pairs! (cdr lista) (- x-displ))
+         )
+   )
+)
+
+(define (add-displ-to-each-child-x! lista x-displ)
+   (cond ((pair? lista)
+            (set-car! (car lista) (+ (caar lista) x-displ))
+            (add-displ-to-each-child-x! (cdr lista) (- x-displ))
+         )
+   )
+)
+
+(define (clash-free? level)
+   (or (null? level)
+       (null? (cdr level))
+       (apply < (map car level))
+   )
+)
+
+
+;; (fill-cordtree-x-coordinates! (construct-coordinate-tree '()) 1)
+;; --> (((0 . 0)))
+;; (fill-cordtree-x-coordinates! (construct-coordinate-tree '(a . b)) 1)
+;; --> (((0 . 0)) ((-1 . 0) (1 . 0)))
+;; (fill-cordtree-x-coordinates! (construct-coordinate-tree '(a . (b . c))) 1)
+;; --> (((0 . 0)) ((-1 . 0) (1 . 0)) ((0 . 1) (2 . 1)))
+;; (fill-cordtree-x-coordinates! (construct-coordinate-tree '((a . b) . c)) 1)
+;; --> (((0 . 0)) ((-1 . 0) (1 . 0)) ((-2 . -1) (0 . -1)))
+;; (fill-cordtree-x-coordinates! (construct-coordinate-tree '((a . b) . (c . d))) 1)
+;; --> (((0 . 0)) ((-1 . 0) (1 . 0)) ((-3/2 . -1) (-1/2 . -1) (1/2 . 1) (3/2 . 1)))
+;;  (fill-cordtree-x-coordinates! (construct-coordinate-tree '((a . (b . c)) . ((d . e) . f))) 1)
+;; --> (((0 . 0)) ((-1 . 0) (1 . 0)) ((-3/2 . -1) (-1/2 . -1) (1/2 . 1) (3/2 . 1)) ((-3/4 . -1/2) (-1/4 . -1/2) (1/4 . 1/2) (3/4 . 1/2)))
+;; 
+
+
+;; Call as (fill-cordtree-x-coordinates! (construct-coordinate-tree bt) x-displ #f)
+(define (fill-cordtree-x-coordinates! ct x-displ never-contract?) ;; New argument added 12. Feb 2003.
+  (cond ((pair? ct)
+           (cond ((not (number? (caaar ct))) ;; Still pointers to parents at this level.
+                   (repl-parent-pointers-with-coord-pairs! (car ct) (- x-displ))
+                   (fill-cordtree-x-coordinates! ct x-displ never-contract?) ;; And check again.
+                 )
+                 ((or never-contract?
+                      (clash-free? (car ct)) ;; If this level is clash-free, then continue
+                  )
+                   (fill-cordtree-x-coordinates! (cdr ct) x-displ never-contract?)
+                 )
+                 (else ;; We have to contract the branches at this level.
+                   (add-displ-to-each-child-x! (car ct) (/ x-displ 2))
+                   (fill-cordtree-x-coordinates! ct (/ x-displ 2) never-contract?) ;; And try again.
+                 )
+           )
+        )
+  )
+  ct
+)
+
+
+
+;; (p->tree-x-coordinates '())       --> (1)
+;; (p->tree-x-coordinates '(()))     --> (1 (1))
+;; (p->tree-x-coordinates '((())))   --> (1 (1 (1)))
+;; (p->tree-x-coordinates '(()()))   --> (3/2 (1) (2))
+;; (p->tree-x-coordinates '(()()())) --> (2 (1) (2) (3))
+;; (p->tree-x-coordinates '((())())) --> (3/2 (1 (1)) (2))
+;; (p->tree-x-coordinates '(()(()))) --> (3/2 (1) (2 (2)))
+;; (p->tree-x-coordinates '((()()))) --> (3/2 (3/2 (1) (2)))
+;; (p->tree-x-coordinates '(((())))) --> (1 (1 (1 (1))))
+
+
+(define (incr x) (set-car! x (+ (car x) 1)) (car x))
+
+
+(define (average-x-of branches)
+   (/ (apply + (map car branches)) (length branches))
+)
+
+(define (p->tree-x-coordinates p)
+  (let ((max_x (list 0)))
+    (let recurse ((p p))
+       (cond ((not (pair? p)) (list (incr max_x)))
+             (else
+               (let ((branches (map recurse p)))
+                  (cons (average-x-of branches) branches)
+               )
+             )
+       )
+    )
+  )
+)
+
+
+
+;; (normalize-root-to-zero-and-scale! (p->tree-x-coordinates '(()((())()))) 12)
+;; --> (0 (-9) (9 (3 (3)) (15)))
+
+(define (normalize-root-to-zero-and-scale! tx x-scale)
+   (let ((off (car tx)))
+      (let recurse ((tx tx))
+         (cond ((pair? tx)
+                    (if (number? (car tx))
+                        (set-car! tx (* (- (car tx) off) x-scale))
+                        (recurse (car tx))
+                    )
+                    (recurse (cdr tx))
+               )
+         )
+      )
+      tx
+   )
+)
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+
+;;;
+;;;; Toplevel
+;;;
+
+
+(class App-Toplevel extends Toplevel
+  
+  
+  (form
+    (<install> caption-base: "App" size: {Dimension 400 400}))))
+
+
+
+
+
+
