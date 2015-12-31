@@ -13,7 +13,7 @@
 ;;  Intel x86 architecture) under the URL:                                ;;
 ;;  http://www.swiss.ai.mit.edu/projects/scheme/                          ;;
 ;;                                                                        ;;
-;;  Last edited  Aug 26 2015 by Antti Karttunen.                          ;;
+;;  Last edited  Dec 19 2015 by Antti Karttunen.                          ;;
 ;;                                                                        ;;
 ;;                                                                        ;;
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -25,7 +25,7 @@
 (load "../Schemuli/intfun_b")
 (load "../Schemuli/intfun_c")
 
-(load "../Schemuli/miscnum2")
+(load "../Schemuli/miscnum2.scm") ;; .com has been out of date for a long time.
 
 (load "../Schemuli/gf2xfuns")
 
@@ -54,12 +54,54 @@
 (define A072491 (FUN_FOR_NUMBER_OF_GREEDY_SUMMANDS A008578))
 
 ;; XXX - Not yet in OEIS:
-(define A_greedy_Pell_sums (FUN_FOR_NUMBER_OF_GREEDY_SUMMANDS A000129))
+(define A265743 (FUN_FOR_NUMBER_OF_GREEDY_SUMMANDS A005187)) ;; Greedy A005187-sums
+;; XXX: To do: Number of greedy carryless sums of A005187,
+;; "carryless" meaning that n = A005187(x) + A005187(y) + A005187(z) = A005187(x) XOR A005187(y) XOR A005187(z).
+;; Similar construction for A003714 (Fibbinary numbers).
 
-(define A_greedy_Jacob_sums (FUN_FOR_NUMBER_OF_GREEDY_SUMMANDS (COMPOSE A001045 1+)))
+(define A265744 (FUN_FOR_NUMBER_OF_GREEDY_SUMMANDS A000129)) ;; Greedy Pell sums
 
-(define A_greedy_A005187_sums (FUN_FOR_NUMBER_OF_GREEDY_SUMMANDS A005187))
+(define A130249almost (LEFTINV-LEASTMONO 0 2 A001045))
+
+(define (A130249 n) (if (zero? n) n (A130249almost n))) ;; o=0:	Maximal index k of a Jacobsthal number such that A001045(k)<=n (the 'lower' Jacobsthal inverse). 
+
+(definec (A265745 n) (if (zero? n) n (+ 1 (A265745 (- n (A001045 (A130249 n)))))))
+
+(define A265745v2 (FUN_FOR_NUMBER_OF_GREEDY_SUMMANDS (COMPOSE A001045 1+))) ;; Greedy Jacobsthal sums
+
+
+(define (A197911 n) ;; o=0: Representable by A001045 (Jacobsthal sequence). Complement of A003158.
+  (let loop ((n n) (s 0) (i 2))
+     (cond ((zero? n) s)
+           ((odd? n) (loop (/ (- n 1) 2) (+ s (A001045 i)) (+ 1 i)))
+           (else (loop (/ n 2) s (+ 1 i)))
+     )
+  )
+)
+
+;; Where A023645 a(n) = tau(n)-1 if n is odd or tau(n)-2 if n is even. 
+
+(definec (A023645_after_some_n_check_it n)
+   (if (<= n 2) (- n 1)
+      (let ((jn (A001045 n)))
+          (let loop ((s 0) (i 2) (ji (A001045 2)))
+             (cond ((= i n) s)
+                   (else (loop (+ s (if (zero? (modulo jn ji)) 1 0))
+                               (+ i 1)
+                               (A001045 (+ 1 i))
+                         )
+                   )
+             )
+          )
+      )
+   )
+)
+
+(definec (A265746 n) (if (zero? n) n (+ (A000244 (- (A130249 n) 2)) (A265746 (- n (A001045 (A130249 n)))))))
+
+(definec (A265747 n) (if (zero? n) n (+ (expt 10 (- (A130249 n) 2)) (A265747 (- n (A001045 (A130249 n)))))))
+(define (A265747v2 n) (A007089 (A265746 n)))
+
 
 (define A_greedy_A003714_sums (FUN_FOR_NUMBER_OF_GREEDY_SUMMANDS A003714))
-
 
