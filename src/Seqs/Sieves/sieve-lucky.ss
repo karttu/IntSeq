@@ -8,6 +8,8 @@
 ;; extracting the related functions from MIT/GNU-Scheme module intfun_a.scm  ;;
 ;; written in 2002-2015.                                                     ;;
 ;;                                                                           ;;
+;; This module last edited 2016-03-12.                                       ;;
+;;                                                                           ;;
 ;; The OEIS-sequence data (also defs & programs) has been submitted as per   ;;
 ;;   http://oeis.org/wiki/The_OEIS_Contributor's_License_Agreement           ;;
 ;; and it is made available with                                             ;;
@@ -58,12 +60,23 @@ A260438 ;; o=1: Row index to A255545: If n is k-th Lucky number then a(n) = k, o
 A260429 ;; o=1: Column index to A255545: if n is Lucky number, then a(n) = 1, otherwise a(n) = 1 + the position at the stage where n is removed in the Lucky sieve.
 A260439 ;; o=1: Column index to A255551: a(1) = 0; for n > 1: if n is Lucky number then a(n) = 1, otherwise for a(2k) = k, and for odd unlucky numbers, a(n) = 1 + the position at the stage where n is removed in the Lucky sieve.
 A260437 ;; o=1: Column index to A255543: if n is Lucky number then a(n) = 0, otherwise a(n) = the position at the stage where n is removed in the Lucky sieve.
+A269369 ;; [AK] o=1: a(1) = 1, a(n) = A260439(n)-th number k for which A260438(k) = A260438(n)+1; a(n) = A255551(A260438(n)+1, A260439(n)).
+A269370 ;; [AK] o=1: a(1) = 1, after which, for odd n: a(n) = A260439(n)-th number k for which A260438(k) = A260438(n)-1, and for even n: a(n) = a(n/2). 
+A269372 ;; [AK] o=0: Permutation of even numbers: a(n) = A269369(n+1) - 1.
+;; The rest should be in a module of their own, sieve-lucky-permutations.ss
+A269373 ;; [AK] o=1: Permutation of natural numbers: a(1) = 1, a(n) = A000079(A260438(n+1)-1) * ((2 * a(A260439(n+1))) - 1).
+A269374 ;; [AK] o=1: Permutation of natural numbers: a(1) = 1, a(n) = A255551(A001511(n), a(A003602(n))) - 1.
+A269375 ;; [AK] o=0: Tree of Lucky sieve, mirrored: a(0) = 1, a(1) = 2; after which a(2n) = 2*a(n), a(2n+1) = A269369(a(n)).
+A269376 ;; [AK] o=1: Permutation of nonnegative integers: a(1) = 0, a(2) = 1, a(2n) = 2*a(n), a(2n+1) = 1 + 2*a(A269370(2n+1)).
+A269377 ;; [AK] o=0: Tree of Lucky sieve: a(0) = 1, a(1) = 2; after which a(2n) = A269369(a(n)), a(2n+1) = 2*a(n).
+A269378 ;; [AK] o=1: Permutation of natural numbers: a(1) = 0, after which a(2n) = 1 + 2*a(n), a(2n+1) = 2 * a(A269370(n)).
 
   )
   (import (rnrs base (6))
           (Intseq Memoize memoize-definec)
           (Intseq Transforms transforms-core)
           (IntSeq Seqs Triangles triangles-core)
+          (IntSeq Seqs Base-2 base2-core)
   )
 
 
@@ -107,7 +120,7 @@ A260437 ;; o=1: Column index to A255543: if n is Lucky number then a(n) = 0, oth
       (let* ((prevrowfun (rowfun_n_for_A000959sieve (- n 1)))
              (everynth (prevrowfun n)) ;; to be removed.
             )
-         (compose-funs prevrowfun (NONZERO-POS 1 1 (lambda (i) (modulo i everynth))))
+         (COMPOSE prevrowfun (NONZERO-POS 1 1 (lambda (i) (mod i everynth))))
       )
   )
 )
@@ -232,7 +245,7 @@ A260437 ;; o=1: Column index to A255543: if n is Lucky number then a(n) = 0, oth
 (definec (A260437 n) ;; Column index to A255543.
   (cond ((not (zero? (A145649 n))) 0) ;; If n is a Lucky number, then return 0.
         ((even? n) (/ n 2)) ;; Optimization. All even numbers are on the row 1.
-        (else ;; We have to search for it, in a two naive loops. (XXX - Could use a binary search in inner one?)
+        (else ;; We have to search for it, with two naive loops. (XXX - Could use a binary search in inner one?)
           (let searchrow ((row 2))
              (let searchcol ((col 1))
                 (cond ((>= (A255543bi row col) n)
@@ -248,6 +261,63 @@ A260437 ;; o=1: Column index to A255543: if n is Lucky number then a(n) = 0, oth
         )
   )
 )
+
+(define (A269369 n) (if (= 1 n) n (A255551bi (+ (A260438 n) 1) (A260439 n))))
+
+(definec (A269370 n) (cond ((= 1 n) n) ((even? n) (A269370 (/ n 2))) (else (A255551bi (- (A260438 n) 1) (A260439 n)))))
+
+(define (A269372 n) (- (A269369 (+ 1 n)) 1))
+
+(definec (A269373 n)
+   (cond ((<= n 1) n)
+         (else (* (A000079 (- (A260438 (+ 1 n)) 1)) (+ -1 (* 2 (A269373 (A260439 (+ 1 n)))))))
+   )
+)
+
+(definec (A269374 n)
+   (cond ((<= n 1) n)
+         ((even? n) (A269372 (A269374 (/ n 2))))
+         (else (+ -1 (* 2 (A269374 (/ (+ n 1) 2)))))
+   )
+)
+
+(definec (A269374v2 n)
+   (cond ((<= n 1) n)
+         (else (+ -1 (A255551bi (A001511 n) (A269374v2 (A003602 n)))))
+   )
+)
+
+
+(definec (A269375 n)
+  (cond ((<= n 1) (+ n 1))
+        ((even? n) (* 2 (A269375 (/ n 2))))
+        (else (A269369 (A269375 (/ (- n 1) 2))))
+  )
+)
+
+(definec (A269376 n)
+  (cond ((<= n 2) (- n 1))
+        ((even? n) (* 2 (A269376 (/ n 2))))
+        (else (+ 1 (* 2 (A269376 (A269370 n)))))
+  )
+)
+
+
+
+(definec (A269377 n)
+   (cond ((<= n 2) (+ 1 n))
+         ((even? n) (A269369 (A269377 (/ n 2))))
+         (else (* 2 (A269377 (/ (- n 1) 2))))
+   )
+)
+
+(definec (A269378 n)
+   (cond ((= 1 n) (- n 1))
+         ((even? n) (+ 1 (* 2 (A269378 (/ n 2)))))
+         (else (* 2 (A269378 (A269370 n))))
+   )
+)
+
 
 
 ) ;; End of module sieve-lucky.ss

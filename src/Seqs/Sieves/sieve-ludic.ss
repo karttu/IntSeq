@@ -8,6 +8,8 @@
 ;; extracting the related functions from MIT/GNU-Scheme module intfun_a.scm  ;;
 ;; written in 2002-2015.                                                     ;;
 ;;                                                                           ;;
+;; This module last edited 2016-03-12.                                       ;;
+;;                                                                           ;;
 ;; The OEIS-sequence data (also defs & programs) has been submitted as per   ;;
 ;;   http://oeis.org/wiki/The_OEIS_Contributor's_License_Agreement           ;;
 ;; and it is made available with                                             ;;
@@ -35,20 +37,19 @@ A192512 ;; o=1: Number of ludic numbers (A003309) not greater than n.
 A260723 ;; o=1: First differences of Ludic numbers: a(n) = A003309(n+1) - A003309(n).
 
 rowfun_n_for_A003309sieve
-rowfun_n_for_remaining_numbers
 rowfun_n_for_A255127
 A255127 ;; o=2: Ludic array: square array A(row,col), where row n lists the numbers removed at stage n in the sieve which produces Ludic numbers. Array is read by antidiagonals A(1,1), A(1,2), A(2,1), A(1,3), A(2,2), A(3,1), ... 
-A255128 ;; o=1: Inverse permutation to A255127.
+;; XXX: Implement: A255128 ;; o=1: Inverse permutation to A255127.
 A255127bi ;; o=[1,1]
 A255129 ;; o=2: Transposed Ludic array.
 A255129bi ;; o=[1,1]
-A255130 ;; o=1: Inverse permutation to A255129.
+;; XXX: Implement: A255130 ;; o=1: Inverse permutation to A255129.
 A254100 ;; o=1: Postludic numbers: Second column of Ludic array A255127.
 A256482 ;; o=1: a(n) = A254100(n) - A003309(n+1).
 A256483 ;; o=1: a(n) = A256482(n)/2 = (A254100(n) - A003309(n+1)) / 2.
 A255410 ;; o=1: Main diagonal of Ludic array A255127 (and A255129): a(n) = A255127(n,n).
 A255413 ;; o=1: Row 3 of Ludic array A255127: a(n) = A007310((5*n)-3).
-A255413v2
+;; A255413v2
 A255413rec
 A255414 ;; o=1: Row 4 of Ludic array A255127.
 A255415 ;; o=1: Row 5 of Ludic array A255127.
@@ -61,13 +62,23 @@ A260739 ;; o=1: Column index to A255127: a(1) = 0; for n > 1, a(n) = the positio
 A237126 ;; o=0: a(0)=0, a(1) = 1, a(2n) = nonludic(a(n)), a(2n+1) = ludic(a(n)+1), where ludic = A003309, nonludic = A192607.
 A237427 ;; o=0: a(0)=0, a(1)=1; thereafter, if n is k-th ludic number [i.e., n = A003309(k)], a(n) = 1 + (2*a(k-1)); otherwise, when n is k-th nonludic number [i.e., n = A192607(k)], a(n) = 2*a(k).
 A235491 ;; o=0: Self-inverse permutation of natural numbers: complementary pair ludic/nonludic numbers (A003309/A192607) entangled with the same pair in the opposite order, nonludic/ludic. See Formula.
-
+A269379 ;; [AK] o=1: a(1) = 1; for n > 1, a(n) = A255127(A260738(n)+1, A260739(n)).
+A269380 ;; [AK] o=1: a(1) = 1, after which, for odd numbers: a(n) = A260739(n)-th number k for which A260738(k) = A260738(n)-1, and for even numbers: a(n) = a(n/2).
+A269382 ;; [AK] o=0: Permutation of even numbers: a(n) = A269379(n+1) - 1.
+;; The rest should be in a module of their own, sieve-ludic-permutations.ss
+A269383 ;; [AK] o=1: Permutation of natural numbers: a(1) = 1, a(n) = A000079(A260738(n+1)-1) * ((2 * a(A260739(n+1))) - 1).
+A269384 ;; [AK] o=1: Permutation of natural numbers: a(1) = 1, a(n) = A255127(A001511(n), a(A003602(n))) - 1.
+A269385 ;; [AK] o=0: Tree of Ludic sieve, mirrored: a(0) = 1, a(1) = 2; after which, a(2n) = 2*a(n), a(2n+1) = A269379(a(n)). 
+A269386 ;; [AK] o=1: Permutation of nonnegative integers: a(1) = 0, a(2) = 1, a(2n) = 2*a(n), a(2n+1) = 1 + 2*a(A269380(2n+1)).
+A269387 ;; [AK] o=0: Tree of Ludic sieve: a(0) = 1, a(1) = 2; after which, a(2n) = A269379(a(n)), a(2n+1) = 2*a(n).
+A269388 ;; [AK] o=1: Permutation of natural numbers: a(1) = 0, after which, a(2n) = 1 + 2*a(n), a(2n+1) = 2 * a(A269380(n)).
 
   )
   (import (rnrs base (6))
           (Intseq Memoize memoize-definec)
           (Intseq Transforms transforms-core)
           (IntSeq Seqs Triangles triangles-core)
+          (IntSeq Seqs Base-2 base2-core)
   )
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -104,7 +115,7 @@ A235491 ;; o=0: Self-inverse permutation of natural numbers: complementary pair 
       (let* ((prevrowfun (rowfun_n_for_A003309sieve (- n 1)))
              (everynth (prevrowfun 1))
             )
-         (compose-funs prevrowfun (NONZERO-POS 1 1 (lambda (i) (modulo (- i 1) everynth))))
+         (COMPOSE prevrowfun (NONZERO-POS 1 1 (lambda (i) (mod (- i 1) everynth))))
       )
   )
 )
@@ -133,25 +144,14 @@ A235491 ;; o=0: Self-inverse permutation of natural numbers: complementary pair 
 ;;;;;;;;;;;;;;;;;;;;
 
 
-;; Each rowfun is zero-based. It's easier that way.
-(definec (rowfun_n_for_remaining_numbers n) ;;
-  (if (= 1 n)
-      (lambda (n) (+ n n 3)) ;; We return as the first row odd numbers from 3 onward.
-      (let* ((rowfun_for_prevrow (rowfun_n_for_remaining_numbers (- n 1)))
-             (off (rowfun_for_prevrow 0))
-            )
-         (COMPOSE rowfun_for_prevrow (lambda (n) (+ 1 n (floor->exact (/ n (- off 1))))))
-      )
-  )
-)
 
-(definec (rowfun_n_for_A255127 n) ;; Should use A260717bi instead of rowfun_n_for_remaining_numbers
+(definec (rowfun_n_for_A255127 n) ;; XXX - Rewrite to use less unnecessary cached closures...
   (if (= 1 n)
       (lambda (n) (+ n n)) ;; We return even numbers as the first row, i.e. A005843.
-      (let* ((rowfun_for_remaining (rowfun_n_for_remaining_numbers (- n 1)))
-             (eka (rowfun_for_remaining 0))
+      (let* ((rowfun_for_remaining (rowfun_n_for_A003309sieve n))
+             (eka (rowfun_for_remaining 1))
             )
-         (COMPOSE rowfun_for_remaining (lambda (n) (* eka (- n 1))))
+         (COMPOSE rowfun_for_remaining add1 (lambda (n) (* eka (- n 1))))
       )
   )
 )
@@ -181,7 +181,7 @@ A235491 ;; o=0: Self-inverse permutation of natural numbers: complementary pair 
 (define (A255410 n) (A255127bi n n))
 
 (define (A255413 n) (A255127bi 3 n))
-(define (A255413v2 n) (A007310 (- (* 5 n) 3)))
+;; (define (A255413v2 n) (A007310 (- (* 5 n) 3)))
 
 (definec (A255413rec n)
   (cond ((= 1 n) 5)
@@ -265,6 +265,67 @@ A235491 ;; o=0: Self-inverse permutation of natural numbers: complementary pair 
          (else (A003309 (+ 1 (A235491 (A236863 n)))))
    )
 )
+
+;;;;
+;; New material 2016-03-01:
+;;;;
+
+(define (A269379 n) (if (= 1 n) n (A255127bi (+ (A260738 n) 1) (A260739 n))))
+
+(definec (A269380 n) (cond ((= 1 n) n) ((even? n) (A269380 (/ n 2))) (else (A255127bi (- (A260738 n) 1) (A260739 n)))))
+
+(define (A269382 n) (- (A269379 (+ 1 n)) 1))
+
+(definec (A269383 n)
+   (cond ((<= n 1) n)
+         (else (* (A000079 (- (A260738 (+ 1 n)) 1)) (+ -1 (* 2 (A269383 (A260739 (+ 1 n)))))))
+   )
+)
+
+(definec (A269384 n)
+   (cond ((<= n 1) n)
+         ((even? n) (A269382 (A269384 (/ n 2))))
+         (else (+ -1 (* 2 (A269384 (/ (+ n 1) 2)))))
+   )
+)
+
+(definec (A269384v2 n)
+   (cond ((<= n 1) n)
+         (else (+ -1 (A255127bi (A001511 n) (A269384v2 (A003602 n)))))
+   )
+)
+
+
+(definec (A269385 n)
+  (cond ((<= n 1) (+ n 1))
+        ((even? n) (* 2 (A269385 (/ n 2))))
+        (else (A269379 (A269385 (/ (- n 1) 2))))
+  )
+)
+
+(definec (A269386 n)
+  (cond ((<= n 2) (- n 1))
+        ((even? n) (* 2 (A269386 (/ n 2))))
+        (else (+ 1 (* 2 (A269386 (A269380 n)))))
+  )
+)
+
+
+
+(definec (A269387 n)
+   (cond ((<= n 2) (+ 1 n))
+         ((even? n) (A269379 (A269387 (/ n 2))))
+         (else (* 2 (A269387 (/ (- n 1) 2))))
+   )
+)
+
+(definec (A269388 n)
+   (cond ((= 1 n) (- n 1))
+         ((even? n) (+ 1 (* 2 (A269388 (/ n 2)))))
+         (else (* 2 (A269388 (A269380 n))))
+   )
+)
+
 
 
 ) ;; End of module sieve-ludic.ss

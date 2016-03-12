@@ -9,6 +9,8 @@
 ;; extracting the related functions from MIT/GNU-Scheme module intfun_a.scm  ;;
 ;; written in 2002-2015.                                                     ;;
 ;;                                                                           ;;
+;; This module last edited 2016-03-12.                                       ;;
+;;                                                                           ;;
 ;; The OEIS-sequence data (also defs & programs) has been submitted as per   ;;
 ;;   http://oeis.org/wiki/The_OEIS_Contributor's_License_Agreement           ;;
 ;; and it is made available with                                             ;;
@@ -21,16 +23,26 @@
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
   (export
-A255407 ;; o=1: Permutation of natural numbers: a(n) = A255127(A252460(n)).
-A255408 ;; o=1: Permutation of natural numbers: a(n) = A083221(A255128(n)).
+A255407 ;; [AK] o=1: Permutation of natural numbers: a(n) = A255127(A252460(n)).
+A255408 ;; [AK] o=1: Permutation of natural numbers: a(n) = A083221(A255128(n)).
 
-A255553 ;; o=1: Permutation of natural numbers: a(n) = A255551(A252460(n)). XFER sieve-cross-permutations.ss
-A255554 ;; o=1: Permutation of natural numbers: a(n) = A083221(A255552(n)).
+A255553 ;; [AK] o=1: Permutation of natural numbers: a(n) = A255551(A252460(n)).
+A255554 ;; [AK] o=1: Permutation of natural numbers: a(n) = A083221(A255552(n)).
 
-A260435 ;; o=1: Permutation mapping from Lucky sieve to Ludic sieve: a(1) = 1, for n > 1: a(n) = A255127(A260438(n), A260439(n)).
-A260436 ;; o=1: Permutation mapping from Ludic sieve to Lucky sieve: a(1) = 1, for n > 1: a(n) = A255551(A260738(n), A260739(n)).
-A260741 ;; o=1: Permutation of natural numbers: a(1) = 1, for n > 1: a(n) = A255127(A260438(n), a(A260439(n))).
-A260742 ;; o=2: Permutation of natural numbers: a(1) = 1, for n > 1: a(n) = A255551(A260738(n), a(A260739(n))).
+A260435 ;; [AK] o=1: Permutation mapping from Lucky sieve to Ludic sieve: a(1) = 1, for n > 1: a(n) = A255127(A260438(n), A260439(n)).
+A260436 ;; [AK] o=1: Permutation mapping from Ludic sieve to Lucky sieve: a(1) = 1, for n > 1: a(n) = A255551(A260738(n), A260739(n)).
+A260741 ;; [AK] o=1: Permutation of natural numbers: a(1) = 1, for n > 1: a(n) = A255127(A260438(n), a(A260439(n))).
+A260742 ;; [AK] o=2: Permutation of natural numbers: a(1) = 1, for n > 1: a(n) = A255551(A260738(n), a(A260739(n))).
+A269355 ;; [AK] o=1: Permutation of natural numbers: a(n) = A269380(A250469(n)).
+A269356 ;; [AK] o=1: Permutation of natural numbers: a(n) = A268674(A269379(n)).
+A269357 ;; [AK] o=1: Permutation of natural numbers: a(1) = 1, a(2n) = 2*a(n), a(2n+1) = A269380(A250469(2n+1)).
+A269358 ;; [AK] o=1: Permutation of natural numbers: a(1) = 1, a(2n) = 2*a(n), a(2n+1) = A268674(A269379(2n+1)).
+A269171 ;; [AK] o=1: Permutation of natural numbers: a(1) = 1, a(2n) = 2*a(n), a(2n+1) = A269379(a(A268674(2n+1))).
+A269172 ;; [AK] o=1: Permutation of natural numbers: a(1) = 1, a(2n) = 2*a(n), a(2n+1) = A250469(a(A269380(2n+1))).
+A269393 ;; [AK] o=1: Permutation of natural numbers: a(n) = A269171(3*n) / 3.
+A269394 ;; [AK] o=1: Permutation of natural numbers: a(n) = A269172(3*n) / 3.
+A269395 ;; [AK] o=1: Permutation of natural numbers: a(n) = A269171(A269393(n)) = A269171(A269171(3*n)/3).
+A269396 ;; [AK] o=1: Permutation of natural numbers: a(n) = A269394(A269172(n)) = A269172(3*A269172(n)) / 3.
   )
   (import (rnrs base (6))
           (Intseq Memoize memoize-definec)
@@ -57,5 +69,30 @@ A260742 ;; o=2: Permutation of natural numbers: a(1) = 1, for n > 1: a(n) = A255
 
 (definec (A260741 n) (if (<= n 1) n (A255127bi (A260438 n) (A260741 (A260439 n)))))
 (definec (A260742 n) (if (<= n 1) n (A255551bi (A260738 n) (A260742 (A260739 n)))))
+
+
+(define (A269355 n) (A269380 (A250469 n)))
+
+(define (A269356 n) (A268674 (A269379 n)))
+
+(definec (A269357 n) (cond ((<= n 1) n) ((even? n) (* 2 (A269357 (/ n 2)))) (else (A269380 (A250469 n)))))
+
+(definec (A269358 n) (cond ((<= n 1) n) ((even? n) (* 2 (A269358 (/ n 2)))) (else (A268674 (A269379 n)))))
+
+(definec (A269171 n) (cond ((<= n 1) n) ((even? n) (* 2 (A269171 (/ n 2)))) (else (A269379 (A269171 (A268674 n))))))
+
+(definec (A269172 n) (cond ((<= n 1) n) ((even? n) (* 2 (A269172 (/ n 2)))) (else (A250469 (A269172 (A269380 n))))))
+
+;; (definec (A269171v2 n) (if (<= n 1) n (A255127bi (A055396 n) (A269171v2 (A078898 n)))))
+
+(definec (A269172v2 n) (if (<= n 1) n (A083221bi (A260738 n) (A269172v2 (A260739 n)))))
+
+(define (A269393 n) (/ (A269171 (* 3 n)) 3))
+
+(define (A269394 n) (/ (A269172 (* 3 n)) 3))
+
+(define (A269395 n) (A269171 (A269393 n)))
+
+(define (A269396 n) (A269394 (A269172 n)))
 
 ) ;; End of module sieves-cross-permutations.ss

@@ -46,7 +46,7 @@ A138042 ;; o=1: Numbers n such that A096379(n)=A096379(n+1).
 A066495 ;; o=1: Numbers n such that f(n) = f(n-1)+f(n-2) where f denotes the prime gaps function given by f(m) = p(m+1)-p(m) and p(m) denotes the m-th prime.
 A117876 ;; o=1: Primes p=prime(k) of level (1,2), i.e. such that A118534(k) = prime(k-2).
 A083375 ;; o=1: n appears prime(n) times.
-
+;; A252460 ;; [AK] o=1: Inverse permutation to A083221 considered as a permutation of natural numbers (with assumption that a(1) = 1).
   )
   (import (rnrs base (6))
           (Intseq Memoize memoize-definec)
@@ -237,6 +237,18 @@ A083375 ;; o=1: n appears prime(n) times.
 ;; Similarly, implement rowfun_n_for_A014580, provided there is an easily
 ;; implementable Euclidean algorithm for GCD's of GF(2)[X] polynomials.
 
-
+;; When A055396 & A078898 are ready:
+;;
+;; (definec (A252460 n)
+;;   (if (<= n 1)
+;;       n
+;;       (let ((x (A055396 n))
+;;             (y (A078898 n))
+;;            )
+;;         (+ 1 (* (/ 1 2) (- (expt (+ x y) 2) x y y y -2)))
+;;       )
+;;   )
+;; )
+;; 
 
 ) ;; End of module sieve-eratosthenes.ss
