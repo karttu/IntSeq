@@ -11,7 +11,7 @@
 ;;  Start with scheme --heap 13000                                        ;;
 ;;  if encountering "Out of memory" errors when compiling.                ;;
 ;;                                                                        ;;
-;;  Last edited 2016-03-05.                                               ;;
+;;  Last edited 2016-05-31.                                               ;;
 ;;                                                                        ;;
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
@@ -6838,3 +6838,21 @@
 
 (define (A269368v2 n) (A269367v2 (- n)))
 
+;;;;;;;;;;;
+;; Actually, noise: XFER Base-3/base-3.reverse.balanced-etc.ss
+
+
+(definec (A270425 n)
+  (cond ((= 1 n) n)
+        ((even? n) (* 2 (A270425 (/ n 2))))
+        (else (+ 1 (* 2 (A270425 (A265354 (/ (- n 1) 2))))))
+  )
+)
+
+
+(definec (A270426 n)
+  (cond ((= 1 n) n)
+        ((even? n) (* 2 (A270426 (/ n 2))))
+        (else (A265341 (A270426 (/ (- n 1) 2))))
+  )
+)
