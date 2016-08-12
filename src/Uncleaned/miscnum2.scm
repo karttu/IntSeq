@@ -1,5 +1,5 @@
 
-;; Last edited 2016-05-31 by Antti Karttunen, added yet more unsorted functions to this old MIT/GNU-Scheme module.
+;; Last edited 2016-08-08 by Antti Karttunen, added yet more unsorted functions to this old MIT/GNU-Scheme module.
 
 (declare (usual-integrations))
 
@@ -1083,6 +1083,27 @@
 (define (A028233 n) (expt (A020639 n) (A067029 n)))
 
 (define (A028234 n) (/ n (A028233 n)))
+
+;; A005361 [Jeffrey Shallit, Olivier Gérard] Product of exponents of prime factorization of n.
+(definec (A005361 n) (if (= 1 n) 1 (* (A067029 n) (A005361 (A028234 n)))))
+
+;; A072411 [Labos Elemer] LCM of exponents in prime factorization of n. [XXX - Prepend! a(1) = 1]
+(definec (A072411 n) (if (= 1 n) 1 (lcm (A067029 n) (A072411 (A028234 n)))))
+
+
+;; A051903 [Labos Elemer] Maximal exponent in prime factorization of n. 
+(definec (A051903 n) (if (= 1 n) 0 (max (A067029 n) (A051903 (A028234 n)))))
+
+;; A056169 [Labos Elemer] o=1: Number of unitary prime divisors of n.
+(definec (A056169 n) (if (= 1 n) 0 (+ (if (= 1 (A067029 n)) 1 0) (A056169 (A028234 n)))))
+
+;; A056170 [Labos Elemer] o=1: Number of non-unitary prime divisors of n.
+(define (A056170 n) (- (A001221 n) (A056169 n)))
+
+(definec (A275812 n) (if (= 1 n) 0 (+ (if (> (A067029 n) 1) (A067029 n) 0) (A275812 (A028234 n)))))
+
+(define (A275812v2 n) (- (A001222 n) (A056169 n)))
+
 
 (definec (A048675 n)
   (cond ((= 1 n) (- n 1))
@@ -2291,6 +2312,54 @@
 
 (define (A245611 n) (A243071 (A064216 n))) ;; offset 1, a(1) = 0.
 (define (A245612 n) (A048673 (A163511 n))) ;; offset 0, a(0) = 1.
+
+(define (A275715 n) (A243071 (A249823 n)))
+
+(define (A273664 n) (A249746 (A032766 n)))
+
+(define (A273664v2 n) (A249824 (A254050 n)))
+
+
+(define (A273669 n) (+ (* 10 (/ (+ (- n 2) (A000035 n)) 2)) 9 (* (A000035 n) -7)))
+(define (A273669v2 n) (+ (* 10 (/ (+ (- n 2) (if (odd? n) 1 0)) 2)) (if (odd? n) 2 9)))
+
+
+(definec (A275716 n)
+  (cond ((<= n 1) (+ 1 n))
+        ((even? n) (A273669 (A275716 (/ n 2))))
+        (else (A273664 (A275716 (/ (- n 1) 2))))
+  )
+)
+
+
+(define A275717 (MATCHING-POS 1 2 (lambda (n) (> (A003961 n) (A003961 (- n 1))))))
+(define A275717v2 (MATCHING-POS 1 2 (lambda (n) (> (A048673 n) (A048673 (- n 1))))))
+
+(define A275718 (MATCHING-POS 1 2 (lambda (n) (< (A003961 n) (A003961 (- n 1))))))
+(define A275718v2 (MATCHING-POS 1 2 (lambda (n) (< (A048673 n) (A048673 (- n 1))))))
+
+(define (A275719 n) (- (A275718 n) (A275717 n)))
+(define (A275719v2 n) (- (A275722 n) (A275721 n)))
+
+(definec (A275720 n) (if (= 1 n) 0 (+ (A275720 (- n 1)) (if (> (A003961 n) (A003961 (- n 1))) 1 -1))))
+
+(define A275721 (MATCHING-POS 1 1 (lambda (n) (> (A003961 (+ 1 n)) (A003961 n)))))
+(define A275722 (MATCHING-POS 1 1 (lambda (n) (< (A003961 (+ 1 n)) (A003961 n)))))
+
+(definec (A249746v2 n)
+  (cond ((= 1 n) n)
+        ((= 2 (modulo n 3)) (A273669 (A249746v2 (/ (+ 1 n) 3))))
+        (else (A273664 (A249746v2 (/ (+ 1 (A064216 n)) 2))))
+  )
+)
+
+(definec (A249824v3 n)
+  (cond ((= 1 n) n)
+        ((even? n) (A273669 (A249824v3 (/ n 2))))
+        (else (A273664 (A249824v3 (A064989 n))))
+  )
+)
+
 
 (define (A243353 n) (A005940 (1+ (A003188 n))))
 (define (A243354 n) (A006068 (A156552 n)))

@@ -17,7 +17,7 @@
 ;;  (some sequences to be renumbered). Also, the current hasty            ;;
 ;;  implementation of A258012 fails with larger values of n.              ;;
 ;;                                                                        ;;
-;;  Last edited August 30 2015.                                           ;;
+;;  Last edited August 11 2016.                                           ;;
 ;;                                                                        ;;
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
@@ -431,7 +431,7 @@
 
 (define (A261219 n) (A261216bi n n))
 
-(define A261220 (ZERO-POS 0 0 A261219))
+(define A261220v2 (ZERO-POS 0 0 A261219))
 
 ;; (same-intfuns0? A001477 (COMPOSE A261218 A261218) 5040) --> #t
 
@@ -1363,3 +1363,214 @@
 
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+;; XFER: Base-factorial/base-factorial-core.ss, or such:
+
+;; A273673(n,c): "Zero the exponent of prime(1+A084558(c)) and add it to the exponent of prime(1+A084558(c)-A099563(c)) in the prime factorization of n".
+
+
+(define (A273673bi n c)
+  (if (zero? c)
+      n 
+      (* (/ n (expt (A000040 (+ 1 (A084558 c))) (A249344bi (+ 1 (A084558 c)) n)))
+         (expt (A000040 (+ 1 (- (A084558 c) (A099563 c)))) (A249344bi (+ 1 (A084558 c)) n))
+      )
+  )
+)
+
+(define (A273673 n) (A273673bi (A002260 n) (A004736 n))) ;; o=1 tabl.
+
+;; A(n,0) = n; A(n,r) = A(A273673(n,r), A257687(r)).
+;; It should be that A001222(A(n,k)) = A001222(n) for any k.
+;; WAS: (define (A275723 n) (A275723bi (A002260 n) (A004736 n)))
+(define (A275723 n) (A275723bi (A002260 n) (- (A004736 n) 1)))
+
+;; WAS: (define (A275724 n) (A275723bi (A004736 n) (A002260 n)))
+(define (A275724 n) (A275723bi (A004736 n) (- (A002260 n) 1)))
+
+(define (A275723bi n fex)
+  (let loop ((n n) (fex fex))
+     (cond ((zero? fex) n)
+           (else (loop (A273673bi n fex) (A257687 fex)))
+     )
+  )
+)
+
+;; Something like this:
+(define (A275725 n) (A275723bi (A002110 (+ 1 (A084558 n))) n))
+
+(define (A275807 n) (/ (A275725 n) 2))
+
+;; And then we should have:
+
+(define (A060131 n) (A072411 (A275725 n)))
+
+(define (A060129 n) (A275812 (A275725 n)))
+
+(define (A060129v2 n) (- (+ 1 (A084558 n)) (A275851 n)))
+
+(define (A275851 n) (A056169 (A275725 n)))
+
+(define (A275851v2 n)  (- (+ 1 (A084558 n)) (A060129 n)))
+
+
+;; A275832-A275853 are now reserved for your use. 
+
+(define (A275832 n) (A007814 (A275725 n)))
+
+(define A153880v3 (ZERO-POS 0 0 (COMPOSE -1+ A275832)))
+(define A273670v3 (NONZERO-POS 0 0 (COMPOSE -1+ A275832)))
+
+;; (same-intfuns0? A153880 A153880v3 5040) --> #t
+
+(define A275833 (MATCHING-POS 0 0 (lambda (n) (odd? (A275832 n)))))
+(define A275833v2 (MATCHING-POS 0 0 (lambda (n) (odd? (A275726 n)))))
+
+(define A275834 (MATCHING-POS 1 1 (lambda (n) (even? (A275832 n)))))
+(define A275834v2 (MATCHING-POS 1 1 (lambda (n) (even? (A275726 n)))))
+
+
+
+(define A275813 (MATCHING-POS 0 0 (lambda (n) (odd? (A060131 n)))))
+
+(define A275814 (MATCHING-POS 1 1 (lambda (n) (even? (A060131 n)))))
+
+
+;; And A001221(A275725(n)) = ? A060128 A060129 ?
+;; And A001222(A275725(n)) = ? A060128 A060129 ?
+
+
+(define (A275730bi n c)
+  (let loop ((z 0) (n n) (m 2) (f 1) (c c))
+    (let ((d (modulo n m)))
+     (cond ((zero? n) z)
+           ((zero? c) (loop z (/ (- n d) m) (+ 1 m) (* f m) (- c 1)))
+           (else (loop (+ z (* f d)) (/ (- n d) m) (+ 1 m) (* f m) (- c 1)))
+     )
+    )
+  )
+)
+
+(define (A275730 n) (A275730bi (A002262 n) (A025581 n)))
+(define (A275731 n) (A275730bi (A025581 n) (A002262 n)))
+
+
+(definec (A275732 n)
+  (cond ((zero? (A257261 n)) 1)
+        (else (* (A000040 (A257261 n)) (A275732 (A275730bi n (- (A257261 n) 1)))))
+  )
+)
+
+(definec (A275736 n)
+  (cond ((zero? (A257261 n)) 0)
+        (else (+ (A000079 (+ -1 (A257261 n))) (A275736 (A275730bi n (- (A257261 n) 1)))))
+  )
+)
+
+(define (A275732loop n)
+  (let loop ((z 1) (n n))
+     (let ((y (A257261 n)))
+        (cond ((zero? y) z)
+              (else (loop (* z (A000040 y)) (A275730bi n (- y 1))))
+        )
+     )
+  )
+)
+
+(definec (A275733 n) (if (zero? n) 1 (* (A275732 n) (A003961 (A275733 (A257684 n))))))
+
+;; (same-intfuns0? A060130 (COMPOSE A001221 A275733) 40320) --> #t
+
+
+(definec (A275734 n) (if (zero? n) 1 (* (A275732 n) (A275734 (A257684 n)))))
+
+
+(definec (A275735 n) (if (zero? n) 1 (* (A000079 (A257511 n)) (A003961 (A275735 (A257684 n))))))
+
+(define (A275726 n) (A048675 (A275725 n)))
+
+(define (A275803 n) (A051903 (A275725 n))) ;; o=0: Maximal cycle length in A060117 / A060118.
+
+(define A261220 (MATCHING-POS 0 0 (lambda (n) (>= 2 (A275803 n)))))
+
+(definec (A275727 n) (if (zero? n) n (+ (A275736 n) (* 2 (A275727 (A257684 n))))))
+(define (A275727v2 n) (A048675 (A275733 n)))
+
+
+(definec (A275728 n) (if (zero? n) n (+ (A275736 n) (A275728 (A257684 n)))))
+(define (A275728v2 n) (A048675 (A275734 n)))
+
+(define (A060502 n) (A001221 (A275734 n)))
+
+(define (A060502v2 n) (A275806 (A225901 n)))
+
+(define (A060502v3 n) (avg  (perm2siteswap3 (A060118permvec-short n))))
+
+;; After similarly named Maple-function in A060502:
+(define (perm2siteswap3 permvec)
+  (let ((n (vector-length permvec)))
+    (let loop ((s (list)) (i 1))
+       (cond ((> i n) s)
+             (else
+               (let ((diff (modulo (- (vector-ref permvec (- i 1)) i) n)))
+                 (loop (cons (if (zero? diff) 0 (- n diff)) s) (+ 1 i))
+               )
+             )
+       )
+    )
+  )
+)
+
+(define (perm2siteswap-muu permvec)
+  (let ((n (vector-length permvec)))
+    (let loop ((s (list)) (i 1))
+       (cond ((> i n) s)
+             (else
+               (let ((diff (modulo (- (vector-ref permvec (- i 1)) i) n)))
+                 (loop (cons (- n diff) s) (+ 1 i))
+               )
+             )
+       )
+    )
+  )
+)
+
+
+;; Not in OEIS yet: (a(n) = A060502(n) + A275851(n)):
+;; (map (lambda (n)  (avg  (perm2siteswap-muu (A060118permvec-short n)))) (iota0 52))
+;; (1 1 2 2 2 1 3 2 3 3 3 2 3 3 2 2 2 2 3 2 2 2 2 1 4 3 3 3 3 2 4 3 4 4 4 3 4 4 3 3 3 3 4 3 3 3 3 2 4 3 4 4 4)
+
+;; (same-intfuns0? (lambda (n) (avg (perm2siteswap-muu (A060118permvec-short n)))) (lambda (n) (+ (A060502 n) (A275851 n))) 5040) --> #t
+
+;; Neither is:
+;; (map (COMPOSE (lambda (n) (avg (perm2siteswap-muu (A060118permvec-short n)))) A225901) (iota0 52))
+;; 1, 1, 2, 1, 2, 2, 3, 2, 2, 1, 2, 2, 3, 3, 2, 2, 2, 2, 3, 2, 3, 2, 3, 3, 4, 3, 3, 2, 3, 3, 3
+
+
+(define (A275729 n) (A048675 (A275735 n)))
+(define (A275806 n) (A001221 (A275735 n)))
+
+
+;; A275803-A275814 are now reserved for your use. 
+
+(define A275804 (MATCHING-POS 0 0 (lambda (n) (>= 1 (A275811 n)))))
+(define A275804v2 (NONZERO-POS 0 0 (lambda (n) (A008683 (A275734 n)))))
+(define A275804v3 (MATCHING-POS 0 0 (lambda (n) (= (A060502 n) (A060130 n)))))
+
+
+(define A275805 (MATCHING-POS 1 1 (lambda (n) (< 1 (A275811 n)))))
+(define A275805v2 (ZERO-POS 1 1 (lambda (n) (A008683 (A275734 n)))))
+
+
+
+(definec (A275808 n) (if (zero? n) n (A003987bi (A275736 n) (A275808 (A257684 n)))))
+
+(define A275809 (ZERO-POS 0 0 A275808))
+
+(definec (A275810 n) (- (A275809 n) (A275809 (- n 1)))) ;; o=1. First differences of A275809.
+
+;; (same-intfuns0?  (COMPOSE A051903 A275734)  (COMPOSE A264990 A225901) 40320) --> #t
+
+(define (A275811 n) (A051903 (A275734 n)))
+(define (A275811v2 n) (A264990 (A225901 n)))
+
