@@ -31,7 +31,7 @@
 ;;  them to this program. Alternatively, you can send the improved        ;;
 ;;  program directly to Neil Sloane.                                      ;;
 ;;                                                                        ;;
-;;  Last edited  May 19 2015 by Antti Karttunen.                          ;;
+;;  Last edited  Aug 13 2016 by Antti Karttunen.                          ;;
 ;;  Trying to abolish sqrt, also A1163xx -> A1143xx, A1164xx -> A1144xx   ;;
 ;;                                                                        ;;
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -98,7 +98,7 @@
 
 ;; Added this 10. July 2002 to avoid allocation catastrophes
 ;; caused by the careless use of the cached integer functions:
-(define *MAX-CACHE-SIZE-FOR-DEFINEC* 290512) ;; Was 131072
+(define *MAX-CACHE-SIZE-FOR-DEFINEC-IN-GF2XFUNS* 290512) ;; Was 131072
 
 
 (define-syntax definec
@@ -110,7 +110,7 @@
             (name
              (lambda (arg)
                (cond ((null? arg) _cache_)
-                     ((>= arg *MAX-CACHE-SIZE-FOR-DEFINEC*)
+                     ((>= arg *MAX-CACHE-SIZE-FOR-DEFINEC-IN-GF2XFUNS*)
                           e0 ...
                      )
                      (else
@@ -118,7 +118,7 @@
                              (set! _cache_
                                    (vector-grow
                                            _cache_
-                                           (min *MAX-CACHE-SIZE-FOR-DEFINEC*
+                                           (min *MAX-CACHE-SIZE-FOR-DEFINEC-IN-GF2XFUNS*
                                                 (max (1+ arg)
                                                      (* 2 (vector-length _cache_))
                                                 )

@@ -17,7 +17,7 @@
 ;;  (some sequences to be renumbered). Also, the current hasty            ;;
 ;;  implementation of A258012 fails with larger values of n.              ;;
 ;;                                                                        ;;
-;;  Last edited August 11 2016.                                           ;;
+;;  Last edited August 24 2016.                                           ;;
 ;;                                                                        ;;
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
@@ -379,6 +379,15 @@
 (define (A056019 n) (permutation->A055089rank (permvec1inverse-of (A055089permvec-short n))))
 
 (define (A060125 n) (permutation->A060117rank (A060118permvec-short n)))
+
+(define A275843 (ZERO-POS 0 0 (lambda (n) (- (A060125 n) (A225901 n)))))
+
+
+(define (A275957 n) (A225901 (A060125 n)))
+(define (A275958 n) (A060125 (A225901 n)))
+
+(define A275844 (NONZERO-POS 1 0 (lambda (n) (- (A060125 n) (A225901 n)))))
+(define A275843v2 (FIXED-POINTS 0 0 A275957))
 
 ;; (same-intfuns0? A060125 (COMPOSE A060126 A056019 A060119) (! 8)) --> #t
 
@@ -1405,6 +1414,8 @@
 
 (define (A060131 n) (A072411 (A275725 n)))
 
+(define (A060128 n) (A056170 (A275725 n)))
+
 (define (A060129 n) (A275812 (A275725 n)))
 
 (define (A060129v2 n) (- (+ 1 (A084558 n)) (A275851 n)))
@@ -1413,6 +1424,7 @@
 
 (define (A275851v2 n)  (- (+ 1 (A084558 n)) (A060129 n)))
 
+(define A275852 (ZERO-POS 1 0 A275851))
 
 ;; A275832-A275853 are now reserved for your use. 
 
@@ -1492,19 +1504,175 @@
 (define (A275803 n) (A051903 (A275725 n))) ;; o=0: Maximal cycle length in A060117 / A060118.
 
 (define A261220 (MATCHING-POS 0 0 (lambda (n) (>= 2 (A275803 n)))))
+(define A261220v3 (MATCHING-POS 0 0 (lambda (n) (>= 2 (A060131 n)))))
+(define A261220v1 (ZERO-POS 0 0 (lambda (n) (+ (A275947 n) (A276007 n)))))
 
 (definec (A275727 n) (if (zero? n) n (+ (A275736 n) (* 2 (A275727 (A257684 n))))))
 (define (A275727v2 n) (A048675 (A275733 n)))
+;; (same-intfuns0? A275727 (COMPOSE A087207 A275733) 720) --> #t
 
 
 (definec (A275728 n) (if (zero? n) n (+ (A275736 n) (A275728 (A257684 n)))))
 (define (A275728v2 n) (A048675 (A275734 n)))
 
+(definec (A276010 n) (if (zero? n) n (A003986bi (A275736 n) (A276010 (A257684 n)))))
+(define (A276010v2 n) (A087207 (A275734 n)))
+
+
+(define (A275946 n) (A056169 (A275734 n)))
+(define (A275947 n) (A056170 (A275734 n)))
+
+(define (A275948 n) (A056169 (A275735 n)))
+(define (A275949 n) (A056170 (A275735 n)))
+
+(define (A275962 n) (A275812 (A275734 n)))
+
+(define (A275964 n) (A275812 (A275735 n)))
+
+(define (A275849 n) (- (A084558 n) (A060502 n)))
+
+(define (A275850 n) (- (A084558 n) (A275806 n)))
+
+(define (A060500 n) (- (A060501 n) (A275851 n))) ;; XXX - Prove!
+(define (A060500v2 n) (+ 1 (- (A275849 n) (A275851 n)))) ;; XXX - Actually, prove this!
+
+(define (A060500check_it n) (avg (perm2siteswap-kuu (A060118permvec-short n))))
+
+(define (A060500v3 n) ;; And also this, number of drops in A060118[n] !
+  (let ((s (+ 1 (A084558 n))) (p (A060118permvec-short n)))
+     (let loop ((d 0) (i 1))
+           (if (> i s)
+               d
+               (loop (+ d (if (< (vector-ref p (- i 1)) i) 1 0)) (+ 1 i))
+           )
+     )
+  )
+)
+
+(define (A060501 n) (- (+ 1 (A084558 n)) (A060502 n))) ;; XXX - Prove!
+
+(define (A060501v2 n) (+ 1 (A275849 n)))
+
 (define (A060502 n) (A001221 (A275734 n)))
+
+(define (A060502v4 n) ;; Also: the number of drops (cases where p[i] < i) in the n-th permutation in list A060117.
+  (let ((s (+ 1 (A084558 n))) (p (A060117permvec-short n)))
+     (let loop ((d 0) (i 1))
+           (if (> i s)
+               d
+               (loop (+ d (if (< (vector-ref p (- i 1)) i) 1 0)) (+ 1 i))
+           )
+     )
+  )
+)
+
+(define A276001 (MATCHING-POS 0 0 (lambda (n) (>= 1 (A060502 n)))))
+(define A276002 (MATCHING-POS 1 0 (lambda (n) (= 2 (A060502 n)))))
+(define A276003 (MATCHING-POS 1 0 (lambda (n) (= 3 (A060502 n)))))
+
+(define (A276004 n) (- (A060502 n) (A060128 n)))
+
+
+(define (A276004v2 n)
+  (let ((fv (list->vector (cons 0 (reverse (n->factbase n))))))
+    (let loop ((i 1) (c 0))
+         (if (>= i (vector-length fv))
+             c
+             (let ((d (vector-ref fv i)))
+                (cond ((zero? d) (loop (+ 1 i) c))
+                      ((zero? (vector-ref fv (- i d))) (loop (+ 1 i) c))
+                      (else
+                        (begin
+                            (vector-set! fv (- i d) 0) ;; Count each falled upon digit only once!
+                            (loop (+ 1 i) (+ 1 c))
+                        )
+                      )
+                )
+             )
+         )
+    )
+  )
+)
+
+;; (same-intfuns0? A276004 (lambda (n) (A000120 (A004198bi (* 2 (A275727 n)) (A276010 n)))) 720) --> #t
+
+(define (A276007 n) ;; Count the number of nonzero digits falling upon other nonzero digits.
+  (let ((fv (list->vector (cons 0 (reverse (n->factbase n))))))
+    (let loop ((i 1) (c 0))
+         (if (>= i (vector-length fv))
+             c
+             (let ((d (vector-ref fv i)))
+                (if (zero? d)
+                    (loop (+ 1 i) c)
+                    (loop (+ 1 i) (+ c (if (not (zero? (vector-ref fv (- i d)))) 1 0)))
+                )
+             )
+         )
+    )
+  )
+)
+
+
+(define A276005 (ZERO-POS 0 0 A276004))
+(define A276005v2 (ZERO-POS 0 0 A276007))
+
+(define A276006 (NONZERO-POS 1 0 A276004))
+(define A276006v2 (NONZERO-POS 1 0 A276007))
+
+
+(define A275956 (ZERO-POS 0 0 (lambda (n) (- (A275806 n) (A060502 n)))))
+
+;; XXX - These should all be proved with any other formula-variants:
+
+(define (A060500v1 n)
+  (let ((s (+ 1 (A084558 n))) (p (A060118permvec-short n)))
+     (let loop ((a 0) (i 1))
+           (if (> i s)
+               (/ a s)
+               (loop (+ a (modulo (- (vector-ref p (- i 1))  i) s)) (+ 1 i))
+           )
+     )
+  )
+)
+
+(define (A060500v11 n)
+  (let ((s (+ 1 (A084558 n))) (p (A060117permvec-short n)))
+     (let loop ((a 0) (i 1))
+           (if (> i s)
+               (/ a s)
+               (loop (+ a (modulo (- i (vector-ref p (- i 1))) s)) (+ 1 i))
+           )
+     )
+  )
+)
+
+
+(define (A060502v1 n)
+  (let ((s (+ 1 (A084558 n))) (p (A060118permvec-short n)))
+     (let loop ((a 0) (i 1))
+           (if (> i s)
+               (/ a s)
+               (loop (+ a (modulo (- i (vector-ref p (- i 1))) s)) (+ 1 i))
+           )
+     )
+  )
+)
+
+
+(define (A060502v11 n)
+  (let ((s (+ 1 (A084558 n))) (p (A060117permvec-short n)))
+     (let loop ((a 0) (i 1))
+           (if (> i s)
+               (/ a s)
+               (loop (+ a (modulo (- (vector-ref p (- i 1))  i) s)) (+ 1 i))
+           )
+     )
+  )
+)
 
 (define (A060502v2 n) (A275806 (A225901 n)))
 
-(define (A060502v3 n) (avg  (perm2siteswap3 (A060118permvec-short n))))
+(define (A060502v3 n) (avg (perm2siteswap3 (A060118permvec-short n))))
 
 ;; After similarly named Maple-function in A060502:
 (define (perm2siteswap3 permvec)
@@ -1536,7 +1704,44 @@
 )
 
 
+(define (perm2siteswap-muu-v2 permvec)
+  (let ((n (vector-length permvec)))
+    (let loop ((s (list)) (i 1))
+       (cond ((> i n) s)
+             (else
+               (let ((diff (modulo (- i (vector-ref permvec (- i 1))) n)))
+                 (loop (cons diff s) (+ 1 i))
+               )
+             )
+       )
+    )
+  )
+)
+
+
+(define (perm2siteswap-kuu permvec)
+  (let ((n (vector-length permvec)))
+    (let loop ((s (list)) (i 1))
+       (cond ((> i n) s)
+             (else
+               (let ((diff (modulo (- (vector-ref permvec (- i 1))  i) n)))
+                 (loop (cons diff s) (+ 1 i))
+               )
+             )
+       )
+    )
+  )
+)
+
+
+
 ;; Not in OEIS yet: (a(n) = A060502(n) + A275851(n)):
+
+(define (A275853 n) (+ (A060502 n) (A275851 n)))
+
+;; (same-intfuns0? A275853 (lambda (n) (avg (perm2siteswap-muu (A060118permvec-short n)))) 40320) --> #t
+
+
 ;; (map (lambda (n)  (avg  (perm2siteswap-muu (A060118permvec-short n)))) (iota0 52))
 ;; (1 1 2 2 2 1 3 2 3 3 3 2 3 3 2 2 2 2 3 2 2 2 2 1 4 3 3 3 3 2 4 3 4 4 4 3 4 4 3 3 3 3 4 3 3 3 3 2 4 3 4 4 4)
 
@@ -1556,6 +1761,7 @@
 (define A275804 (MATCHING-POS 0 0 (lambda (n) (>= 1 (A275811 n)))))
 (define A275804v2 (NONZERO-POS 0 0 (lambda (n) (A008683 (A275734 n)))))
 (define A275804v3 (MATCHING-POS 0 0 (lambda (n) (= (A060502 n) (A060130 n)))))
+(define A275804v4 (ZERO-POS 0 0 A275947))
 
 
 (define A275805 (MATCHING-POS 1 1 (lambda (n) (< 1 (A275811 n)))))
@@ -1574,3 +1780,591 @@
 (define (A275811 n) (A051903 (A275734 n)))
 (define (A275811v2 n) (A264990 (A225901 n)))
 
+
+
+;; Submit these "impostors" (or false friends) later:
+;; (same-intfuns1? A275811 (COMPOSE A072411 A275734) 5040) --> 287
+
+;; (same-intfuns1? A264990 (COMPOSE A072411 A275735) 5040) --> 161
+
+;; Not at all equal to these:
+
+;; (definec (Asomenewone6 n) (if (zero? n) 1 (* (A257511 n) (Asomenewone6 (A257684 n)))))
+
+;; (definec (Asomenewone9 n) (if (zero? n) 1 (lcm (A257511 n) (Asomenewone9 (A257684 n)))))
+
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+
+;;;; XXX - XFER Seqs/Factorial/factorial-base.ss
+;; Or: ;; /XFER: Base-F/Base.Factorial.core.ss or such...
+
+
+(define (A009445 n) (A000142 (+ n n 1))) ;;  ;; o=0: (2n+1)! XFER: core-factorial or such ?
+
+(define (A002674 n) (/ (A000142 (* 2 n)) 2)) ;; o=1: (2n)!/2.
+
+(define (A002674v2 n) (* n (A009445 (- n 1)))) ;; As n*(2n-1)! = (2n)!/2, yes!
+
+
+;; XFER: Factorial/factorial-base-core.ss
+
+
+;; A059590 [Bottomley] o=0: Sum of distinct factorials (0! and 1! not treated as distinct). 
+
+(define (A059590 n)
+   (let loop ((n n) (s 0) (f 1) (i 2))
+      (cond ((zero? n) s)
+            ((even? n) (loop (/ n 2) s (* i f) (+ 1 i)))
+            (else (loop (/ (- n 1) 2) (+ s f) (* i f) (+ 1 i)))
+      )
+   )
+)
+
+(definec (A059590v1 n) ;; Recursive version.
+  (cond ((zero? n) n)
+        ((even? n) (A153880 (A059590v1 (/ n 2))))
+        (else (+ 1 (A153880 (A059590v1 (/ (- n 1) 2)))))
+  )
+)
+
+
+;; 
+(define (A276091v2 n) (A225901 (A059590 n)))
+
+
+(define (A276091 n)
+   (let loop ((n n) (s 0) (f 1) (i 2))
+      (cond ((zero? n) s)
+            ((even? n) (loop (/ n 2) s (* i f) (+ 1 i)))
+            (else (loop (/ (- n 1) 2) (+ s (* (- i 1) f)) (* i f) (+ 1 i)))
+      )
+   )
+)
+
+(definec (A276091v1 n) ;; Recursive version.
+  (cond ((zero? n) n)
+        ((even? n) (A255411 (A276091v1 (/ n 2))))
+        (else (+ 1 (A255411 (A276091v1 (/ (- n 1) 2)))))
+  )
+)
+
+
+(definec (A275959 n) ;; Recursive version.
+  (cond ((zero? n) n)
+        ((even? n) (A255411 (A153880 (A275959 (/ n 2)))))
+        (else (+ 1 (A255411 (A153880 (A275959 (/ (- n 1) 2))))))
+  )
+)
+
+
+(define (A275959v2 n) (A276089 (A276091 n)))
+
+(define A275959slow (FIXED-POINTS 0 0 (lambda (n) (A225901 n))))
+
+
+(definec (A276082 n)
+  (cond ((zero? n) n)
+        ((even? n) (A153880 (A276082 (/ n 2))))
+        (else (+ 1 (A255411 (A276082 (/ (- n 1) 2)))))
+  )
+)
+
+
+(definec (A276083 n)
+  (cond ((zero? n) n)
+        ((even? n) (A255411 (A276083 (/ n 2))))
+        (else (+ 1 (A153880 (A276083 (/ (- n 1) 2)))))
+  )
+)
+
+
+
+(define (A276008 n) ;; o=0: Replace all nonzero digits by ones.
+   (let loop ((n n) (s 0) (f 1) (i 2))
+      (if (zero? n) 
+         s
+         (let ((d (modulo n i)))
+            (if (zero? d)
+                (loop (/ n i) s (* i f) (+ 1 i))
+                (loop (/ (- n d) i) (+ s f) (* i f) (+ 1 i))
+            )
+         )
+      )
+   )
+)
+
+(define (A276008v2 n) (A059590 (A275727 n)))
+
+;; Standalone version: ;; o=0: Decrement each nonzero digit by one in factorial base representation.
+(define (A276009 n)
+   (let loop ((n n) (s 0) (f 1) (i 2))
+      (if (zero? n) 
+         s
+         (let ((d (modulo n i)))
+            (if (zero? d)
+                (loop (/ n i) s (* i f) (+ 1 i))
+                (loop (/ (- n d) i) (+ s (* f (- d 1))) (* i f) (+ 1 i))
+            )
+         )
+      )
+   )
+)
+
+(define (A276009v2 n) (- n (A276008 n)))
+
+
+(define (A276089 n) ;; Aerate the factorial base representation of n.
+   (let loop ((n n) (s 0) (f 1) (i 2) (j 2))
+      (if (zero? n) 
+         s
+         (let ((d (modulo n i)))
+            (loop (/ (- n d) i) (+ s (* f d)) (* j (+ 1 j) f) (+ 1 i) (+ 2 j))
+         )
+      )
+   )
+)
+
+
+(define (A276090 n) ;; Deaerate the factorial base representation of n, left inverse of A276089.
+   (let loop ((n n) (s 0) (f 1) (i 2) (j 2))
+      (if (zero? n) 
+         s
+         (let ((d (modulo n j)))
+            (loop (floor->exact (/ (/ (- n d) j) (+ 1 j))) (+ s (* f d)) (* i f) (+ 1 i) (+ 2 j))
+         )
+      )
+   )
+)
+
+;; Add to Examples and comments:
+;; For n = 311 ("22321") we pick the digits at odd positions positions 1, 3 and 5, thus we get a(311) = 2*3! + 3*2! + 1*1! = 19.
+;; For n = 373 ("30201") we pick the digits from those same positions and construct a(373) = 3*3! + 2*2! + 1*1! = 23.
+
+;; This "deaerates" A276089(n) by picking only the digits from the odd positions of its factorial base representation. Of course, when computed for an arbitrary n, those digits, when  "compressed" into a(n) are not necessarily valid digits in standard factorial base representation (A007623), as the example given for n=311 shows.
+
+
+
+(define (A266123 n) ;; Shift right & decrement by 1 all other digits except ones and zeros. Cf. A257684.
+   (let loop ((n n) (z 0) (i 2) (f 0))
+      (cond ((zero? n) z)
+            (else
+              (let ((d (remainder n i)))
+                      (loop (quotient n i)
+                            (+ z (* f (- d (if (<= d 1) 0 1))))
+                            (+ 1 i)
+                            (if (zero? f) 1 (* f (- i 1)))
+                      )
+              )
+            )
+      )
+   )
+)
+
+;; A266186-A266197 are now reserved for your use. 
+
+(define (A266193 n) ;; o=0: Shift right & decrement by 1 the maximal digits. Cf. A257684, A266123. Inverse of A153880.
+   (let loop ((n n) (z 0) (i 2) (f 0))
+      (cond ((zero? n) z)
+            (else
+              (let ((d (remainder n i)))
+                      (loop (quotient n i)
+                            (+ z (* f (- d (if (< d (- i 1)) 0 1))))
+                            (+ 1 i)
+                            (if (zero? f) 1 (* f (- i 1)))
+                      )
+              )
+            )
+      )
+   )
+)
+
+
+(defineperm1 (A266191 n)
+  (cond ((<= n 3) n)
+        (else
+          (let ((prev1 (A266191 (- n 1))) (prev2 (A266191 (- n 2))))
+            (let loop ((k 1))
+               (cond ((and (not-lte? (A266192 k) (- n 1)) (isA003714? (* k prev1 prev2))) k)
+                     (else (loop (+ 1 k)))
+               )
+            )
+          )
+        )
+  )
+)
+
+(define (A266192 n) (A266191 (- n)))
+
+;;;;;;;;;;;;;;;;;;
+
+
+(define (A007623 n) ;; New version! Use mod instead of modulo in R6RS
+   (let loop ((n n) (s 0) (p 1) (i 2))
+      (if (zero? n) s (let ((d (modulo n i))) (loop (/ (- n d) i) (+ (* p d) s) (* 10 p) (+ 1 i))))
+   )
+)
+
+;;
+
+;; XXX: Change all to starting offset=0: !
+(definec (A265905 n) (if (= 1 n) n (+  (A265905 (- n 1)) (A153880 (A265905 (- n 1)))))) ;; o=1. Cf. A001710.
+
+(define (A265906 n) (A153880 (A265905 n)))
+
+(define (A265906v2 n) (- (A265905 (+ 1 n)) (A265905 n)))
+
+(definec (A265907 n) (if (= 1 n) n (+  (A265907 (- n 1)) (A255411 (A265907 (- n 1))))))
+
+(define (A265908 n) (A255411 (A265907 n)))
+
+(define (A265908v2 n) (- (A265907 (+ 1 n)) (A265907 n)))
+
+(define (A275940bi row col) (if (= 1 row) (A265905 col) (- (A275940bi (- row 1) (+ 1 col)) (A275940bi (- row 1) col))))
+
+;; A275946-A275965 are now reserved for your use.
+
+(define (A275950 n) (A275950bi (A002260 n) (A004736 n)))
+(define (A275951 n) (A275950bi (A004736 n) (A002260 n)))
+
+(define (A275950bi row col) (if (= 1 row) (A265905 col) (- (A275950bi (- row 1) (+ 1 col)) (A275950bi (- row 1) col))))
+
+(define (A275953 n) (- (A265906 (+ 1 n)) (A265906 n)))
+
+(definec (A275955 n) (A275950bi n 1))
+
+(define (A275960 n) (A275960bi (A002260 n) (A004736 n)))
+(define (A275961 n) (A275960bi (A004736 n) (A002260 n)))
+
+(define (A275960bi row col) (if (= 1 row) (A265907 col) (- (A275960bi (- row 1) (+ 1 col)) (A275960bi (- row 1) col))))
+
+(define (A275963 n) (- (A265908 (+ 1 n)) (A265908 n)))
+
+(definec (A275965 n) (A275960bi n 1))
+
+;; XXX: Uncomment when BINOMIAL-TRANSFORM and INVERSE-BINOMIAL-TRANSFORM have been transferred to transforms.ss 
+;; (define A275955off0 (BINOMIAL-TRANSFORM (COMPOSE A265905 1+)))
+
+;; (define A265905off0 (INVERSE-BINOMIAL-TRANSFORM A275955off0))
+
+
+;; (define A275965off0 (BINOMIAL-TRANSFORM (COMPOSE A265907 1+)))
+
+;; (define A265907off0 (INVERSE-BINOMIAL-TRANSFORM A275965off0))
+
+;; (map A275955off0 (iota0 16))
+;; (1 2 6 24 150 918 6876 63018 589518 6272712 76110150 950826294 13044895668 197045295354 3070861314894 51493780503216 931608094164870)
+;; (map A275955 (iota 17))
+;; (1 2 6 24 150 918 6876 63018 589518 6272712 76110150 950826294 13044895668 197045295354 3070861314894 51493780503216 931608094164870)
+
+
+
+(define Afacbase_carryless (ZERO-POS 0 0 (lambda (n) (- (* 2 (A034968 n)) (A034968 (+ n (A153880 n))))))) ;; Not really, but a superset of carryless stuff (sum of nonconsecutive factorial numbers + * something?)
+
+(define Afacbase_carryfull (COMPLEMENT 1 Afacbase_carryless))
+
+;; Replace in factorial base representation of n each nonzero digit d with (m+1)-d, where m is the maximal digit allowed in that location, then convert back to decimal.
+
+(define (A225901 n) ;; o=0: [Tek] Write n in factorial base, then replace each nonzero digit d of radix k by k-d.
+   (let loop ((n n) (z 0) (m 2) (f 1))
+      (cond ((zero? n) z)
+            (else (loop (quotient n m)
+                        (if (zero? (modulo n m)) z (+ z (* f (- m (modulo n m)))))
+                        (+ 1 m)
+                        (* f m)
+                  )
+            )
+      )
+   )
+)
+
+;; A276001-A276012 are now reserved for your use. 
+
+(define (A276011 n) (A273662 (A225901 (A273670 n))))
+
+(define (A276012 n) (A273663 (A225901 (A256450 n))))
+
+(define (A275952 n) (A225901 (A256450 (A225901 n))))
+
+(define (A275954 n) (A225901 (A273670 (A225901 n))))
+
+
+
+(define A153880v2 (ZERO-POS 0 0 A260736))
+
+(definec0 (A273670 n) (if (zero? n) 1 (let ((prev (A273670 (- n 1)))) (cond ((even? prev) (+ 1 prev)) ((not (zero? (A260736 (+ 1 prev)))) (+ 1 prev)) (else (+ 2 prev))))))
+
+(define A273670v2 (NONZERO-POS 0 0 A260736))
+
+(define (A275840 n) (- (A273670 n) (A256450 n)))
+
+
+(definec (A273662 n) (if (= 1 n) 0 (+ (A257680 n) (A273662 (- n 1)))))
+
+(define (A273662v2 n) (- (A257682 n) 1))
+
+(definec (A273663 n) (if (= 1 n) 0 (+ (A257680 (A225901 n)) (A273663 (- n 1)))))
+
+;; (same-intfuns0? A001477 (COMPOSE A273663 A273670) 16387) --> #t
+
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; New, o=0 version of A256450:
+;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+(definec0 (A256450naive n) ;; o=0: 
+   (if (zero? n) 1
+       (let ((prev (A256450naive (- n 1))))
+           (cond ((even? prev) (+ 1 prev)) ;; Actually unnecessary, but optimizes for the next clause:
+                 ((> (A257511 (+ 1 prev)) 0) (+ 1 prev))
+                 (else (+ 2 prev))
+           )
+       )
+   )
+)
+
+(definec0 (A256450 n)
+   (let* ((k (A258198 n))
+          (d (- n (A258199 n)))
+          (f (A000142 (+ 1 k)))
+         )
+      (cond ;; ((<= n 1) n)
+            ((< d f) (+ f d))
+            (else
+               (+ (* f (+ 2 (floor->exact (/ (- d f) (A258199 n)))))
+                  (A256450 (modulo (- d f) (A258199 n)))
+               )
+            )
+      )
+   )
+)
+
+
+(define (A257503bi row col) (if (= 1 row) (A256450 (- col 1)) (A255411 (A257503bi (- row 1) col))))
+(define (A257503 n) (A257503bi (A002260 n) (A004736 n)))
+
+(define (A257505bi row col) (if (= 1 col) (A256450 (- row 1)) (A255411 (A257505bi row (- col 1)))))
+(define (A257505 n) (A257505bi (A002260 n) (A004736 n)))
+
+;;;;;;;;;;;;;;;;;;;;
+;; Entanglement-permutations, corrected because of changed offset of A256450:
+
+(definec (A255565 n)
+  (cond ((zero? n) n)
+        ((zero? (A257680 n)) (* 2 (A255565 (A257685 n))))
+        (else (+ 1 (* 2 (A255565 (A273662 n)))))
+  )
+)
+
+
+(definec (A255566 n)
+  (cond ((zero? n) n)
+        ((even? n) (A255411 (A255566 (/ n 2))))
+        (else (A256450 (A255566 (/ (- n 1) 2))))
+  )
+)
+
+
+;; Now offset 1:
+(definec (A255567 n) (cond ((<= n 2) n) ((odd? n) (+ 1 (A255567 (- n 1)))) (else (A255411 (A255567 (/ n 2))))))
+
+;; At least same for terms a(2) - a(255):
+(define A255567probably (MATCHING-POS 2 1 (lambda (n) (= (+ 1 (A256450 (A255411 n))) (A255411 (A256450 n))))))
+
+
+;;;;;;;;;;;;;;;;;;;;;;;;;
+;;
+
+
+(definec (A273665 n)
+  (cond ((zero? n) n)
+        ((zero? (A257680 (A225901 n))) (* 2 (A273665 (A266193 n))))
+        (else (+ 1 (* 2 (A273665 (A273663 n)))))
+  )
+)
+
+
+(definec (A273666 n)
+  (cond ((zero? n) n)
+        ((even? n) (A153880 (A273666 (/ n 2))))
+        (else (A273670 (A273666 (/ (- n 1) 2))))
+  )
+)
+
+;; (same-intfuns1? A000027 (COMPOSE A273665 A273666) 255) --> #t
+
+;; (same-intfuns1? A000027 (COMPOSE A273666 A273665) 5040) --> #t
+
+
+;; And the cross-entanglements:
+
+(definec0 (A273667 n)
+  (cond ((zero? n) n)
+        ((zero? (A257680 (A225901 n))) (A255411 (A273667 (A266193 n))))
+        (else (A256450 (A273667 (A273663 n))))
+  )
+)
+
+(definec0 (A273668 n)
+  (cond ((zero? n) n)
+        ((zero? (A257680 n)) (A153880 (A273668 (A257684 n))))
+        (else (A273670 (A273668 (A273662 n))))
+  )
+)
+
+
+;; (same-intfuns0? A001477 (COMPOSE A273667 A273668) 1200) --> #t
+
+;; (same-intfuns0? A001477 (COMPOSE A273668 A273667) 1200) --> #t
+
+
+
+;; And their compositions with A225901:
+
+(define (A275835 n) (A273667 (A225901 n)))
+
+(define (A275836 n) (A225901 (A273668 n)))
+
+(define (A275837 n) (A225901 (A273667 n)))
+
+(define (A275838 n) (A273668 (A225901 n)))
+
+(define A275839 (FIXED-POINTS 0 0 A275837))
+
+(define A275839v2 (MATCHING-POS 0 0 (lambda (n) (= (A225901 n) (A273667 n)))))
+
+(define (A275841 n) (A273663 (A275837 (A273670 n))))
+
+(define (A275842 n) (A273663 (A275838 (A273670 n))))
+
+;; "Deficient (or simpler!) variants of A273667 & A273668":
+
+
+(definec0 (A275845 n)
+  (cond ((zero? n) n)
+        ((zero? (A257680 (A225901 n))) (A255411 (A266193 n)))
+        (else (A256450 (A275845 (A273663 n))))
+  )
+)
+
+(definec0 (A275846 n)
+  (cond ((zero? n) n)
+        ((zero? (A257680 n)) (A153880 (A257684 n)))
+        (else (A273670 (A275846 (A273662 n))))
+  )
+)
+
+
+
+(definec0 (A275847 n)
+  (cond ((zero? n) n)
+        ((zero? (A257680 (A225901 n))) (A255411 (A275847 (A266193 n))))
+        (else (A256450 (A273663 n)))
+  )
+)
+
+(definec0 (A275848 n)
+  (cond ((zero? n) n)
+        ((zero? (A257680 n)) (A153880 (A275848 (A257684 n))))
+        (else (A273670 (A273662 n)))
+  )
+)
+
+
+;; (same-intfuns0? A273667 (COMPOSE A255566 A273665) 1200) --> #t
+
+;; (same-intfuns0? A273668 (COMPOSE A273666 A255565) 1200) --> #t
+
+;; Why? Yes, of course:
+(define (A225901v2 n) (A257684 (A225901 (A153880 n))))
+(define (A225901v3 n) (A266193 (A225901 (A255411 n))))
+
+(define (Ajoku1 n)  (A273662 (A225901 (A273670 n))))
+(define (Ajoku2 n)  (A273663 (A225901 (A256450 n))))
+
+;; (same-intfuns0? A001477 (COMPOSE Ajoku1 Ajoku2) 255) --> #t
+;; (same-intfuns0? A001477 (COMPOSE Ajoku2 Ajoku1) 4096) --> #t
+
+
+;; A276073-A276094 are now reserved for your use. 
+;; A276075: Cf. A048675
+(definec (A276075 n)
+  (cond ((= 1 n) (- n 1))
+        (else (+ (* (A067029 n) (A000142 (A055396 n)))
+                 (A276075 (A028234 n))
+              )
+        )
+  )
+)
+
+(definec (A276085 n)
+  (cond ((= 1 n) (- n 1))
+        (else (+ (* (A067029 n) (A002110 (+ -1 (A055396 n))))
+                 (A276085 (A028234 n))
+              )
+        )
+  )
+)
+
+(define (A276086 n)
+   (let loop ((n n) (t 1) (i 1))
+      (if (zero? n) 
+         t
+         (let* ((p (A000040 i))
+                (d (modulo n p))
+               )
+            (loop (/ (- n d) p) (* t (expt p d)) (+ 1 i))
+         )
+      )
+   )
+)
+
+(define (A276087 n) (A276086 (A276086 n)))
+
+
+;; A267263 [Cade Brown] o=0: Number of nonzero digits in representation of n in primorial base.
+(define (A267263 n) (A001221 (A276086 n)))
+
+
+
+(define (A276080 n) (A276075 (A206296 n)))
+;; (definec (A_is_not276080 n) (if (<= n 1) n (+ (A153880 (A_is_not276080 (- n 1))) (A_is_not276080 (- n 2)))))
+
+
+(definec (A129251v2 n) (if (= 1 n) 0 (+ (A129251v2 (A028234 n)) (if (>= (A067029 n) (A020639 n)) 1 0))))
+
+
+(definec (A276076 n) (if (zero? n) 1 (* (expt (A000040 (A084558 n)) (A099563 n)) (A276076 (A257687 n)))))
+
+(definec (A276076v2 n) (if (zero? n) 1 (* (A275733 n) (A276076v2 (A276009 n)))))
+
+(define (A276073 n) (A048675 (A276076 n)))
+
+(define (A276074 n) (A248663 (A276076 n)))
+
+
+
+;; XFER: These should be somewhere else, num-theory-misc.ss ?
+
+;; A129251 [Zumkeller] o=1: Number of distinct prime factors p of n such that p^p is a divisor of n. 
+(define (A129251 n) (if (= 1 n) 0 (+ (A129251 (A028234 n)) (if (zero? (modulo n (expt (A020639 n) (A020639 n)))) 1 0))))
+
+(define A048103 (ZERO-POS 1 1 A129251))
+
+(define A100716 (NONZERO-POS 1 1 A129251))
+
+
+(definec (A276077 n) (if (= 1 n) 0 (+ (A276077 (A028234 n)) (if (> (A067029 n) (A055396 n)) 1 0))))
+
+(define A276078 (ZERO-POS 1 1 A276077))
+
+(define A276079 (NONZERO-POS 1 1 A276077))
+
+
+;; /XFER: Base-2/Base2.???.ss ???
+
+(define (A270198 n) (A054429 (A055938 (A054429 n))))
+
+(define (A270200 n) (if (zero? n) n (A054429 (A005187 (+ 1 (A054429 (- n 1)))))))
+(define A270200from1 (COMPLEMENT 1 A270198))

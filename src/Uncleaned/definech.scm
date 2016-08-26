@@ -17,6 +17,8 @@
 ;;    macro grow-cache) as well as defineperm from intfuns1.scm       ;;
 ;;    to here.                                                        ;;
 ;;                                                                    ;;
+;;    Aug 13 2016: Added the limitless version definec0               ;;
+;;                                                                    ;;
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 
@@ -27,7 +29,7 @@
 
 ;; Added this 10. July 2002 to avoid allocation catastrophes
 ;; caused by the careless use of cached integer functions:
-(define *MAX-CACHE-SIZE-FOR-DEFINEC* 290512) ;; Was 131072
+(define *MAX-CACHE-SIZE-FOR-DEFINEC* 362881) ;; Was: 290512) ;; Was 131072
 
 
 ;; Note that this and other cached functions depend on MIT Scheme
@@ -108,6 +110,18 @@
    )
   ) ;; syntax-rules
 )
+
+
+(define-syntax definec0 ;; No allocation limit!
+  (syntax-rules ()
+   ((definec (name arg) e0 ...)
+      (define name
+        (implement-cached-function 0 (name arg) e0 ...)
+      ) ;; (define name ...)
+   )
+  ) ;; syntax-rules
+)
+
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
