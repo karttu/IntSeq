@@ -1,5 +1,5 @@
 
-;; Last edited 2016-08-24 by Antti Karttunen, added yet more unsorted functions to this old MIT/GNU-Scheme module.
+;; Last edited 2016-09-20 by Antti Karttunen, added yet more unsorted functions to this old MIT/GNU-Scheme module.
 
 (declare (usual-integrations))
 
@@ -106,6 +106,7 @@
 (define A001359 (MATCHING-POS 1 1 (lambda (n) (and (= 1 (A010051 n)) (= 1 (A010051 (+ 2 n))))))) ;; Lesser of twin primes.
  
 (definec (A002110 n) (if (zero? n) 1 (* (A000040 n) (A002110 (- n 1)))))
+
 
 (define (A057588 n) (- (A002110 n) 1)) ;; o=1: [Mario Velucchi] Kummer numbers: -1 + product of first n consecutive primes.
 
@@ -1141,6 +1142,15 @@
 
 ;; XXX: The next ones XFER Base2/base2-xor-recurrences.ss ?
 
+(define (A099884 n) (A099884bi (A002262 n) (A025581 n)))
+(define (A099884bi row col) (if (zero? row) (A000079 col) (A048724 (A099884bi (- row 1) col))))
+
+(define (A276618 n) (A099884bi (A025581 n) (A002262 n)))
+
+(define (A099884v2 n) (A099884biv2 (A002262 n) (A025581 n)))
+(define (A099884biv2 row col) (if (zero? col) (A001317 row) (* 2 (A099884biv2 row (- col 1)))))
+
+
 (definec (A264977 n) (cond ((<= n 1) n) ((even? n) (* 2 (A264977 (/ n 2)))) (else (A003987bi (A264977 (/ (- n 1) 2)) (A264977 (/ (+ n 1) 2)))))) ;; o=0:
 
 (define (A265397 n) (- n (A264977 n))) ;; o=0: [Each seem to be a multiple of four].
@@ -1728,7 +1738,11 @@
 ;; Least number of squares that add up to n. This formula after _Charles R Greathouse IV_'s Jul 19 2011 PARI-code:
 (define (A002828 n) (cond ((zero? n) n) ((= 1 (A010052 n)) 1) ((= 1 (A229062 n)) 2) (else (+ 3 (A072401 n)))))
 
+;; A062535  [Henry Bottomley] o=0: Don't be greedy! Difference between number of squares needed to sum to n using the greedy algorithm and using the best such sum.
+(define (A062535 n) (- (A053610 n) (A002828 n)))
+
 (define (A255131 n) (- n (A002828 n)))
+(define (A255131v2 n) (- n (A002828v2 n))) ;; For cross-checking.
 
 (definec (A262689 n) (if (= 1 (A010052 n)) (A000196 n) (let ((t (- (A002828 n) 1))) (let loop ((k (A000196 n))) (if (= t (A002828 (- n (* k k)))) k (loop (- k 1)))))))
 
@@ -6107,6 +6121,125 @@
    )
 )
 
+;; A276437-A276448 are now reserved for your use. 
+
+;; Mirror images of A267111 & A267112:
+
+;; (same-intfuns1? A267111 (COMPOSE A054429 A276441) 16384) --> #t
+;; (same-intfuns1? A276441 (COMPOSE A054429 A267111) 16384) --> #t
+;; (same-intfuns1? A276441 (COMPOSE A233277 A276343) 32767) --> #t
+;; (same-intfuns1? A276441 (COMPOSE A233275 A276345) 32767) --> #t
+;; (same-intfuns1? A276441 (COMPOSE A006068 A276443) 32767) --> #t
+
+;; Try also something like: A209862(A267111(A209861(n))).
+;; and: A209862(A276441(A209861(n))).
+;; Note that: A266341(n) = A209862(-1+A004001(1+A209861(n))).
+
+
+(definec (A276441 n)
+   (cond ((< n 2) n)
+         ((zero? (A093879 (- n 1))) (+ 1 (* 2 (A276441 (+ -1 (A080677 n)))))) ;; I.e., if n is in A087686
+         (else (* 2 (A276441 (+ -1 (A004001 n)))))
+   )
+)
+
+;; (same-intfuns1? A267112 (COMPOSE A276442 A054429) 16384) --> #t
+;; (same-intfuns1? A276442 (COMPOSE A276344 A233278) 32767) --> #t
+;; (same-intfuns1? A276442 (COMPOSE A276346 A233276) 32767) --> #t
+;; (same-intfuns1? A276442 (COMPOSE A276444 A003188) 32767) --> #t
+
+(definec (A276442 n)
+   (cond ((< n 2) n)
+         ((even? n) (A088359 (A276442 (/ n 2))))
+         (else (A087686 (+ 1 (A276442 (/ (- n 1) 2)))))
+   )
+)
+
+;; Entangled with odious and evil numbers instead of odd and even:
+
+
+(definec (A276443 n)
+   (cond ((< n 2) n)
+         ((zero? (A093879 (- n 1))) (A000069 (+ 1 (A276443 (+ -1 (A080677 n)))))) ;; I.e., if n is in A087686
+         (else (A001969 (+ 1 (A276443 (+ -1 (A004001 n))))))
+   )
+)
+
+
+(definec (A276444 n)
+   (cond ((< n 2) n)
+         ((zero? (A010060 n)) (A088359 (A276444 (A245710 n))))
+         (else (A087686 (+ 1 (A276444 (- (A115384 n) 1)))))
+   )
+)
+
+
+;; In another order:
+
+(definec (A276445 n)
+   (cond ((< n 2) n)
+         ((zero? (A093879 (- n 1))) (A001969 (+ 1 (A276445 (+ -1 (A080677 n)))))) ;; I.e., if n is in A087686
+         (else (A000069 (+ 1 (A276445 (+ -1 (A004001 n))))))
+   )
+)
+
+
+(definec (A276446 n)
+   (cond ((< n 2) n)
+         ((zero? (A010060 n)) (A087686 (+ 1 (A276446 (A245710 n)))))
+         (else (A088359 (A276446 (- (A115384 n) 1))))
+   )
+)
+
+;; Entangled with A005187 and A055938 instead of odd and even numbers:
+
+;; (same-intfuns1? A276343 (COMPOSE A233276 A267111) 8192) --> #t
+;; (same-intfuns1? A276343 (COMPOSE A233278 A276441) 32767) --> #t
+
+(definec (A276343 n)
+   (cond ((< n 2) n)
+         ((zero? (A093879 (- n 1))) (A005187 (+ 1 (A276343 (+ -1 (A080677 n)))))) ;; I.e., if n is in A087686
+         (else (A055938 (A276343 (+ -1 (A004001 n)))))
+   )
+)
+
+;; (same-intfuns1? A276344 (COMPOSE A267112 A233275) 8192) --> #t
+;; (same-intfuns1? A276344 (COMPOSE A276442 A233277) 32767) --> #t
+
+(definec (A276344 n)
+   (cond ((< n 2) n)
+         ((not (zero? (A079559 n))) (A087686 (+ 1 (A276344 (- (A213714 n) 1)))))
+         (else (A088359 (A276344 (A234017 n))))
+   )
+)
+
+;; Compose them in the other order:
+
+;; (same-intfuns1? A276345 (COMPOSE A233276 A276441) 8192) --> #t
+;; (same-intfuns1? A276345 (COMPOSE A233278 A267111) 32767) --> #t
+
+(definec (A276345 n)
+   (cond ((< n 2) n)
+         ((zero? (A093879 (- n 1))) (A055938 (A276345 (+ -1 (A080677 n))))) ;; I.e., if n is in A087686
+         (else (A005187 (+ 1 (A276345 (+ -1 (A004001 n))))))
+   )
+)
+
+
+;; (same-intfuns1? A276346 (COMPOSE A276442 A233275) 32767) --> #t
+;; (same-intfuns1? A276346 (COMPOSE A267112 A233277) 32767) --> #t
+
+
+(definec (A276346 n)
+   (cond ((< n 2) n)
+         ((not (zero? (A079559 n))) (A088359 (A276346 (- (A213714 n) 1))))
+         (else (A087686 (+ 1 (A276346 (A234017  n)))))
+   )
+)
+
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
 (define (A266341 n) (+ (- n (A053644 n)) (if (zero? (A063250 n)) 0 (A000079 (- (A063250 n) 1))))) ;; o=0: Cf. p. 240 in Kubo & Vakil paper.
 
 
@@ -6624,21 +6757,24 @@
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-;; XXX - XFER BINOMIAL-TRANSFORM and INVERSE-BINOMIAL-TRANSFORM to transforms.ss:
+;; XXX - XFER INVERSE-BINOMIAL-TRANSFORM and BINOMIAL-TRANSFORM to transforms.ss:
 
 
-(define (BINOMIAL-TRANSFORM Afun)
+(define (INVERSE-BINOMIAL-TRANSFORM Afun)
   (lambda (n) (add (lambda (k) (* (expt -1 (- n k)) (C n k) (Afun k))) 0 n))
 )
 
-(define (INVERSE-BINOMIAL-TRANSFORM Afun)
+(define (BINOMIAL-TRANSFORM Afun)
   (lambda (n) (add (lambda (k) (* (C n k) (Afun k))) 0 n))
 )
 
-;; A121497 [T. D. Noe] inomial transform of the characteristic function of the prime numbers (A010051). 
-(define A121497 (INVERSE-BINOMIAL-TRANSFORM (lambda (n) (A010051 n))))
+;; A121572 [Franklin T. Adams-Watters] o=0: Subprimorials: inverse binomial transform of primorials (A002110). 
+(define A121572 (INVERSE-BINOMIAL-TRANSFORM (lambda (n) (A002110 n))))
 
-(define A010051test (BINOMIAL-TRANSFORM A121497))
+;; A121497 [T. D. Noe] binomial transform of the characteristic function of the prime numbers (A010051). 
+(define A121497 (BINOMIAL-TRANSFORM (lambda (n) (A010051 n))))
+
+(define A010051test (INVERSE-BINOMIAL-TRANSFORM A121497))
 
 
 ;;;;;;;;;;;;;;
@@ -6694,6 +6830,9 @@
 ;; A260188 [Jean-Marc Rebert] o=1: Greatest primorial less than or equal to n. 
 (define (A260188 n) (if (zero? n) n (let loop ((i 0)) (if (> (A002110 i) n) (A002110 (- i 1)) (loop (+ 1 i))))))
 
+(define (A276157 n) (/ (A260188 n) (A053589 n)))
+
+
 ;; A111701 [Amarnath Murthy] o=1: Least integer obtained when n is divided by prime(1), then by prime(2), then by prime(3),..., stopping as soon as one of the primes does not divide it. In particular, a(2n-1) = 2n-1.
 (define (A111701 n) (/ n (A053589 n)))
 
@@ -6745,5 +6884,237 @@
 
 
 
+;; XFER: Misc, Anthony Hernandez:
+
+(define A276305 (MATCHING-POS 1 1 (lambda (n) (and (= 1 (A010051 n)) (= 12 (A000005 (* n (+ n n 1))))))))
+
+
+;; A014682 [Mohammad K. Azarian] o=0: The Collatz or 3x+1 function: a(n) = n/2 if n is even, otherwise (3n+1)/2.
+(define (A014682 n) (if (even? n) (/ n 2) (/ (+ n n n 1) 2)))
+
+
+
+
+;; Random edit:
+
+;; A276418 [Bhushan Bade] o=1: Sums of 25 consecutive primes. 
+
+(definec (A276418 n) (if (= 1 n) (add A000040 1 25) (+ (A276418 (- n 1)) (- (A000040 (- n 1))) (A000040 (+ 24 n)))))
+
+
+
+(define (A030301 n) (A000035 (A000523 n)))
+
+;; A275973 [Stanislav Sykora] o=1: A binary sequence due to Sir Harold Jeffreys. 
+
+;; a(n)={my(p=1, np=n-1); while(np, p++; np=np\2); return(bitand(p, 1)); }
+
+
+(define (A275973 n) (if (<= n 2) (A000035 n) (A030301 (- n 1))))
+
+(define (A275973_with_loop n) (let loop ((p 1) (np (- n 1))) (if (zero? np) (A000035 p) (loop (+ 1 p) (/ (- np (A000035 np)) 2)))))
+
+
+;; XFER: Beanstalks
+;; A276568-A276589 are now reserved for your use. 
+
+;; With minimal number of squares, see: A002828 & A255131:
+
+;; o=0: After zero, each n occurs A260734(n) times.
+(define (A276571 n) (let loop ((k 0)) (if (>= (A260733 (+ 1 k)) n) k (loop (+ 1 k)))))
+
+;; (define (A276572apu n) (- (A260733 (+ 1 (A276571 n))) n))
+
+;; Simple self-inverse permutation of natural numbers: after a(0)=0, list each block of A260734(n) numbers in reverse order, from A260732(n) to A260733(1+n):
+(define (A276572 n) (if (zero? n) n (+ (- (A260733 (+ 1 (A276571 n))) n) (A260732 (A276571 n)))))
+
+;; The infinite trunk of minimal squares beanstalk: The only infinite sequence such that a(n-1) = a(n) - minimal number of squares (A002828) needed to sum to a(n).
+(define (A276573 n) (A276574 (A276572 n)))
+
+;; The infinite trunk of minimal squares beanstalk with reversed subsections.
+(definec (A276574 n) (cond ((zero? n) n) ((= 1 n) 3) (else (let ((maybe_next (A255131 (A276574 (- n 1))))) (if (zero? (A010052 (+ 1 maybe_next))) maybe_next (+ -1 (A000290 (+ 2 (A000196 (+ 1 maybe_next))))))))))
+
+(define (A276575 n) (A002828 (A276573 n)))
+(define (A276575v2 n) (if (zero? n) n (- (A276573 n) (A276573 (- n 1)))))
+
+;; (reverse (map (lambda (n) ((COMPOSE-FUN-TO-NTH-POWER A255131 n) 100)) (iota 38)))
+;; (0 3 6 8 11 15 16 18 21 24 27 30 32 35 38 40 43 45 48 51 53 56 59 63 64 67 70 72 75 78 80 83 85 88 90 93 96 99)
+
+;; (equal? (map A276573 (iota0 1624)) (reverse (map (lambda (n) ((COMPOSE-FUN-TO-NTH-POWER A255131v2 n) 4624)) (iota 1625)))) -->  #t
+
+;;;;;;
+
+;; With greedy summation of squares, see: A053610 & A260740:
+
+;; o=0: After zero, each n occurs A261224(n) times.
+(define (A276581 n) (let loop ((k 0)) (if (>= (A261223 (+ 1 k)) n) k (loop (+ 1 k)))))
+
+;; Simple self-inverse permutation of natural numbers: after a(0)=0, list each block of A261224(n) numbers in reverse order, from A261222(n) to A261223(1+n).
+(define (A276582 n) (if (zero? n) n (+ (- (A261223 (+ 1 (A276581 n))) n) (A261222 (A276581 n)))))
+
+;; o=0: The infinite trunk of greedy squares beanstalk: The only infinite sequence such that a(n-1) = a(n) - number of squares that sum to a(n) with greedy algorithm (A053610).
+(define (A276583 n) (A276584 (A276582 n)))
+
+(definec (A276584 n) (cond ((zero? n) n) ((= 1 n) 3) (else (let ((maybe_next (A260740 (A276584 (- n 1))))) (if (zero? (A010052 (+ 1 maybe_next))) maybe_next (+ -1 (A000290 (+ 2 (A000196 (+ 1 maybe_next))))))))))
+
+(define (A276585 n) (A053610 (A276583 n)))
+(define (A276585v2 n) (if (zero? n) n (- (A276583 n) (A276583 (- n 1)))))
+
+;; (equal? (map A276583 (iota0 1009)) (reverse (map (lambda (n) ((COMPOSE-FUN-TO-NTH-POWER A260740 n) 3969)) (iota 1010)))) --> #t
+
+;; (reverse (map (lambda (n) ((COMPOSE-FUN-TO-NTH-POWER A260740 n) 143)) (iota 40)))
+;; (0 3 6 8 11 15 18 21 24 27 32 35 38 43 48 51 56 59 63 66 71 74 78 80 83 88 91 95 99 102 107 110 114 117 120 123 128 131 135 138)
+
+;; (map A276583 (iota0 39))
+;; (0 3 6 8 11 15 18 21 24 27 32 35 38 43 48 51 56 59 63 66 71 74 78 80 83 88 91 95 99 102 107 110 114 117 120 123 128 131 135 138)
+
+;;;;;;
+
+
+;;;;;;
+;; A276603-A276624 are now reserved for your use. 
+
+(define A048766 (LEFTINV-LEASTMONO-NC2NC 0 0 A000578)) ;; /XFER: core.cubes
+(define (A010057 n) (if (= n (A000578 (A048766 n))) 1 0)) ;; /XFER: core.cubes
+
+
+;; With greedy summation of cubes, see: A055401 & A261225:
+
+;; o=0: After zero, each n occurs A261229(n) times.
+(define (A276611 n) (let loop ((k 0)) (if (>= (A261228 (+ 1 k)) n) k (loop (+ 1 k)))))
+
+;; Simple self-inverse permutation of natural numbers: after a(0)=0, list each block of A261229(n) numbers in reverse order, from A261227(n) to A261228(1+n).
+
+(define (A276612 n) (if (zero? n) n (+ (- (A261228 (+ 1 (A276611 n))) n) (A261227 (A276611 n)))))
+
+(define (A276613 n) (A276614 (A276612 n)))
+
+(definec (A276614 n) (cond ((zero? n) n) ((= n 1) 7) (else (let ((maybe_next (A261225 (A276614 (- n 1))))) (if (zero? (A010057 (+ 1 maybe_next))) maybe_next (+ -1 (A000578 (+ 2 (A048766 (+ 1 maybe_next))))))))))
+
+(define (A276615 n) (A055401 (A276613 n)))
+(define (A276615v2 n) (if (zero? n) n (- (A276613 n) (A276613 (- n 1)))))
+
+;; (equal? (map A276613 (iota0 1038)) (reverse (map (lambda (n) ((COMPOSE-FUN-TO-NTH-POWER A261225 n) 8000)) (iota 1039)))) --> #t
+
+
+;; (reverse (map (lambda (n) ((COMPOSE-FUN-TO-NTH-POWER A261225 n) 216)) (iota 34)))
+;; (0 7 14 21 26 33 40 47 52 59 63 70 77 84 89 96 103 110 115 124 131 138 145 150 157 164 171 176 183 187 194 201 208 215)
+
+;; (map A276613 (iota0 33))
+;; (0 7 14 21 26 33 40 47 52 59 63 70 77 84 89 96 103 110 115 124 131 138 145 150 157 164 171 176 183 187 194 201 208 215)
+
+
+;;;;;;
+;; o=0: After zero, each n occurs A261234(n-1) times.
+(define (A276621 n) (let loop ((k 0)) (if (>= (A261233 k) n) k (loop (+ 1 k)))))
+
+;; (map A276621 (iota0 50))
+;; (0 1 2 2 3 3 3 3 3 4 4 4 4 4 4 4 4 4 4 4 4 5 5 5 5 5 5 5 5 5 5 5 5 5 5 5 5 5 5 5 5 5 5 5 5 5 5 5 5 5 6)
+
+;; Simple self-inverse permutation of natural numbers: after a(0)=0, list each block of A261234(n) numbers in reverse order, from A261232(n) to A261233(1+n).
+
+(define (A276622 n) (if (zero? n) n (+ (A261232 (+ -1 (A276621 n))) (- (A261232 (A276621 n)) n 1))))
+
+;; Formula: a(0) = 0; for n >= 1, a(n) = A261232(A276621(n)-1) + A261232(A276621(n)) - n - 1.
+
+
+;; (map A276622 (iota0 49))
+;; (0 1 3 2 8 7 6 5 4 20 19 18 17 16 15 14 13 12 11 10 9 49 48 47 46 45 44 43 42 41 40 39 38 37 36 35 34 33 32 31 30 29 28 27 26 25 24 23 22 21)
+
+;; The infinite trunk of ternary beanstalk: The only infinite sequence such that a(n-1) = a(n) - base-3 digit sum of a(n).
+(define (A276623 n) (A276624 (A276622 n)))
+
+(definec (A276624 n) (cond ((zero? n) n) ((= n 1) 2) (else (let ((maybe_next (* 2 (A054861 (A276624 (- n 1)))))) (if (not (= 1 (A053735 (+ 1 maybe_next)))) maybe_next (+ -1 (A000244 (+ 1 (A081604 (+ 1 maybe_next))))))))))
+
+(define (A276603 n) (/ (A276623 n) 2))
+
+(define (A276604 n) (A053735 (A276623 n)))
+(define (A276604v2 n) (if (zero? n) n (- (A276623 n) (A276623 (- n 1)))))
+
+
+(define (A276605 n) (/ (A276604 n) 2))
+(define (A276605v2 n) (if (zero? n) n (- (A276603 n) (A276603 (- n 1)))))
+
+;; [0] [1] [3,2] [8,7,6,5,4]        [20,9]
+;;  0   2  8,4   26,20,16,12,10
+
+;; (reverse (map (lambda (n) ((COMPOSE-FUN-TO-NTH-POWER (lambda (n) (- n (A053735 n))) n) 243)) (iota 50)))
+;; (0 2 4 8 10 12 16 20 26 28 30 34 38 42 46 52 56 62 68 72 80 82 84 88 92 96 100 106 110 116 122 126 134 140 144 152 160 164 170 176 180 188 194 198 204 212 216 224 232 242)
+
+;; (equal? (map A276623 (iota0 49)) (reverse (map (lambda (n) ((COMPOSE-FUN-TO-NTH-POWER (lambda (n) (- n (A053735 n))) n) 243)) (iota 50)))) --> #t
+
+;; (equal? (map A276623 (iota0 6250)) (reverse (map (lambda (n) ((COMPOSE-FUN-TO-NTH-POWER (lambda (n) (- n (A053735 n))) n) 59049)) (iota 6251)))) --> #t
+
+
+(define (A123098 n) (A019565 (A001317 n)))
+
+;; A066117 o=1: [Henry Bottomley] Triangle read by rows: T(n,k)=T(n-1,k-1)*T(n,k-1) and T(n,1)=p(n).
+
+(define (A066117 n) (A066117bi (A002260 n) (A004736 n)))
+
+;; As a square array:
+(define (A066117bi row col)
+   (if (= 1 row)
+       (A000040 col)
+       (* (A066117bi (- row 1) col) (A066117bi (- row 1) (+ col 1)))
+   )
+)
+
+(define (A066117v2 n) (A066117biv2 (A002260 n) (A004736 n)))
+
+;; As a square array, alternative definition:
+(define (A066117biv2 row col)
+   (if (= 1 col)
+       (A007188 (- row 1))
+       (A003961 (A066117biv2 row (- col 1)))
+   )
+)
+
+(define (A276586 n) (A276586bi (A002262 n) (A025581 n)))
+(define (A276586bi row col) (A276085 (A066117bi (+ 1 row) (+ 1 col))))
+
+(define (A276586as_sum n) (A276586bi_as_sum (A002262 n) (A025581 n)))
+(define (A276586bi_as_sum row col) (add (lambda (i) (* (A007318tr row i) (A002110 (+ i col)))) 0 row))
+
+
+(define (A276587 n) (A276586bi (A025581 n) (A002262 n)))
+
+;;;
+
+(define (A276588 n) (A276588bi (A002262 n) (A025581 n)))
+(define (A276588bi row col) (A276075 (A066117bi (+ 1 row) (+ 1 col))))
+
+(define (A276588as_sum n) (A276588bi_as_sum (A002262 n) (A025581 n)))
+(define (A276588bi_as_sum row col) (add (lambda (i) (* (A007318tr row i) (A000142 (+ 1 i col)))) 0 row))
+
+(define (A276589 n) (A276588bi (A025581 n) (A002262 n)))
+
+;;;
+
+(define (A136104 n) (A276085 (A007188 n)))
+
+(define A136104v2 (BINOMIAL-TRANSFORM A002110))
+
+(define (A136104as_sum n) (add (lambda (i) (* (A007318tr n i) (A002110 i))) 0 n))
+
+
+(define (A255483 n) (A255483bi (A002262 n) (+ 1 (A025581 n))))
+(define (A255483bi row col)
+   (if (zero? row)
+       (A000040 col)
+       (let ((a (A255483bi (- row 1) col)) (b (A255483bi (- row 1) (+ col 1))))
+         (/ (lcm a b) (gcd a b))
+       )
+   )
+)
+
+
+(define (A255483v2 n) (A255483biv2 (A002262 n) (+ 1 (A025581 n))))
+(define (A255483biv2 row col) (if (= 1 col) (A123098 row) (A003961 (A255483biv2 row (- col 1)))))
+
+(define (A276578 n) (A255483bi (A025581 n) (+ 1 (A002262 n)))) ;; o=0, tabl, transpose of A255483.
+
+;; (define A276579 (MATCHING-POS 1 1 (lambda (n) (and (> n 1) (= 1 (A008966 n)) (= 1 (A209229 (A268669 (A048675 n))))))))
+(define A276579 (MATCHING-POS 1 1 (lambda (n) (and (> n 1) (not (zero? (A008683 n))) (= 1 (A000120 (A268669 (A048675 n))))))))
 
 

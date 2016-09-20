@@ -17,7 +17,7 @@
 ;;  (some sequences to be renumbered). Also, the current hasty            ;;
 ;;  implementation of A258012 fails with larger values of n.              ;;
 ;;                                                                        ;;
-;;  Last edited August 24 2016.                                           ;;
+;;  Last edited September 20 2016.                                        ;;
 ;;                                                                        ;;
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
@@ -1375,6 +1375,12 @@
 
 ;; XFER: Base-factorial/base-factorial-core.ss, or such:
 
+(definec (A257511v3 n) (if (zero? n) n (+ (A265333 n) (A257511v3 (A257687 n)))))
+
+(define (A257511v4 n) (A260736 (A225901 n)))
+
+(define (A257511v5 n) (A056169 (A276076 n)))
+
 ;; A273673(n,c): "Zero the exponent of prime(1+A084558(c)) and add it to the exponent of prime(1+A084558(c)-A099563(c)) in the prime factorization of n".
 
 
@@ -1616,6 +1622,9 @@
 (define A276005 (ZERO-POS 0 0 A276004))
 (define A276005v2 (ZERO-POS 0 0 A276007))
 
+;; Note! (uniq (map (COMPOSE A275947 A060125 A276005) (iota0 4140))) --> (0)
+;; Also: A275804(A000110(n)) = n! = A000142(n). [To be proved.]
+
 (define A276006 (NONZERO-POS 1 0 A276004))
 (define A276006v2 (NONZERO-POS 1 0 A276007))
 
@@ -1810,6 +1819,8 @@
 
 ;; XFER: Factorial/factorial-base-core.ss
 
+(definec (A060130v3 n) (if (zero? n) n (+ (A257511 n) (A060130v3 (A257684 n)))))
+
 
 ;; A059590 [Bottomley] o=0: Sum of distinct factorials (0! and 1! not treated as distinct). 
 
@@ -1850,6 +1861,13 @@
   )
 )
 
+
+(definec (A276091v4 n) ;; Another recursive version.
+  (cond ((zero? n) n)
+        ((even? n) (A276340 (A276091v4 (/ n 2))))
+        (else (+ 1 (A276340 (A276091v4 (/ (- n 1) 2)))))
+  )
+)
 
 (definec (A275959 n) ;; Recursive version.
   (cond ((zero? n) n)
@@ -2043,15 +2061,15 @@
 
 (definec (A275965 n) (A275960bi n 1))
 
-;; XXX: Uncomment when BINOMIAL-TRANSFORM and INVERSE-BINOMIAL-TRANSFORM have been transferred to transforms.ss 
-;; (define A275955off0 (BINOMIAL-TRANSFORM (COMPOSE A265905 1+)))
+;; XXX: Uncomment when INVERSE-BINOMIAL-TRANSFORM and BINOMIAL-TRANSFORM have been transferred to transforms.ss 
+;; (define A275955off0 (INVERSE-BINOMIAL-TRANSFORM (COMPOSE A265905 1+)))
 
-;; (define A265905off0 (INVERSE-BINOMIAL-TRANSFORM A275955off0))
+;; (define A265905off0 (BINOMIAL-TRANSFORM A275955off0))
 
 
-;; (define A275965off0 (BINOMIAL-TRANSFORM (COMPOSE A265907 1+)))
+;; (define A275965off0 (INVERSE-BINOMIAL-TRANSFORM (COMPOSE A265907 1+)))
 
-;; (define A265907off0 (INVERSE-BINOMIAL-TRANSFORM A275965off0))
+;; (define A265907off0 (BINOMIAL-TRANSFORM A275965off0))
 
 ;; (map A275955off0 (iota0 16))
 ;; (1 2 6 24 150 918 6876 63018 589518 6272712 76110150 950826294 13044895668 197045295354 3070861314894 51493780503216 931608094164870)
@@ -2090,6 +2108,7 @@
 (define (A275954 n) (A225901 (A273670 (A225901 n))))
 
 
+(define (A276146 n) (A034968 (A225901 n)))
 
 (define A153880v2 (ZERO-POS 0 0 A260736))
 
@@ -2276,6 +2295,13 @@
 
 ;; (same-intfuns0? A273668 (COMPOSE A273666 A255565) 1200) --> #t
 
+(define (A276149 n) (if (zero? n) n (* (A048764 n) (+ 1 (- (A084558 n) (A099563 n))))))
+
+(define (A225901v1 n) (if (zero? n) n (+ (A276091 (A275736 n)) (A153880 (A225901v1 (A257684 n)))))) ;; Elegant!
+
+(define (A225901rec n) (if (zero? n) n (+ (A276149 n) (A225901rec (A257687 n))))) ;; Boring!
+
+
 ;; Why? Yes, of course:
 (define (A225901v2 n) (A257684 (A225901 (A153880 n))))
 (define (A225901v3 n) (A266193 (A225901 (A255411 n))))
@@ -2322,10 +2348,22 @@
 
 (define (A276087 n) (A276086 (A276086 n)))
 
+;; A049345 [R. K. Guy] o=0: n written in primorial base. 
+
+(define (A049345 n) ;; Use mod instead of modulo in R6RS
+ (if (>= n 2100)
+     (error "A049345: ambiguous primorial representation when n is larger than 2099:" n)
+     (let loop ((n n) (s 0) (t 1) (i 1))
+        (if (zero? n) s (let* ((p (A000040 i)) (d (modulo n p))) (loop (/ (- n d) p) (+ (* t d) s) (* 10 t) (+ 1 i))))
+     )
+ )
+)
 
 ;; A267263 [Cade Brown] o=0: Number of nonzero digits in representation of n in primorial base.
 (define (A267263 n) (A001221 (A276086 n)))
 
+;; A060735 [Robert G. Wilson v] o=1: Where n / (phi(n) + 1) increases.
+(define A060735 (ZERO-POS 1 1 (lambda (n) (+ -1 (A267263 n)))))
 
 
 (define (A276080 n) (A276075 (A206296 n)))
@@ -2368,3 +2406,199 @@
 
 (define (A270200 n) (if (zero? n) n (A054429 (A005187 (+ 1 (A054429 (- n 1)))))))
 (define A270200from1 (COMPLEMENT 1 A270198))
+
+;; XFER: Base-factorial-derived-base-A001563.ss or such:
+
+(define (A276326 n)
+   (let loop ((n n) (s 0))
+      (if (zero? n)
+          s
+          (let ((dig (A276333 n)))
+             (if (> dig 9)
+                 (error "A276326: ambiguous representation of n, digit > 9 would be needed: " n dig)
+                 (loop (A276335 n) (+ s (* dig (expt 10 (- (A258198 n) 1)))))
+             )
+          )
+      )
+   )
+)
+
+(define (A276326no_error_checking n)
+   (let loop ((n n) (s 0))
+      (if (zero? n)
+          s
+          (loop (A276335 n) (+ s (* (A276333 n) (expt 10 (- (A258198 n) 1)))))
+      )
+   )
+)
+
+
+(define (A276327 n) (let loop ((n n)) (let ((next_n (A276335 n))) (if (zero? next_n) (A276333 n) (loop next_n)))))
+
+(definec (A276327rec n) (if (zero? n) n (if (zero? (A276335 n)) (A276333 n) (A276327rec (A276335 n)))))
+
+(definec (A276328 n) (if (zero? n) n (+ 1 (A276328 (- n (A258199 n))))))
+
+(definec (A276328v2 n) (if (zero? n) n (+ (A276333 n) (A276328v2 (A276335 n)))))
+
+(definec (A276328_by_minimization n) ;; XXX - Should be proved that is really A276328 !
+   (if (zero? n)
+       n
+       (let loop ((i (A258198 n)) (m #f))
+          (cond ((zero? i) m)
+                ((not m) (loop (- i 1) (+ 1 (A276328_by_minimization (- n (A001563 i))))))
+                (else (loop (- i 1) (min m (+ 1 (A276328_by_minimization (- n (A001563 i)))))))
+          )
+       )
+   )
+)
+
+
+(define (A276329 n) (let loop ((i (A258198 n))) (cond ((zero? i) 1) ((zero? (modulo n (A001563 i))) i) (else (loop (- i 1))))))
+
+
+(define (A276330 n) (if (zero? n) n (A001563 (A276329 n))))
+
+(define (A276331 n) (- n (A276330 n)))
+
+(definec (A276332 n) (if (zero? n) n (+ 1 (A276332 (A276331 n)))))
+
+(define (A276333 n) (if (zero? n) n (floor->exact (/ n (A258199 n)))))
+
+(define (A276334 n) (* (A258199 n) (A276333 n)))
+
+(define (A276335 n) (- n (A276334 n)))
+
+(define (A276336 n) (let loop ((n n) (m 0)) (if (zero? n) m (loop (A276335 n) (max m (A276333 n))))))
+
+(definec (A276336rec n) (if (zero? n) n (max (A276333 n) (A276336rec (A276335 n)))))
+
+(definec (A276337 n) (if (zero? n) n (+ 1 (A276337 (A276335 n)))))
+
+
+(define (A276338 n) (* (A001563 (+ 1 (A258198 n))) (A276333 n)))
+
+(define (A276339 n) (- (A255411 n) (A276340 n)))
+
+(definec (A276340 n) (if (zero? n) n (+ (A276338 n) (A276340 (A276335 n)))))
+
+(define A276341 (COMPLEMENT 1 A276340))
+
+
+
+;; A274647 [Max Barrentine] o=0: A variation on Recamán's sequence
+
+(defineperm1 (A274647 n)
+   (if (<= n 1)
+       n
+       (let ((prev (A274647 (- n 1))))
+         (let loop ((k n))
+               (cond ((and (> (- prev k) 1)
+                           (not-lte? (A276342 (- prev k)) n) ;; Found prev-k such that prev-k is free
+                      )
+                         (- prev k) ;;  thus that value was unused.
+                     )
+                     ((not-lte? (A276342 (+ prev k)) n) ;; Or found prev+k such that prev+k is free
+                         (+ prev k)
+                     )
+                     (else (loop (+ k n)))
+               )
+         )
+       )
+   )
+)
+
+(define (A276342 n) (A274647 (- n)))
+
+;; A274647 should have been computed before this one!
+(define (A276438 n) (/ (- (A274647 n) (A274647 (- n 1))) n))
+
+(definec (A276439 n) (if (zero? n) n (+ (A276438 n) (A276439 (- n 1)))))
+
+;; XFER: sieves-lucky.ss
+
+;; A265859 [Max Barrentine] o=1: Unluckiness of n
+(define (A265859 n) (* (- 1 (A145649 n)) (A260438 n)))
+
+;; A264940 [Max Barrentine] o=1: Lucky factor of n. 
+(define (A264940 n) (if (= 1 (A145649 n)) 0 (if (even? n) 2 (A000959 (A265859 n)))))
+
+(define (A264940v2 n) (if (= 1 (A145649 n)) 0 (if (even? n) 2 (A000959 (A260438 n)))))
+
+(define A047229off1 (COMPLEMENT 1 A007310)) ;; This with o=1, should have a(0) = 0.
+
+
+;; XFER: sieves-ludic.ss 
+
+;; A272565 [Max Barrentine] o=1: Ludic factor of n. 
+(define (A272565 n) (A003309 (+ 1 (A260738 n))))
+
+;; A271419 [Max Barrentine] o=1: If n is a ludic number, a(n)=0; if n is not a ludic number, a(n) is the ludic number that rejects n from the ludic number sieve.
+(define (A271419 n) (* (- 1 (A192490 n)) (A272565 n)))
+
+;; A271420 [Max Barrentine] o=1: Nonludicity of n.
+(define (A271419 n) (* (- 1 (A192490 n)) (A260738 n)))
+
+
+
+(define A276347 (ZERO-POS 1 1 (lambda (n) (- (A272565 n) (A020639 n)))))
+
+(define A276437 (NONZERO-POS 1 1 (lambda (n) (- (A272565 n) (A020639 n)))))
+
+(define A276447 (MATCHING-POS 1 1 (lambda (n) (< (A272565 n) (A020639 n)))))
+
+(define A276448 (MATCHING-POS 1 1 (lambda (n) (> (A272565 n) (A020639 n)))))
+
+;; (define (Asomething n) (let loop ((k (A260738 n))) (if (zero? (modulo n (A003309 (+ 1 k)))) (A003309 (+ 1 k)) (loop (- k 1)))))
+
+(define (A276440 n) (let loop ((k 1) (mt 1)) (let ((t (A003309 k))) (cond ((> t n) mt) ((zero? (modulo n t)) (loop (+ 1 k) t)) (else (loop (+ 1 k) mt))))))
+
+(define A276568 (ZERO-POS 1 1 (lambda (n) (modulo n (A272565 n)))))
+
+(define A276569 (NONZERO-POS 1 1 (lambda (n) (modulo n (A272565 n)))))
+
+(define (A276570 n) (modulo n (A272565 n)))
+
+;; (map (lambda (row) (cons (A003309 (+ 1 row)) (map (lambda (col) (A276570 (A255127bi row col))) (iota 55)))) (iota 15))
+
+(define (A276580 n) (A276580bi (A002260 (- n 1)) (A004736 (- n 1)))) ;; o=2: 
+(define (A276580bi row col) (A276570 (A255127bi row col)))
+
+(define (A276576 n) (A276570 (A254100 n))) ;; o=1: Column 2 of A276580: a(n) = A276570(A254100(n)); Postludic numbers reduced by Ludic-numbers.
+
+(define (A276576v2 n) (modulo (A254100 n) (A003309 (+ 1 n))))
+
+(define (A276577 n) (modulo (A255415 n) 11))
+
+;;;
+
+(define (A276610 n) (A276610bi (A002260 n) (A004736 n)))
+
+(define (A276610bi row col) (- (A255127bi (+ 1 row) col) (A255127bi row col)))
+
+(define (A276610v2 n) (A276610biv2 (A002260 n) (A004736 n)))
+(define (A276610biv2 row col) (- (A269379 (A255127bi row col)) (A255127bi row col)))
+
+(define (A276609 n) (A276610bi (A004736 n) (A002260 n)))
+
+(define (A276606 n) (- (A254100 (+ 1 n)) (A254100 n)))
+
+(define (A276607 n) (- (A276606 n) (A260723 (+ 1 n))))
+
+(define (A276608 n) (/ (A276607 n) 2))
+
+
+(define (A276620 n) (A276620bi (A002260 n) (A004736 n)))
+(define (A276620bi row col) (- (A276610bi row (+ 1 col)) (A276610bi row col)))
+
+(define (A276619 n) (A276620bi (A004736 n) (A002260 n)))
+
+;; (definec (A_maybe_later_6 n) (if (or (= 1 n) (not (zero? (A276570 n)))) 0 (+ 1 (A_maybe_later_6 (/ n (A272565 n))))))
+
+;; (definec (A_maybe_later_7 n) (if (or (= 1 n) (not (zero? (A276570 n)))) n (A_maybe_later_7 (/ n (A272565 n)))))
+
+;; (define A_maybe_later_8 (ZERO-POS 1 1 (COMPOSE -1+ A_maybe_later_7)))
+
+;; (define A_maybe_later_9 (NONZERO-POS 1 1 (COMPOSE -1+ A_maybe_later_7)))
+
+

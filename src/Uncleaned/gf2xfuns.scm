@@ -31,7 +31,7 @@
 ;;  them to this program. Alternatively, you can send the improved        ;;
 ;;  program directly to Neil Sloane.                                      ;;
 ;;                                                                        ;;
-;;  Last edited  Aug 13 2016 by Antti Karttunen.                          ;;
+;;  Last edited  Sep 18 2016 by Antti Karttunen.                          ;;
 ;;  Trying to abolish sqrt, also A1163xx -> A1143xx, A1164xx -> A1144xx   ;;
 ;;                                                                        ;;
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -324,7 +324,8 @@
   )
 )
 
-(define (A000523 n) (cond ((zero? n) -1) (else (floor->exact (/ (log n) (log 2))))))
+;; DAMN: (define (A000523 n) (cond ((zero? n) -1) (else (floor->exact (/ (log n) (log 2))))))
+(define (A000523 n) (- (binwidth n) 1))
 
 (define (binwidth n) ;; = A029837(n+1)
   (let loop ((n n) (i 0))
