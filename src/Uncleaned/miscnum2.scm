@@ -1,5 +1,5 @@
 
-;; Last edited 2016-09-20 by Antti Karttunen, added yet more unsorted functions to this old MIT/GNU-Scheme module.
+;; Last edited 2016-09-26 by Antti Karttunen, added yet more unsorted functions to this old MIT/GNU-Scheme module.
 
 (declare (usual-integrations))
 
@@ -104,21 +104,6 @@
 (define (A008837 n) (/ (A036689 n) 2)) ;; p(p-1)/2 for p prime. 
 
 (define A001359 (MATCHING-POS 1 1 (lambda (n) (and (= 1 (A010051 n)) (= 1 (A010051 (+ 2 n))))))) ;; Lesser of twin primes.
- 
-(definec (A002110 n) (if (zero? n) 1 (* (A000040 n) (A002110 (- n 1)))))
-
-
-(define (A057588 n) (- (A002110 n) 1)) ;; o=1: [Mario Velucchi] Kummer numbers: -1 + product of first n consecutive primes.
-
-;; A143293 [Gary W. Adamson] o=0: Partial sums of A002110, the primorial numbers. 
-(definec (A143293 n) (if (zero? n) (A002110 n) (+ (A002110 n) (A143293 (- n 1)))))
-
-
-(definec (A005867 n) (if (zero? n) 1 (* (- (A000040 n) 1) (A005867 (- n 1)))))
-
-(define (A006094 n) (* (A000040 n) (A000040 (+ 1 n)))) ;; Products of 2 successive primes.
-
-(define (A001248 n) (A000290 (A000040 n)))
 
 (define A001358 (MATCHING-POS 1 1 (lambda (n) (= 2 (A001222 n))))) ;; Semiprimes (or biprimes): products of two primes. 
 
@@ -7116,5 +7101,9 @@
 
 ;; (define A276579 (MATCHING-POS 1 1 (lambda (n) (and (> n 1) (= 1 (A008966 n)) (= 1 (A209229 (A268669 (A048675 n))))))))
 (define A276579 (MATCHING-POS 1 1 (lambda (n) (and (> n 1) (not (zero? (A008683 n))) (= 1 (A000120 (A268669 (A048675 n))))))))
+
+
+(define (A051063 n) (* 9 (A001651 n))) ;; o=1: [NJAS, Gary W. Adamson] 27*n+9 or 27*n+18.
+
 
 
