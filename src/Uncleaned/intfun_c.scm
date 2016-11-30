@@ -17,7 +17,7 @@
 ;;  (some sequences to be renumbered). Also, the current hasty            ;;
 ;;  implementation of A258012 fails with larger values of n.              ;;
 ;;                                                                        ;;
-;;  Last edited September 26 2016.                                        ;;
+;;  Last edited November 24 2016.                                         ;;
 ;;                                                                        ;;
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
@@ -2476,6 +2476,20 @@
 
 (define (A276087 n) (A276086 (A276086 n)))
 
+;; A054842 [Bottomley] o=0: If n = a + 10 * b + 100 * c + 1000 * d + ... then a(n) = (2^a) * (3^b) * (5^c) * (7^d) * ... 
+(define (A054842 n)
+  (let ((b 10))
+   (let loop ((n n) (t 1) (i 1))
+      (if (zero? n) 
+         t
+         (let ((d (modulo n b)))
+            (loop (/ (- n d) b) (* t (expt (A000040 i) d)) (+ 1 i))
+         )
+      )
+   )
+  )
+)
+
 
 ;; A049345 [R. K. Guy] o=0: n written in primorial base. 
 
@@ -2913,3 +2927,275 @@
 
 (define (A276914 n) (+ (A000290 n) (* 2 (A000217 (A052928 n)))))
 
+
+;; A087808 [Ralf Stephan] o=0:	a(0) = 0; a(2n) = 2a(n), a(2n+1) = a(n) + 1
+
+(definec (A087808 n) (cond ((zero? n) n) ((even? n) (* 2 (A087808 (/ n 2)))) (else (+ 1 (A087808 (/ (- n 1) 2))))))
+
+;; (same-intfuns0? A001477 (COMPOSE A087808 A277020) 63) --> #t
+
+;; (same-intfuns0? A087808 (COMPOSE A048675 A005940 1+) 16387) --> #t
+
+;; (same-intfuns0? A048679 (COMPOSE A087808 A003714) 10946) --> #t
+
+;; A085357 [Paul D. Hanna] o=0: Common residues of binomial(3n,n)/(2n+1) modulo 2: relates ternary trees (A001764) to the infinite Fibonacci word (A003849). (Characteristic function of A003714, Fibbinary numbers).
+
+(define (A085357 n) (if (zero? (A004198bi n (+ n n))) 1 0))
+
+(define (A063524 n) (if (= 1 n) n 0)) ;; o=0: Characteristic function of 1.
+
+(define (A085357v2 n) (A008966 (A005940 (+ 1 n))))
+
+(define (A085357v3 n) (fold-left (lambda (a r) (* a (A063524 r))) 1 (bisect (reverse (binexp->runcount1list n)) (- 1 (modulo n 2)))))
+
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+;;;;
+;; XXX: The next one: XFER Base2/base2-recurrences.ss ?
+
+(definec (A002487 n) (cond ((<= n 1) n) ((even? n) (A002487 (/ n 2))) (else (+ (A002487 (/ (- n 1) 2)) (A002487 (/ (+ n 1) 2))))))
+
+;; XXX: The next ones XFER Base2/base2-xor-recurrences.ss ?
+
+(define (A099884 n) (A099884bi (A002262 n) (A025581 n)))
+(define (A099884bi row col) (if (zero? row) (A000079 col) (A048724 (A099884bi (- row 1) col))))
+
+(define (A276618 n) (A099884bi (A025581 n) (A002262 n)))
+
+(define (A099884v2 n) (A099884biv2 (A002262 n) (A025581 n)))
+(define (A099884biv2 row col) (if (zero? col) (A001317 row) (* 2 (A099884biv2 row (- col 1)))))
+
+
+(definec (A264977 n) (cond ((<= n 1) n) ((even? n) (* 2 (A264977 (/ n 2)))) (else (A003987bi (A264977 (/ (- n 1) 2)) (A264977 (/ (+ n 1) 2)))))) ;; o=0:
+
+
+(define (A265397 n) (- n (A264977 n))) ;; o=0: [Each seem to be a multiple of four].
+
+(define A277701 (MATCHING-POS 1 1 (lambda (n) (= 1 (A264977 n)))))
+
+(define A277701v2 (MATCHING-POS 1 1 (lambda (n) (= 2 (A277330 n)))))
+
+(define A277712 (MATCHING-POS 1 1 (lambda (n) (= 2 (A264977 n)))))
+(define A277712v2 (MATCHING-POS 1 1 (lambda (n) (= 3 (A277330 n)))))
+
+(define A277713 (MATCHING-POS 1 1 (lambda (n) (= 3 (A264977 n)))))
+(define A277713v2 (MATCHING-POS 1 1 (lambda (n) (= 6 (A277330 n)))))
+
+(define (A277714 n) (/ (A277713 n) 3))
+
+(define A277715 (MATCHING-POS 1 1 (lambda (n) (= 5 (A264977 n)))))
+
+(definec (A277711 n) (let loop ((k 0)) (if (= (A264977 k) n) k (loop (+ 1 k))))) ;; Very crude.
+
+(define (A277709 n) (A277710bi (A004736 n) (A002260 n)))
+
+(define (A277710 n) (A277710bi (A002260 n) (A004736 n)))
+(define (A277710bi row col) ((rowfun-for-A277710 row) col))
+(definec (rowfun-for-A277710 n) (MATCHING-POS 1 0 (lambda (k) (= n (A264977 k)))))
+
+(define (A277710v2 n) (A277710biv2 (A002260 n) (A004736 n)))
+(define (A277710biv2 row col) (if (= 1 col) (A277711 row) (A277816 (A277710biv2 row (- col 1)))))
+
+;;
+(definec (A277824 n) (if (zero? n) n (+ 1 (A277824 (A277815 n)))))
+
+
+;; "Ancestor": The least k for which A264977(k) = A264977(n).
+(definec (A277826 n) (let ((v (A264977 n))) (let loop ((k 0)) (if (= v (A264977 k)) k (loop (+ 1 k))))))
+
+(definec (A277826_slower n) (if (zero? n) n (let ((v (A264977 n))) (let loop ((k (- n 1)) (m n)) (cond ((zero? k) m) ((= v (A264977 k)) (loop (- k 1) k)) (else (loop (- k 1) m)))))))
+
+
+(define (A277884 n) (A277814 (A277826 n)))
+
+;; "Predecessor": The largest k < n for which A264977(k) = A264977(n), or 0 if no such k exists.
+(definec (A277815 n) (if (zero? n) n (let ((v (A264977 n))) (let loop ((k (- n 1))) (cond ((zero? k) 0) ((= v (A264977 k)) k) (else (loop (- k 1))))))))
+
+;; "Successor": The smallest k > n for which A264977(k) = A264977(n) (or bottom if no such k exists... ;-)
+(define (A277816 n) (if (zero? n) n (let ((v (A264977 n))) (let loop ((k (+ 1 n))) (if (= v (A264977 k)) k (loop (+ 1 k)))))))
+
+(define A277817 (ZERO-POS 0 0 A277815)) ;; Terms of A277711 sorted into ascending order, i.e. numbers n not in range of A277816.
+
+;; 
+(define (A000007 n) (if (zero? n) 1 0)) ;;  o=0: NJAS The characteristic function of 0: a(n) = 0^n.
+
+(definec (A277814 n) (if (zero? n) n (+ (A277814 (- n 1)) (A000007 (A277815 n)))))
+
+;; (same-intfuns1? A000027 (COMPOSE A277814 A277817) 120) --> #t
+
+(definec (A277695 n)
+  (cond ((= 1 n) n)
+        ((zero? (A277815 n)) (* 2 (A277695 (+ -1 (A277814 n)))))
+        (else (+ 1 (* 2 (A277695 (A277815 n)))))
+  )
+)
+
+(definec (A277696 n)
+  (cond ((= 1 n) n)
+        ((even? n) (A277817 (+ 1 (A277696 (/ n 2)))))
+        (else (A277816 (A277696 (/ (- n 1) 2))))
+  )
+)
+
+;; (same-intfuns1? A000027 (COMPOSE A277696 A277695) 120) --> #t
+;; (same-intfuns1? A000027 (COMPOSE A277695 A277696) 120) --> #t
+
+(definec (Anot_this n)
+  (cond ((= 1 n) n)
+        ((zero? (A277815 n)) (* 2 (Anot_this (+ -1 (A277814 n)))))
+        (else (+ 1 (* 2 (Anot_this (- n (A277814 n))))))
+  )
+)
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;;
+;; XFER: sieve-flavius-josephus.ss
+;;
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+;; From David Wilson, Tue, 22 Nov 2016 on SeqFan-list:
+;;
+;; Let a(0) be the sequence of nonnegative integers, indexed starting at 0.
+;; For k > 1 let a(k) be the sequence gotten by sieving out every nth element of a(k-1).
+;; We then have:
+;; 
+;; a(0) = (0,   1,   2,   3,   4,   5,   6,   7,   8,   9, ...)
+;; a(1) = (0,   2,   4,   6,   8,  10,  12,  14,  16,  18, ...)
+;; a(2) = (0,   2,   6,   8,  12,  14,  18,  20,  24,  26, ...)
+;; a(3) = (0,   2,   6,  12,  14,  18,  24,  26,  30,  36, ...)
+;; a(4) = (0,   2,   6,  12,  18,  24,  26,  30,  38,  42, ...)
+;; a(5) = (0,   2,   6,  12,  18,  26,  30,  38,  42,  48, ...)
+;; a(6) = (0,   2,   6,  12,  18,  26,  38,  42,  48,  60, ...)
+;; a(7) = (0,   2,   6,  12,  18,  26,  38,  48,  60,  62, ...)
+;; a(8) = (0,   2,   6,  12,  18,  26,  38,  48,  62,  66, ...)
+;; a(9) = (0,   2,   6,  12,  18,  26,  38,  48,  62,  78, ...)
+;; ...
+;; 
+;; which is described by the following recursive definition:
+;; 
+;; a(0, n) = n for n >= 0.
+;; a(k, n) = a(k - 1, [n *(k + 1)/k]) for k > 0 and n >= 0.
+;; 
+
+
+(define (A278482bi row col) (if (zero? row) col (A278482bi (- row 1) (floor->exact (* col (/ 1 row) (+ 1 row))))))
+
+(define (A278482 n) (A278482bi (A002262 n) (A025581 n)))
+(define (A278483 n) (A278482bi (A025581 n) (A002262 n)))
+
+(define (A278484 n) (A278482bi n n))
+
+(define (A000960 n) (+ 1 (A278484 (- n 1))))
+
+;; A056526 [Bottomley] o=1: First differences of Flavius Josephus's sieve.
+(define (A056526 n) (- (A000960 (+ 1 n)) (A000960 n)))
+
+;; A100617 [NJAS] o=1: There are n people in a room. The first half (i.e., floor(n/2)) of them leave, then 1/3 (i.e., floor of 1/3) of those remaining leave, then 1/4, then 1/5, etc.; sequence gives number who remain at the end. 
+
+(define A100617 (LEFTINV-LEASTMONO 1 1 A000960))
+
+(define (A278169 n) (if (= 1 n) n (- (A100617 n) (A100617 (- n 1)))))
+
+
+(define (A278492bi row col) (+ 1 (A278482bi row col)))
+
+(define (A278492 n) (A278492bi (A002262 n) (A025581 n)))
+(define (A278493 n) (A278492bi (A025581 n) (A002262 n)))
+
+
+(define (A278503 n) (A278505bi (A004736 n) (A002260 n)))
+
+(define (A278504 n) (let ((row (A278539 n)) (col (A278538 n))) (* (/ 1 2) (- (expt (+ row col) 2) row col col col -2))))
+
+(define (A278505 n) (A278505bi (A002260 n) (A004736 n)))
+
+(define (A278506 n) (let ((row (A278538 n)) (col (A278539 n))) (* (/ 1 2) (- (expt (+ row col) 2) row col col col -2))))
+
+(define (A278505bi row col) (if (= 1 col) (A000960 row) (A278507bi row (- col 1))))
+
+
+;; Flavius Josephus's sieve: Start with the natural numbers; at the k-th sieving step, remove every (k+1)-st term of the sequence remaining after the (k-1)-st sieving step; iterate. 
+
+;; Flavius Josephus array: square array A(row,col), where row n lists the numbers removed at stage n in the sieve which produces A000960. Array is read by antidiagonals A(1,1), A(1,2), A(2,1), A(1,3), A(2,2), A(3,1), ... 
+
+(define (A278507 n) (A278507bi (A002260 n) (A004736 n)))
+
+(define (A278508 n) (A278507bi (A004736 n) (A002260 n)))
+
+(define (A278507bi row col)
+  (cond ((= 1 row) (* 2 col))
+        (else (A278492bi (- row 1) (+ -1 (* col (+ 1 row)))))
+  )
+)
+
+
+(define (A278511 n) (if (<= n 1) n (A278511bi (A002260 (- n 1)) (A004736 (- n 1)))))
+
+(define (A278511bi row col) (cond ((= 1 row) (+ col col)) ((= 1 col) (A000960 row)) (else (A278507bi row (- col 1))))) 
+
+(define (A278512 n) (if (= 1 n) n (let ((row (A278538 n)) (col (A278537 n))) (+ 1 (* (/ 1 2) (- (expt (+ row col) 2) row col col col -2))))))
+
+
+;; Row index to A278507, is like A278538, apart from A000960 for which it gets zeros.
+(definec (A278528 n) ;; Row index to A278507.
+  (cond ((not (zero? (A278169 n))) 0) ;; If n is a Flavius number, then return zero.
+        ((even? n) 1) ;; Optimization. All even numbers are on the row 1.
+        (else ;; We have to search for it, in a two naive loops. (XXX - Could use a binary search in inner one?)
+          (let searchrow ((row 2))
+             (let searchcol ((col 1))
+                (cond ((>= (A278507bi row col) n)
+                         (if (= (A278507bi row col) n)
+                             row
+                             (searchrow (+ 1 row))
+                         )
+                      )
+                      (else (searchcol (+ 1 col)))
+                )
+             )
+          )
+        )
+  )
+)
+
+(definec (A278529 n) ;; Column index to A278507
+  (cond ((not (zero? (A278169 n))) 0) ;; If n is a Flavius number, then return zero.
+        ((even? n) (/ n 2)) ;; Optimization. All even numbers are on the row 1.
+        (else ;; We have to search for it, in a two naive loops. (XXX - Could use a binary search in inner one?)
+          (let searchrow ((row 2))
+             (let searchcol ((col 1))
+                (cond ((>= (A278507bi row col) n)
+                         (if (= (A278507bi row col) n)
+                             col
+                             (searchrow (+ 1 row))
+                         )
+                      )
+                      (else (searchcol (+ 1 col)))
+                )
+             )
+          )
+        )
+  )
+)
+
+
+
+;; A278539: Column index to  A278511
+(definec (A278537 n)
+   (cond ((= 1 n) 0) ;; 1 is outside of A278511.
+         ((not (zero? (A278169 n))) 1) ;; If n is a Flavius number > 1, then return 1
+         ((even? n) (/ n 2)) ;; All even numbers are on the row 1.
+         (else (+ 1 (A278529 n)))
+   )
+)
+
+(define (A278538 n) (if (not (zero? (A278169 n))) (A100617 n) (A278528 n)))
+
+
+(define (A278539 n) (+ 1 (A278529 n))) ;; [AK] o=1: Column index to A278505.
+
+;; (same-intfuns1? A000027 (lambda (n) (A278505bi (A278538 n) (A278539 n))) 1275) --> #t
+
+;; (same-intfuns1? (COMPOSE A000027 1+) (COMPOSE (lambda (n) (A278511bi (A278538 n) (A278537 n))) 1+) 1275) --> #t
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;

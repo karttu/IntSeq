@@ -1,5 +1,5 @@
 
-;; Last edited 2016-09-26 by Antti Karttunen, added yet more unsorted functions to this old MIT/GNU-Scheme module.
+;; Last edited 2016-11-30 by Antti Karttunen, added yet more unsorted functions to this old MIT/GNU-Scheme module.
 
 (declare (usual-integrations))
 
@@ -29,7 +29,7 @@
   )
 )
 
-(definec (A000010 n) (apply * (sub1from1st_nums (sort (factor n) <))))
+(definec (A000010 n) (if (= 1 n) n (apply * (sub1from1st_nums (sort (factor n) <)))))
 
 ;; %F A000203 Multiplicative with a(p^e) = (p^(e+1)-1)/(p-1). - David W. Wilson, Aug 01, 2001.
 
@@ -210,6 +210,10 @@
 (define (A252375v2 n) (let ((x (A251725 n))) (if (= 1 x) 2 x)))
 
 ;; An interlude:
+
+(define A085271 (MATCHING-POS 1 1 (lambda (n) (and (= 2 (A001222 n)) (= (A000523 (A020639 n)) (A000523 (A006530 n)))))))
+
+
 (define A261073 (MATCHING-POS 1 1 (lambda (n) (and (= 2 (A001222 n)) (= (A000523 (A020639 n)) (A000523 (A006530 n))) (= 1 (A101080bi (A020639 n) (A006530 n)))))))
 
 (define A261074 (MATCHING-POS 1 1 (lambda (n) (and (= 2 (A001222 n)) (= (A000523 (A020639 n)) (A000523 (A006530 n))) (= 2 (A101080bi (A020639 n) (A006530 n)))))))
@@ -923,6 +927,17 @@
 (define A005117 (NONZERO-POS 1 1 A008966))
 (define A013929 (ZERO-POS 1 1 A008966))
 
+
+(define (A107078 n) (- 1 (A008966 n)))
+
+(define (A107079 n) (+ 1 (A013928 n)))
+(define (A107079v2 n) (+ (A013928 (+ 1 n)) (A107078 n)))
+
+;; (same-intfuns1? A107079 A107079v2 16387) --> #t
+
+;; (same-intfuns1? A000027 (COMPOSE A107079 A005117) 8192) --> #t
+
+
 (definec (A013928 n) (if (< n 2) 0 (+ (A013928 (- n 1)) (A008966 (- n 1)))))
 
 (define (A057627 n) (- n (A013928 (+ n 1))))
@@ -1118,28 +1133,41 @@
   )
 )
 
+;; Yet another:
+(definec (A048675rec n) (cond ((= 1 n) 0) ((even? n) (+ 1 (A048675rec (/ n 2)))) (else (* 2 (A048675rec (A064989 n))))))
 
 
-;;;;
-;; XXX: The next one: XFER Base2/base2-recurrences.ss ?
 
-(definec (A002487 n) (cond ((<= n 1) n) ((even? n) (A002487 (/ n 2))) (else (+ (A002487 (/ (- n 1) 2)) (A002487 (/ (+ n 1) 2))))))
+(definec (Aludicpredecessor n) (let ((v (A272565 n))) (if (= v n) 0 (let loop ((k (- n 1))) (if (= v (A272565 k)) k (loop (- k 1)))))))
 
-;; XXX: The next ones XFER Base2/base2-xor-recurrences.ss ?
-
-(define (A099884 n) (A099884bi (A002262 n) (A025581 n)))
-(define (A099884bi row col) (if (zero? row) (A000079 col) (A048724 (A099884bi (- row 1) col))))
-
-(define (A276618 n) (A099884bi (A025581 n) (A002262 n)))
-
-(define (A099884v2 n) (A099884biv2 (A002262 n) (A025581 n)))
-(define (A099884biv2 row col) (if (zero? col) (A001317 row) (* 2 (A099884biv2 row (- col 1)))))
+(definec (Aludicsuccessor n) (if (= 1 n) 0 (let ((v (A272565 n))) (let loop ((k (+ 1 n))) (if (= v (A272565 k)) k (loop (+ 1 k)))))))
 
 
-(definec (A264977 n) (cond ((<= n 1) n) ((even? n) (* 2 (A264977 (/ n 2)))) (else (A003987bi (A264977 (/ (- n 1) 2)) (A264977 (/ (+ n 1) 2)))))) ;; o=0:
+(definec (Asomething_else5 n)
+  (cond ((<= n 2) (- n 1))
+        ((= 1 (A192490 n)) (* 2 (Asomething_else5 (+ -1 (A192512 n)))))
+        (else (+ 1 (* 2 (Asomething_else5 (Aludicpredecessor n)))))
+  )
+)
 
-(define (A265397 n) (- n (A264977 n))) ;; o=0: [Each seem to be a multiple of four].
+(definec (Asomething_else6 n)
+  (cond ((<= n 1) (+ 1 n))
+        ((even? n) (A003309 (+ 1 (Asomething_else6 (/ n 2)))))
+        (else (Aludicsuccessor (Asomething_else6 (/ (- n 1) 2))))
+  )
+)
 
+;; (same-intfuns0? A001477 (COMPOSE Asomething_else5 Asomething_else6) 55) --> #t
+;; (same-intfuns1? A001477 (COMPOSE Asomething_else6 Asomething_else5) 55) --> #t
+
+
+;; A079427 [Zumkeller] o=1: Least m > n having the same number of divisors as n, a(1)=1. 
+
+(definec (A079427 n) (if (= 1 n) 1 (let ((v (A000005 n))) (let loop ((k (+ 1 n))) (if (= v (A000005 k)) k (loop (+ 1 k)))))))
+
+(definec (Aprecu n) (let ((v (A000005 n))) (let loop ((k (- n 1))) (cond ((zero? k) k) ((= v (A000005 k)) k) (else (loop (- k 1)))))))
+
+;;;;;;;;;;;;;;;;;;;;;;;;
 
 (definec (A168081 n) (if (<= n 1) n (A003987bi (* 2 (A168081 (- n 1))) (A168081 (- n 2))))) ;; o=0: Lucas sequence U_n(x,1) over the field GF(2). Cf. also A000129.
 
@@ -1437,6 +1465,146 @@
 
 (define (A267116v2 n) (A003986bi (A007814 n) (A003986bi (A260728 n) (A267113 n))))
 
+;; A124859 [Zumkeller] o=1: Multiplicative with p^e -> primorial(e), p prime and e>0. 
+(definec (A124859 n) (cond ((= 1 n) 1) (else (* (A002110 (A067029 n)) (A124859 (A028234 n))))))
+
+;; A046523 [NJAS] o=1: Smallest number with same prime signature as n. 
+(define (A046523 n) (A124859 (A124859 n)))
+
+;; A278216-A278248 are now reserved for your use
+
+(define (A278217 n) (A046523 (+ 1 (A075157 n)))) ;; o=0: 
+(define (A278217v2 n) (A046523 (A075159 (+ 1 n))))
+
+(define (A278219 n) (A046523 (A243353 n)))
+
+;; (same-intfuns0? A278219 (COMPOSE A278222 A003188) 1024) --> #t
+;; (same-intfuns0? A278219 (COMPOSE A278220 1+ A075157) 512) --> #t
+
+
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;;
+;; Least number with prime signature - applied to various prime index bijections:
+;;
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+(define (A278220 n) (A046523 (A241909 n)))
+
+(define (A278221 n) (A046523 (A122111 n)))
+
+
+(define (A046523v2_apparently_check n) (A046523 (A242420 n))) ;; At least up to n=8192.
+
+(define (A046523v3_apparently_check n) (A046523 (A242415 n))) ;; At least up to n=8192.
+
+(define (A046523v4_apparently_check n) (A046523 (A242419 n)))
+
+(define (A046523v5_apparently_check n) (A046523 (A069799 n)))
+
+(define (A278221v2_apparently_check n) (A046523 (A153212 n))) ;; At least up to n=1024.
+
+
+(define (A278523 n) (A046523 (A249818 n))) ;; A278523 [AK] o=1: a(n) = A046523(A249818(n)).
+(define (A278524 n) (A046523 (A250246 n))) ;; A278523 [AK] o=1: a(n) = A046523(A250246(n)).
+
+;; A278526 [AK] o=1: Filtering sequence (related to prime factorization): a(n) = A046523(A241916(n)).
+(define (A278525 n) (A046523 (A241916 n)))
+
+(define (A278526 n) (A046523 (A227413 n)))
+(define (A278527 n) (A046523 (A246378 n)))
+
+;; (same-intfuns1? A278526 (COMPOSE A278527 A054429) 511) --> #t
+;; (same-intfuns1? A278527 (COMPOSE A278526 A054429) 511) --> #t
+
+
+
+(define (A278531 n) (A046523 (A163511 n))) ;; [AK] o=0: a(n) = A046523(A163511(n)).
+;; (same-intfuns0? A278531 (COMPOSE A278222 A054429) 2047) --> #t
+
+(define (A278533 n) (A046523 (A253563 n)))
+(define (A278535 n) (A046523 (A253565 n)))
+
+;; (same-intfuns0? A278533 (COMPOSE A278535 A054429) 1023) --> #t
+;; (same-intfuns0? A278535 (COMPOSE A278533 A054429) 1023) --> #t
+
+
+(define (A278532 n) (A278219 (A255056 n))) ;; Cf. A255336, A278232, A278262, A278534. 
+(define (A278534 n) (A278236 (A219666 n))) ;; Cf. A230406, A278232, A278262, A278534. 
+
+(define (A278540 n) (A046523 (A235201 n)))
+
+(define (A278541 n) (A046523 (A209636 n)))
+
+(define (A278542 n) (A046523 (A209637 n)))
+
+;; (same-intfuns0? A278541 (COMPOSE A278542 A054429) 511) --> #t
+;; (same-intfuns0? A278542 (COMPOSE A278541 A054429) 511) --> #t
+
+(define (A278543 n) (A046523 (A277198 n))) ;; Cf. A278243.
+
+;;;;;;;;;;;;;;;;;;;;;;
+
+(define (A278222 n) (A046523 (A005940 (+ 1 n))))
+
+;; (same-intfuns0? A278222 (COMPOSE A124859 A278159) 1200) --> #t
+
+
+(define (A278223 n) (A046523 (+ n n -1)))
+
+(define (A278223v2 n) (A046523 (A064216 n)))
+
+(define (A278224 n) (A046523 (A048673 n)))
+
+(define (A278225 n) (A046523 (A275725 n)))
+
+(define (A278226 n) (A046523 (A276086 n)))
+
+(define (A278231 n) (A046523 (A193231 n)))
+
+(define (A278233 n) (A046523 (A091203 n)))
+
+;; Two derived seqs, apply to squares in GF(2)[X]:
+(define (A278238 n) (A278233 (A000695 n)))
+
+;; And to "almost squares":
+(define (A278239 n) (A278233 (A277699 n)))
+
+(define (A278234 n) (A046523 (A275734 n)))
+
+(define (A278235 n) (A046523 (A275735 n)))
+
+(define (A278236 n) (A046523 (A276076 n)))
+
+(define (A278241 n) (A046523 (A000041 n)))
+
+(define (A278245 n) (A046523 (A000045 n)))
+
+;; A001608 [NJAS] o=0: Perrin sequence (or Ondrej Such sequence): a(n) = a(n-2) + a(n-3) with a(0) = 3, a(1) = 0, a(2) = 2.
+(definec (A001608 n) (cond ((zero? n) 3) ((= 1 n) 0) ((= 2 n) 2) (else (+ (A001608 (- n 2)) (A001608 (- n 3))))))
+
+(define (A278248 n) (if (= 1 n) 0 (A046523 (A001608 n))))
+
+;; A069877 [Murthy] o=0: Smallest number with a prime signature whose indices are the decimal digits of n. 
+(define (A069877 n) (A046523 (A054842 n)))
+
+;; A276528 is now reserved for your use. 
+;; A278249-A278263 are now reserved for your use. 
+;; A278264-A278266 are now reserved for your use. 
+
+(define (A278261 n) (A046523 (A273671 n)))
+
+(define (A278263 n) (A046523 (A064413 n)))
+(define (A278264 n) (A046523 (A064664 n)))
+
+(define (A278266 n) (A046523 (A026477 n)))
+
+
+(define (A278237 n) (A046523 (A263273 n)))
+
+(define (A278243 n) (A046523 (A260443 n)))
+
+
 ;; Interlude, Vandermast:
 (definec (A181819 n) (cond ((= 1 n) 1) (else (* (A000040 (A067029 n)) (A181819 (A028234 n)))))) ;; a(1) = 1; for n>1, if n = Product prime(i)^e(i), then a(n) = Product prime(e(i)).
 
@@ -1729,6 +1897,38 @@
 (define (A255131 n) (- n (A002828 n)))
 (define (A255131v2 n) (- n (A002828v2 n))) ;; For cross-checking.
 
+(definec (A278216 n) (let loop ((s 0) (k (+ 4 n))) (if (< k n) s (loop (+ s (if (= n (A255131 k)) 1 0)) (- k 1)))))
+
+(define A278489 (NONZERO-POS 0 0 A278216))
+
+(define A278490 (ZERO-POS 1 1 A278216))
+
+(define A278494 (MATCHING-POS 1 1 (lambda (n) (and (not (zero? (A010051 n))) (zero? (A278216 n))))))
+
+(definec (A278495 n)
+   (let loop ((k (+ -1 (A000290 (+ 1 n)))) (s 0))
+        (if (= 1 (A010052 k))
+            s
+            (loop (- k 1) (+ s (* (A010051 k) (if (zero? (A278216 k)) 1 0))))
+        )
+   )
+)
+
+
+(define (A278496 n) (A000196 (A278494 n)))
+
+
+;; A014085 [Jon Wild] o=0: Number of primes between n^2 and (n+1)^2. 
+(definec (A014085 n)
+   (let loop ((k (+ -1 (A000290 (+ 1 n)))) (s 0))
+        (if (= 1 (A010052 k))
+            s
+            (loop (- k 1) (+ s (A010051 k)))
+        )
+   )
+)
+
+
 (definec (A262689 n) (if (= 1 (A010052 n)) (A000196 n) (let ((t (- (A002828 n) 1))) (let loop ((k (A000196 n))) (if (= t (A002828 (- n (* k k)))) k (loop (- k 1)))))))
 
 
@@ -1780,6 +1980,25 @@
 (define (A260734v2 n) (- (A260733 (+ 1 n)) (A260733 n))) ;; One-based.
 (define (A260734v3 n) (- (A260731 (- (A000290 (+ 1 n)) 1)) (A260731 (- (A000290 n) 1))))
 (define (A260734v4 n) (- (A260731 (A000290 (+ 1 n))) (A260731 (A000290 n))))
+
+;; No any consistent bias between these, thus not interesting?
+
+(definec (Acount_odd_numbers_encountered_with_A260734 n)
+ (let ((end (- (A000290 n) 1)))
+  (let loop ((k (- (A000290 (+ 1 n)) 1)) (s 0))
+        (if (= k end) s (loop (A255131 k) (+ s (A000035 k))))
+  )
+ )
+)
+
+(definec (Acount_of_even_numbers_encountered_with_A260734 n)
+ (let ((end (- (A000290 n) 1)))
+  (let loop ((k (- (A000290 (+ 1 n)) 1)) (s 0))
+        (if (= k end) s (loop (A255131 k) (+ s (- 1 (A000035 k)))))
+  )
+ )
+)
+
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
@@ -2150,21 +2369,73 @@
 ;; A260443: a(0) = 1, a(1) = 2, a(2n) = A003961(a(n)), a(2n+1) = a(n)*a(n+1).
 ;; The exponents in the prime factorization of term a(n) give the coefficients of the n-th Stern polynomial. See A125184.
 
-(definec (A260443 n)
+(definec (A260443rec n)
   (cond ((<= n 1) (+ 1 n))
-        ((even? n) (A003961 (A260443 (/ n 2))))
-        (else (* (A260443 (/ (- n 1) 2)) (A260443 (/ (+ n 1) 2))))
+        ((even? n) (A003961 (A260443rec (/ n 2))))
+        (else (* (A260443rec (/ (- n 1) 2)) (A260443rec (/ (+ n 1) 2))))
   )
 )
 
 
-(definec (A260443as_index_lists n)
+(define (A260443 n) (product_primes_to_kth_powers (A260443as_coeff_list n)))
+
+(define A260442 (FIXED-POINTS 0 1 (COMPOSE A260443 A048675)))
+
+(define A277702 (RECORD-POS 1 0 A260443))
+(define (A277703 n) (A260443 (A277702 n)))
+
+;; After a(1)=0, a(2n)=a(n)+1, a(4n-1)=a(n)+1, a(4n+1)=a(n)+1 for n>=1 (Klavzar et al. Proposition 12). - Emeric Deutsch, Dec 04 2006
+(definec (A057526 n)
+  (cond ((= 1 n) 0)
+        ((even? n) (+ 1 (A057526 (/ n 2))))
+        ((= 3 (modulo n 4)) (+ 1 (A057526 (/ (+ 1 n) 4))))
+        (else (+ 1 (A057526 (/ (+ -1 n) 4))))
+  )
+)
+
+(define (A277329 n) (if (zero? n) n (+ 1 (A057526 n))))
+(define (A277329v2 n) (A061395 (A260443 n)))
+
+(definec (A277329rec n)
+  (cond ((<= n 1) n)
+        ((even? n) (+ 1 (A277329rec (/ n 2))))
+        ((= 3 (modulo n 4)) (+ 1 (A277329rec (/ (+ 1 n) 4))))
+        (else (+ 1 (A277329rec (/ (+ -1 n) 4))))
+  )
+)
+
+(definec (A277330 n)
+  (cond ((<= n 1) (+ 1 n))
+        ((even? n) (A003961 (A277330 (/ n 2))))
+        (else (/ (lcm (A277330 (/ (- n 1) 2)) (A277330 (/ (+ n 1) 2)))
+                 (gcd (A277330 (/ (- n 1) 2)) (A277330 (/ (+ n 1) 2)))
+              )
+        )
+  )
+)
+
+(definec (A277330v2 n) (A007913 (A260443 n)))
+
+;; (same-intfuns0? A264977 (COMPOSE A048675 A277330) 255) --> #t
+
+;; (same-intfuns0? A277330 (COMPOSE A019565 A264977) 255) --> #t
+
+(define A260442fast (MATCHING-POS 0 1 (lambda (n) (or (= 1 (A010051 n)) (= n (A260443 (A048675 n)))))))
+(define A260442faster (MATCHING-POS 0 1 (lambda (n) (or (= 1 (A010051 n)) (and (not (< (A001221 n) (+ 1 (A243055 n)))) (= n (A260443 (A048675 n))))))))
+
+
+(define (A277415 n) (A048675 (A260442 n)))
+
+(definec (A277416 n) (let ((b (A260443 n))) (let loop ((k 0)) (if (= (A260442 k) b) k (loop (+ 1 k))))))
+
+
+(definec (A260443as_coeff_list n)
   (cond ((zero? n) (list))
         ((= 1 n) (list 1))
-        ((even? n) (cons 0 (A260443as_index_lists (/ n 2))))
+        ((even? n) (cons 0 (A260443as_coeff_list (/ n 2))))
         (else (add_two_lists
-                   (A260443as_index_lists (/ (- n 1) 2))
-                   (A260443as_index_lists (/ (+ n 1) 2))
+                   (A260443as_coeff_list (/ (- n 1) 2))
+                   (A260443as_coeff_list (/ (+ n 1) 2))
               )
         )
   )
@@ -2180,7 +2451,82 @@
   )
 )
 
-(define (A276081 n) (sum_factorials_times_elements_in (A260443as_index_lists n)))
+(define (gcd_of_exp_lists nums1 nums2)
+  (let ((len1 (length nums1))
+        (len2 (length nums2))
+       )
+    (cond ((< len1 len2) (gcd_of_exp_lists nums2 nums1))
+          (else (map min nums1 (append nums2 (make-list (- len1 len2) 0))))
+    )
+  )
+)
+
+
+(define (product_primes_to_kth_powers nums)
+   (let loop ((p 1) (nums nums) (i 1))
+      (cond ((null? nums) p)
+            (else (loop (* p (expt (A000040 i) (car nums))) (cdr nums) (+ 1 i)))
+      )
+   )
+)
+
+(define (A277333 n) (let ((k (A048675 n))) (if (= (A260443 k) n) k 0))) ;; o=1:
+;; (same-intfuns0? A001477 (COMPOSE A277333 A260443) 1024) --> #t
+;; (same-intfuns0?  (COMPOSE A277333 1+ double) (COMPOSE double A277333 A064989 1+ double)  120) --> #t
+
+(define A277417 (ZERO-POS 1 1 (lambda (n) (- (A277333 n) (A248663 n)))))
+
+
+(define (A277705 n) (fold-left (lambda (a e) (* (+ 1 e) a)) 1 (A260443as_coeff_list n)))
+(define (A277705v2 n) (A000005 (A260443 n)))
+(define (A277705v3 n) (A106737 (A277020 n)))
+
+(define (A277197 n) (- (A260443 (+ 1 n)) (A260443 n)))
+
+(define (A277198v2 n) (gcd (A260443 (+ 1 n)) (A260443 n)))
+
+(define (A277198 n) (product_primes_to_kth_powers (gcd_of_exp_lists (A260443as_coeff_list n) (A260443as_coeff_list (+ 1 n)))))
+
+
+(define (A277325 n) (reduce * 1 (filter positive? (A260443as_coeff_list n))))
+(define (A277325v2 n) (A005361 (A260443 n)))
+
+(define (A277326 n) (reduce lcm 1 (filter positive? (A260443as_coeff_list n))))
+(define (A277326v2 n) (A072411 (A260443 n)))
+
+
+(define (A277327v2 n) (A001221 (A277198 n)))
+
+(define (A277327 n) (length (filter positive? (gcd_of_exp_lists (A260443as_coeff_list n) (A260443as_coeff_list (+ 1 n))))))
+
+
+(define (A277328v2 n) (A001222 (A277198 n)))
+(define (A277328 n) (reduce + 0 (gcd_of_exp_lists (A260443as_coeff_list n) (A260443as_coeff_list (+ 1 n)))))
+
+(define (A277314v2 n) (A001221 (A260443 n))) ;; Number of nonzero terms in Stern polynomial B(n,t).
+(define (A277314 n) (length (filter positive? (A260443as_coeff_list n)))) ;; o=0:
+
+;; (same-intfuns0? A277314 (COMPOSE A069010 A277020) 120) --> #t
+
+
+(define (A277315v2 n) (A051903 (A260443 n))) ;; Max exponent in A260443, max coefficient in Stern polynomial B(n,t).
+(define (A277315 n) (reduce max 0 (A260443as_coeff_list n))) ;; o=0:
+
+(define (A277316 n) (A260443 (A000040 n)))
+
+(define A277317 (MATCHING-POS 1 1 (lambda (n) (= 1 (A010051 (A277333 n)))))) ;; o=1: Slow!
+(define Ajotkut (MATCHING-POS 1 1 (lambda (n) (= 1 (A010051 (A048675 n)))))) ;; o=1, supersequence of above.
+
+
+(define (A277323 n) (A260443 (* 2 n)))
+(define (A277323v2 n) (if (zero? n) 1 (A003961 (A260443 n))))
+
+(define (A277324 n) (A260443 (+ 1 n n)))
+(define (A277324v2 n) (if (zero? n) 2 (* (A260443 n) (A260443 (+ 1 n)))))
+
+
+
+(define (A276081 n) (sum_factorials_times_elements_in (A260443as_coeff_list n)))
 
 (define (A276081v2 n) (A276075 (A260443 n)))
 
@@ -2195,6 +2541,11 @@
               (if (= 1 col) (list) (elemcountpairs (ifactor col))) ;; (sort (factor n) <)
    )
 )
+
+
+;; Not a practical way to compute it, but just as a demonstration:
+(define (A073133 n) (A073133bi (A004736 n) (A002260 n))) ;; o=1: (by ascending antidiagonals).
+(define (A073133bi row col) (A104244bi row (A206296 col)))
 
 (define (A048675v3 n) (A104244bi 2 n))
 
@@ -3429,6 +3780,8 @@
 
 (define (A007913 n) (/ n (A000290 (A000188 n)))) ;; Squarefree part of n: a(n) = smallest positive number m such that n/m is a square.
 
+(define (A008833 n) (/ n (A007913 n)))
+(define (A008833v2 n) (A000290 (A000188 n)))
 
 (define (A240025 n) (if (zero? n) 1 (- (A000267 n) (A000267 (- n 1))))) ;; XFER: Squares/squares-quarter.ss together with A000267 from intfun_a.scm
 
@@ -3437,6 +3790,26 @@
 (define (A002620 n) (A002265 (A000290 n))) ;; o=0: XFER: Squares/squares-quarter.ss
 (define (A033638 n) (+ 1 (A002620 n))) ;; o=0: XFER: Squares/squares-quarter.ss
 
+;; A278259 [AK] o=1: Least number with the prime signature of the n-th quarter-square.
+(define (A278259 n) (if (<= n 1) 0 (A046523 (A002620 n))))
+
+;; A278260 [AK] o=1: Least number with the same prime signature as {the n-th quarter-square}+1 has.
+(define (A278260 n) (A046523 (A033638 n)))
+
+;; (same-intfuns1? A278254 (COMPOSE A278259 double) 1024) --> #t
+
+;; (same-intfuns1? A278162 (COMPOSE A278260 double) 1024) --> #t
+
+(define (A002378 n) (* (+ 1 n) n)) ;; A002378: [NJAS] o=0: Oblong (or promic, pronic, or heteromecic) numbers: a(n) = n*(n+1).
+
+;; A278256 [AK] o=1: Least number with the same prime signature as the n-th oblong number (A002378).
+(define (A278256 n) (A046523 (A002378 n)))
+
+;; (define (A278256_not_so_easy n) (if (<= (modulo (- n 1) 4) 1) (* 2 (A003961 (A278253 n))) (* 2 (A278253 n))))
+
+;; (same-intfuns1? A278256 (COMPOSE A278259 1+ double) 1200) --> #t
+
+;; 
 
 (definec (A265400 n) (cond ((<= n 3) 0) ((<= n 8) (- 1 (A000035 n))) ((= 1 (A240025 (- n 1))) 0) ((= 1 (A240025 (- n 2))) (A033638 (- (A000267 n) 4))) (else (+ 1 (A265400 (- n 1)))))) ;; XFER: Squares/squares-quarter.ss
 
@@ -5460,6 +5833,53 @@
    )
 )
 
+;; A277885 [AK] o=1: a(n) = index of the least non-unitary prime divisor of n or 0 if no such prime-divisor exists.
+(definec (A277885 n) (cond ((= 1 n) 0) ((< 1 (A067029 n)) (A055396 n)) (else (A277885 (A028234 n)))))
+
+(definec (A277885v2 n) (cond ((= 1 n) 0) ((< 1 (A067029 n)) (A055396 n)) (else (A277885v2 (A032742 n)))))
+
+(definec (A249739v2 n) (cond ((= 1 n) 1) (else (let* ((spf (A020639 n)) (gpd (/ n spf))) (if (zero? (modulo gpd spf)) spf (A249739v2 gpd))))))
+;; (same-intfuns1? A249739v2 (COMPOSE A008578 1+ A277885) 12000) --> #t
+
+
+(define (A277886 n) (if (zero? (A277885 n)) n (* (A000040 (+ 1 (A277885 n))) (/ n (expt (A249739 n) 2)))))
+
+;; (same-intfuns1? A048675  (COMPOSE A048675 A277886) 1200) --> #t
+
+;; A097246 [Zumkeller] o=1: Replace factors of n that are squares of a prime by the prime succeeding this prime.
+
+(definec (A097246 n) (if (= 1 n) 1 (* (A000244 (A004526 (A007814 n))) (A000079 (A000035 (A007814 n))) (A003961 (A097246 (A064989 n))))))
+(define (A097246v2 n) (* (A003961 (A000188 n)) (A007913 n)))
+
+(definec (A097248 n) (if (not (zero? (A008683 n))) n (A097248 (A097246 n))))
+
+;; It is same:
+(definec (A097248v2 n) (if (zero? (A277885 n)) n (A097248v2 (A277886 n))))
+;; as: 
+;; A097248 a(n)=r(n,m) with m such that r(n,m)=r(n,m+1), where r(n,k)=A097246(r(n,k-1)), r(n,0)=n. 
+;; A097248(n)=r(n,a(n));
+
+(definec (A097249 n) (if (not (zero? (A008683 n))) 0 (+ 1 (A097249 (A097246 n)))))
+
+;; a(n) = number of times we must iterate A097246, starting at A260443(n), before the result is squarefree. 
+(define (A277899slow n) (A097249 (A260443 n)))
+
+(define (A277899 n) (A097249_for_coeff_list (A260443as_coeff_list n)))
+
+(define (A097249_for_coeff_list nums)
+   (let loop ((nums nums) (s 0))
+      (if (<= (reduce max 0 nums) 1)
+          s
+          (loop (A097246_for_coeff_list nums) (+ 1 s))
+      )
+   )
+)
+
+(define (A097246_for_coeff_list nums) (add_two_lists (map A000035 nums) (cons 0 (map A004526 nums))))
+
+
+;; (same-intfuns1? A048675  (COMPOSE A048675 A097248v2) 1200) --> #t
+
 
 (definec (A249740 n)
    (cond ((= n 1) n)
@@ -5657,6 +6077,7 @@
 
 (definec (A268389rec n) (if (odd? (A006068 n)) 0 (+ 1 (A268389rec (/ (A006068 n) 2)))))
 
+(define (A277818 n) (+ 1 (A268389 n)))
 
 (define (A268669 n)
    (let loop ((n n))
@@ -6916,16 +7337,155 @@
 ;; The infinite trunk of minimal squares beanstalk: The only infinite sequence such that a(n-1) = a(n) - minimal number of squares (A002828) needed to sum to a(n).
 (define (A276573 n) (A276574 (A276572 n)))
 
+
 ;; The infinite trunk of minimal squares beanstalk with reversed subsections.
 (definec (A276574 n) (cond ((zero? n) n) ((= 1 n) 3) (else (let ((maybe_next (A255131 (A276574 (- n 1))))) (if (zero? (A010052 (+ 1 maybe_next))) maybe_next (+ -1 (A000290 (+ 2 (A000196 (+ 1 maybe_next))))))))))
 
 (define (A276575 n) (A002828 (A276573 n)))
 (define (A276575v2 n) (if (zero? n) n (- (A276573 n) (A276573 (- n 1)))))
 
+(define (A278497 n) (A046523 (A276573 n)))
+
+(define (A278498 n) (A065338 (A276573 n)))
+
+(define (A278499 n) (modulo (A276573 n) 4))
+
+(define A277887 (MATCHING-POS 1 1 (lambda (n) (= 1 (A010051 (A276573 n)))))) ;; o=1: Positions of primes in A276573.
+
+(define (A277888 n) (A276573 (A277887 n))) ;; o=1: Primes in A276573.
+
+(define A278485 (MATCHING-POS 1 1 (lambda (n) (= 1 (A010051 (+ -1 (A276573 n)))))))
+(define (A278486 n) (A276573 (A278485 n)))
+(define (A278487 n) (+ -1 (A276573 (A278485 n))))
+
+
+;; 
+
+(definec (A277890 n)
+    (let ((org_k (- (A000290 (+ 1 n)) 1)))
+       (let loop ((k org_k) (s 0))
+            (if (and (< k org_k) (= 1 (A010052 (+ 1 k))))
+                s
+                (loop (- k (A002828 k)) (+ s (- 1 (A000035 k))))
+            )
+       )
+    )
+)
+
+(definec (A277891 n)
+    (let ((org_k (- (A000290 (+ 1 n)) 1)))
+       (let loop ((k org_k) (s 0))
+            (if (and (< k org_k) (= 1 (A010052 (+ 1 k))))
+                s
+                (loop (- k (A002828 k)) (+ s (A000035 k)))
+            )
+        )
+    )
+)
+
+;; (same-intfuns1? A260734 (COMPOSE (lambda (n) (+ (A277891 n) (A277890 n))) 1+) 120) --> #t
+
+
+;; A277486-A277488 are now reserved for your use. 
+
+(definec (A277486 n)
+     (let ((org_k (- (A000290 (+ 1 n)) 1)))
+        (let loop ((k org_k) (s 0))
+             (if (and (< k org_k) (= 1 (A010052 (+ 1 k))))
+                 s
+                 (loop (- k (A002828 k)) (+ s (A010051 (+ -1 k))))
+             )
+        )
+     )
+)
+
+
+(definec (A277487 n)
+    (let ((org_k (- (A000290 (+ 1 n)) 1)))
+       (let loop ((k org_k) (s 0))
+            (if (and (< k org_k) (= 1 (A010052 (+ 1 k))))
+                s
+                (loop (- k (A002828 k)) (+ s (A010051 k)))
+            )
+       )
+    )
+)
+
+(definec (A277488 n)
+    (let ((org_k (- (A000290 (+ 1 n)) 1)))
+       (let loop ((k org_k) (s 0))
+            (if (and (< k org_k) (= 1 (A010052 (+ 1 k))))
+                s
+                (loop (- k (A002828 k)) (+ s (A010051 (+ 1 k))))
+            )
+       )
+    )
+)
+
+;; A278158-A278169 are now reserved for your use. 
+
+;; Partial sums, seem to have a consistent (?) bias:
+(definec (A278166 n) (if (= 1 n) (A277486 n) (+ (A277486 n) (A278166 (- n 1)))))
+(definec (A278167 n) (if (= 1 n) (A277487 n) (+ (A277487 n) (A278167 (- n 1)))))
+(definec (A278168 n) (if (= 1 n) (A277488 n) (+ (A277488 n) (A278168 (- n 1)))))
+
+
 ;; (reverse (map (lambda (n) ((COMPOSE-FUN-TO-NTH-POWER A255131 n) 100)) (iota 38)))
 ;; (0 3 6 8 11 15 16 18 21 24 27 30 32 35 38 40 43 45 48 51 53 56 59 63 64 67 70 72 75 78 80 83 85 88 90 93 96 99)
 
 ;; (equal? (map A276573 (iota0 1624)) (reverse (map (lambda (n) ((COMPOSE-FUN-TO-NTH-POWER A255131v2 n) 4624)) (iota 1625)))) -->  #t
+
+(define A277014 (NONZERO-POS 0 0 (COMPOSE A010052 A276573)))
+(define A277014v2 (ZERO-POS 1 1 (COMPOSE -1+ A276575)))
+
+
+(define (A277015 n) (A000196 (A277016 n)))
+(define (A277016 n) (A276573 (A277014 n)))
+
+(define (A277023 n) (A276573 (A260732 n)))
+
+(define (A277024 n) (- (A277023 n) (A000290 n)))
+
+(define A277025 (ZERO-POS 0 0 (lambda (n) (A277024 (* 4 n)))))
+
+(define A277026 (NONZERO-POS 1 1 (lambda (n) (A277024 (* 4 n)))))
+
+;; A077773: [T. D. Noe] o=1 (should be prepended with a(0)=0 ?): Number of integers between n^2 and (n+1)^2 that are the sum of two squares; multiple representations are counted once. 
+(define (A077773 n) (add (lambda (i) (* (- 1 (A010052 i)) (A229062 i))) (A000290 n) (+ -1 (A000290 (+ 1 n)))))
+
+(define (A277193 n) (add (lambda (i) (* (- 1 (A010052 i)) (- 1 (A229062 i)) (- 1 (A072401 i)))) (A000290 n) (+ -1 (A000290 (+ 1 n)))))
+
+
+(define (A277194 n) (add A072401 (A000290 n) (+ -1 (A000290 (+ 1 n)))))
+
+(define (A277191 n) (add (lambda (i) (A000035 (A002828v2 i))) (A000290 n) (+ -1 (A000290 (+ 1 n)))))
+(define (A277191v2 n) (if (zero? n) 0 (+ 1 (A277193 n))))
+
+(define (A277192 n) (add (lambda (i) (- 1 (A000035 (A002828v2 i)))) (A000290 n) (+ -1 (A000290 (+ 1 n)))))
+(define (A277192v2 n) (if (zero? n) 1 (+ (A077773 n) (A277194 n))))
+
+;; (same-intfuns0? double (lambda (n) (+ (A077773 n) (A277193 n) (A277194 n))) 120) --> #t
+
+;; (same-intfuns0? A005408 (lambda (n) (+ 1 (A077773 n) (A277193 n) (A277194 n))) 120) --> #t
+
+
+
+;;;;;;;;;;;;;;;;;;
+;; Interlude, XFER: linear recurrences with constant coefficients, all three:
+
+;; A001541: [NJAS] o=0: a(0) = 1, a(1) = 3; for n > 1, a(n) = 6a(n-1) - a(n-2).
+(definec (A001541 n) (cond ((zero? n) 1) ((= 1 n) 3) (else (- (* 6 (A001541 (- n 1))) (A001541 (- n 2))))))
+
+;; A055792: [Henry Bottomley] o=0: a(n) and floor(a(n)/2) are both squares; i.e. squares which remain squares when written in base 2 and last digit is removed.
+(define (A055792 n) (if (zero? n) n (A000290 (A001541 (- n 1)))))
+
+;; A132592 [Mohamed Bouhamida] o=0: Sequence allows us to find X values of the equation: X(X + 1) - 8*Y^2 = 0.
+(define (A132592 n) (+ -1 (A055792 (+ 1 n))))
+
+;;;;;;;;;;;;;;;;;;;
+
+
+
 
 ;;;;;;
 
@@ -7106,4 +7666,490 @@
 (define (A051063 n) (* 9 (A001651 n))) ;; o=1: [NJAS, Gary W. Adamson] 27*n+9 or 27*n+18.
 
 
+
+
+(define (A277006 n) (A005940 (+ 1 (A003714 n)))) ;; o=0.
+
+;; (same-intfuns0? A048679 (COMPOSE A048675 A277006) 256) --> #t
+
+
+(define (A277010 n) (A156552 (A005117 n))) ;; o=1.
+
+(define (A277331 n) (A253563 (A003714 n)))
+
+(define (A277332 n) (A253565 (A003714 n)))
+
+(define (A022340 n) (* 2 (A003714 n)))
+
+
+;; A091377 [Zumkeller] o=1: Numbers having fewer prime factors than the value of their smallest prime factor.
+
+(define A091377 (MATCHING-POS 1 1 (lambda (n) (< (A001222 n) (A020639 n)))))
+(define Amutkut (MATCHING-POS 1 1 (lambda (n) (<= (A001222 n) (A055396 n))))) ;; Differs from A091377 at n=256.
+
+(define A277334 (MATCHING-POS 1 1  (lambda (n) (and (or (= 2 n) (not (even? n))) (not (zero? (A008683 (A052126 n))))))))
+
+
+
+(define (A277020v2 n) (A156552 (A260443 n))) ;; o=0.
+
+(define (A277189 n) (A277020 (+ n n 1))) ;; o=0: Odd bisection of A277020.
+
+(define (A277020 n) (list_of_numbers_to_unary_binary_representation (A260443as_coeff_list n)))
+
+
+(define (list_of_numbers_to_unary_binary_representation nums)
+   (let loop ((s 0) (nums nums) (b 1))
+      (cond ((null? nums) s)
+;;          ((zero? (car nums)) (loop s (cdr nums) (* 2 b))) ;; Unnecessary clause.
+            (else (loop (+ s (* (A000225 (car nums)) b)) (cdr nums) (* (A000079 (+ 1 (car nums))) b)))
+      )
+   )
+)
+
+
+;; (same-intfuns0? A001477 (COMPOSE A087808 A277020) 63) --> #t
+
+(define (A277195 n) (A022290 (A277010 n))) ;; o=1.
+
+(define (A277196 n) (A107079 (A277006 n))) ;; o=0:
+
+;; (same-intfuns1? A001477 (COMPOSE A277196 A277195) 2048) --> #t
+;; (same-intfuns0? A001477 (COMPOSE A277195 A277196) 353) --> #t
+
+;; XFER: prime-indices-matula-goebel.ss :
+
+(definec (A061775 n) (cond ((= 1 n) 1) ((= 1 (A010051 n)) (+ 1 (A061775 (A000720 n)))) (else (+ -1 (A061775 (A020639 n)) (A061775 (A032742 n))))))
+
+(definec (A196050 n) (cond ((= 1 n) 0) ((= 1 (A010051 n)) (+ 1 (A196050 (A000720 n)))) (else (+ (A196050 (A020639 n)) (A196050 (A032742 n))))))
+
+
+(definec (A277697 n)
+  (cond ((= 1 n) 0)
+        ((= 1 (A067029 n)) (A055396 n))
+        (else (A277697 (A028234 n)))
+  )
+)
+
+(definec (A277707 n)
+  (cond ((= 1 n) 0)
+        ((odd? (A067029 n)) (A055396 n))
+        (else (A277707 (A028234 n)))
+  )
+)
+
+(define (A277707v2 n) (A055396 (A007913 n)))
+
+(define (A277708 n) (A008578 (+ 1 (A277707 n))))
+(define (A277708v2 n) (A020639 (A007913 n)))
+
+
+(define (A080368 n) (if (zero? (A277697 n)) 0 (A000040 (A277697 n))))
+(define (A277698 n) (A008578 (+ 1 (A277697 n))))
+
+
+;; Related to A115872, A065621, etc:
+
+(define (A277320 n) (A277320bi (A002260 n) (A004736 n)))
+(define (A277320bi row col) (A048720bi (A065621 row) col))
+
+
+(define (A277199 n) (A277320bi (A004736 n) (A002260 n)))
+
+(definec (A277699 n) (A277320bi n n))
+
+(define A023758 (MATCHING-POS 1 0 (lambda (n) (or (<= n 4) (pow2? (+ 1 (A000265 n)))))))
+
+(define A277704 (NONZERO-POS 1 1 (COMPOSE A010052 A277699)))
+
+(define A277807 (MATCHING-POS 1 1 (lambda (n) (and (not (pow2? (+ 1 (A000265 n)))) (= 1 (A010052 (A277699 n)))))))
+
+(define (A277806 n) (A000196 (A277699 (A277807 n))))
+
+
+(define A277706 (ZERO-POS 1 1 (COMPOSE A010052 A277699)))
+
+(define (A277805 n) (A277699 (A277706 n)))
+
+
+(define (A277819 n) (A277820bi (A004736 n) (A002260 n)))
+(define (A277820 n) (A277820bi (A002260 n) (A004736 n)))
+(define (A277820bi row col) (if (= 1 col) (A065621 row) (A048724 (A277820bi row (- col 1)))))
+
+(define (A277821 n) (let ((row (A268671 n)) (col (A277818 n))) (* (/ 1 2) (- (expt (+ row col) 2) row col col col -2))))
+
+
+(define (A277823 n) (A048724 (A065621 n)))
+(define (A277823v2 n) (A048720bi (A065621 n) 3))
+(define (A277823v3 n) (A277320bi n 3))
+
+(define (A277825 n) (A048724 (A277823 n)))
+(define (A277825v2 n) (A048720bi (A065621 n) 5))
+
+(define (A277810bi row col) (A019565 (A277820bi row col)))
+(define (A277810 n) (A277810bi (A002260 n) (A004736 n)))
+(define (A277809 n) (A277810bi (A004736 n) (A002260 n)))
+
+(define (A277811 n) (A019565 (A065621 n))) ;; Column 1 of A277810.
+
+
+(definec (A277808 n) (if (= 1 (A010060 n)) 0 (+ 1 (A277808 (A003188 (/ (A006068 n) 2))))))
+(define (A277808v2 n) (if (= 1 (A010060 n)) 0 (A001511 n)))
+
+(define (A277808v3 n) (* (A010059 n) (A001511 n)))
+
+(definec (A277822 n) (cond ((zero? n) n) ((= 1 (A010060 n)) 1) (else (+ 1 (A277822 (A003188 (/ (A006068 n) 2)))))))
+
+(define (A277822v2 n) (+ (* (A010059 n) (A007814 n)) (A010060 n)))
+
+(definec (A277822v3 n) (cond ((zero? n) n) ((= 1 (A010060 n)) 1) (else (+ 1 (A277822v3 (floor->exact (/ n 2)))))))
+
+(definec (A277812 n) (if (= 1 (A010060 n)) n (A277812 (A003188 (/ (A006068 n) 2)))))
+;; (definec (A277812v2 n) (if (= 1 (A010060 n)) n (A277812 (A000265 n))))
+
+
+(define (A277813 n) (A115384 (A277812 n)))
+
+;; A277880-A277911 are now reserved for your use.
+
+(define (A129771 n) (+ 1 (* 2 (A000069 n))))
+
+(define (A277880 n) (A277880bi (A002260 n) (A004736 n)))
+(define (A277880bi row col) (if (= 1 col) (A000069 row) (A001969 (+ 1 (A277880bi row (- col 1))))))
+
+(define (A277880v2 n) (A277880biv2 (A002260 n) (A004736 n)))
+(define (A277880biv2 row col) (cond ((= 1 col) (A000069 row)) ((= 2 col) (A129771 row)) (else (* 2 (A277880biv2 row (- col 1))))))
+
+(define (A277881 n) (let ((row (A277813 n)) (col (A277822 n))) (* (/ 1 2) (- (expt (+ row col) 2) row col col col -2))))
+
+(define (A277882 n) (A277880bi (A004736 n) (A002260 n)))
+(define (A277883 n) (let ((col (A277813 n)) (row (A277822 n))) (* (/ 1 2) (- (expt (+ row col) 2) row col col col -2))))
+
+
+(define (A277901v2 n) (A277820 (A277881 n)))
+
+(definec (A277901 n) (if (= 1 (A010060 n)) (A065621 (A115384 n)) (A048724 (A277901 (floor->exact (/ n 2))))))
+
+(define (A277902v2 n) (A277880 (A277821 n)))
+
+(definec (A277902 n) (if (= 1 (A010060 n)) (A000069 (A268671 n)) (A001969 (+ 1 (A277902 (/ (A006068 n) 2))))))
+
+
+;; XFER: Transfer to triangles-core.ss or such:
+(define (A048147 n) (A048147bi (A025581 n) (A002262 n)))
+(define (A048147bi row col) (+ (* row row) (* col col)))
+
+(define A277557 (MATCHING-POS 1 1 (lambda (n) (let ((x (A025581 n)) (y (A002262 n))) (and (not (zero? x)) (< x y) (odd? (+ x y)) (= 1 (gcd x y)))))))
+
+;; A008834: [NJAS] o=1:	Largest cube dividing n. 
+(definec (A008834 n) (let loop ((k 1) (m 1)) (let ((c (expt k 3))) (cond ((> c n) (expt m 3)) ((zero? (modulo n (expt k 3))) (loop (+ 1 k) k)) (else (loop (+ 1 k) m))))))
+
+(define (A050985 n) (/ n (A008834 n))) ;; o=1: [Eric W. Weisstein] Cubefree part of n. 
+
+
+;; A048766 [Charles T. Le] o=0: Integer part of cube root of n. Or, number of cubes <= n. Or, n appears 3n^2 + 3n + 1 times. 
+
+(define A048766 (LEFTINV-LEASTMONO-NC2NC 0 0 A000578)) ;; /XFER: core.cubes
+
+;; A277780 o=1 (or 0?): [Peter Kagey] a(n) is the least k > n such that n*k^2 is a cube. 
+(define (A277780 n) (if (zero? n) 1 (* (A050985 n) (A000578 (+ 1 (A048766 (A008834 n)))))))
+
+
+;; A118306 [Leroy Quet] o=1: If n = product(k>=1} p(k)^b(n,k), where p(k) is the k-th prime and where each b(n,k) is a nonnegative integer, then: If n occurs earlier in the sequence, then a(n) = product{k>=2} p(k-1)^b(n,k); If n does not occur earlier in the sequence, then a(n) = product{k>=1} p(k+1)^b(n,k). 
+
+(defineperm1 (A118306p n)
+  (cond ((= 1 n) n)
+        ((not-lte? (A118306p (- n)) (- n 1)) (A003961 n))
+        (else (A064989 n))
+  )
+)
+
+(define (A118306 n) (cond ((= 1 n) n) ((odd? (A055396 n)) (A003961 n)) (else (A064989 n))))
+
+;; [AK] o=1: Self-inverse permutation of natural numbers induced when A118306 is restricted to A007310:
+(define (A277911 n) (A126760 (A118306 (A007310 n))))
+
+(define A277908 (MATCHING-POS 1 1 (lambda (n) (= 1 (abs (- n (A277911 n)))))))
+
+(define A277909 (MATCHING-POS 1 1 (lambda (n) (= (A277911 n) (+ 1 n)))))
+
+(define A277910 (MATCHING-POS 1 1 (lambda (n) (= (A277911 n) (- n 1)))))
+
+(define (A277907 n) (A007310 (A277908 n)))
+
+
+;;;;;;;;;;;;;;;;;;;;;;
+
+
+
+
+
+(define (A277892 n) (if (= 1 n) 0 (A001222 (A048675 n))))
+
+;; A277893(n) = the least k > n for which A277892(k) = A277892(n), 0 if no such number exists.
+(definec (A277893 n)
+  (cond ((= 1 n) 2)
+        ((= 2 n) 0)
+        (else
+           (let ((v (A277892 n)))
+             (let loop ((k (+ 1 n)))
+                (if (= (A277892 k) v) k (loop (+ 1 k)))
+             )
+           )
+        )
+  )
+)
+
+;; A277894(n) = the largest k < n for which A277892(k) = A277892(n), 0 if no such number exists.
+(definec (A277894 n)
+  (cond ((<= n 2) 0)
+        (else
+           (let ((v (A277892 n)))
+             (let loop ((k (- n 1)))
+                (cond ((= 1 k) 0)
+                      ((= (A277892 k) v) k)
+                      (else (loop (- k 1)))
+                )
+             )
+           )
+        )
+  )
+)
+
+;; (same-intfuns1? (COMPOSE 1+ 1+) (COMPOSE A277894 A277893 1+ 1+) 100) --> #t
+
+
+(definec (A277895 n) (cond ((<= n 2) 0) ((= 1 (A010051 n)) 1) (else (+ 1 (A277895 (A277894 n))))))
+
+
+(define (A277897 n) (if (< n 3) n (A277898bi (A004736 (- n 2)) (A002260 (- n 2))))) ;; o=3:
+
+(define (A277898 n) (if (< n 3) n (A277898bi (A002260 (- n 2)) (A004736 (- n 2))))) ;; o=3:
+
+(define (A277898bi row col) (if (= 1 col) (A000040 (+ 1 row)) (A277893 (A277898bi row (- col 1)))))
+
+(define (A277900 n) (A277898bi n 2))
+(define (A277900v2 n) (A277893 (A065091 n)))
+
+
+;; A046951 o=1: [Simon Colton] a(n) = number of squares dividing n. 
+
+;; (definec (A046951 n) (cond ((= 1 n) 1) ((even? n) (* (A008619 (A007814 n)) (A046951 (A000265 n)))) (else (A046951 (A064989 n)))))
+
+(definec (A046951 n) (if (= 1 n) 1 (* (A008619 (A007814 n)) (A046951 (A064989 n)))))
+
+(define (A008619 n) (+ 1 (/ (- n (modulo n 2)) 2)))
+
+
+;; A278159 o=0: [AK] Run length transform of primorials, A002110.
+
+(define (A278159 n) (fold-left (lambda (a r) (* a (A002110 r))) 1 (bisect (reverse (binexp->runcount1list n)) (- 1 (modulo n 2)))))
+
+;; (same-intfuns0? A278159 (COMPOSE A124859 A005940 1+) 1200) --> #t
+
+;; A278161 o=0: [AK] Run length transform of A008619 (floor(n/2)+1). 
+
+(define (A278161 n) (fold-left (lambda (a r) (* a (A008619 r))) 1 (bisect (reverse (binexp->runcount1list n)) (- 1 (modulo n 2)))))
+
+;; (same-intfuns1? A046951 (COMPOSE A278161 A156552) 1200) --> #t
+;; (same-intfuns0? A278161 (COMPOSE A046951 A005940 1+) 2048) --> #t
+
+;; A000123 [NJAS] o=0: Number of binary partitions: number of partitions of 2n into powers of 2. 
+(define (A000123 n) (A018819 (+ n n)))
+
+;; A131205 [Zumkeller] o=1: a(n) = a(n-1) + a(floor(n/2)) + a(ceiling(n/2)). 
+;; Partial sums of A000123: (1, 2, 4, 6, 10, 14, 20, 26,...). - Gary W. Adamson, Oct 26 2007 (but note the offset!)
+(definec (A131205 n) (if (= 1 n) 1 (+ (A000123 (- n 1)) (A131205 (- n 1)))))
+
+;; (definec (A278163 n) (let loop ((k 1)) (if (>= (A131205 k) n) (- k 1) (loop (+ 1 k)))))
+(definec (A278163 n) (let loop ((k 1)) (if (>= (A131205 k) n) (- k 1) (loop (+ 1 k)))))
+(define (A278164 n) (if (= 1 n) 0 (- n (A131205 (A278163 n)) 1)))
+
+;; (same-intfuns1? A000027  (COMPOSE A278163 A131205 1+) 1024) --> #t
+
+
+;; A018819 [DWW, NJAS, JHC] o=0: Binary partition function: number of partitions of n into powers of 2.
+(definec (A018819 n) (cond ((zero? n) 1) ((even? n) (+ (A018819 (- n 1)) (A018819 (/ n 2)))) (else (A018819 (- n 1)))))
+
+(definec (A277903 n) (let loop ((k 0)) (if (>= (A000123 k) n) k (loop (+ 1 k)))))
+
+(define (A277904 n) (if (= 1 n) 0 (- n (A000123 (+ -1 (A277903 n))) 1)))
+
+(definec (A277896 n) (if (= 1 (A209229 n)) 0 (let ((v (A048675 n))) (let loop ((k (+ 1 n))) (if (= (A048675 k) v) k (loop (+ 1 k)))))))
+
+
+(definec (Anot_submitted n)
+   (if (zero? (A278164 n))
+       1
+       (let ((prev (Anot_submitted (- n 1)))
+             (row (A278163 n))
+             (col (A278164 n))
+            )
+         (if (or
+                (= (A018819 row) prev)
+                (> (A003961 (A277905bi row prev))
+                   (* 2 (A277905bi (+ row row -1) (- col prev)))
+                )
+             )
+             prev
+             (+ 1 prev)
+         )
+       )
+   )
+)
+
+
+(definec (A277905 n) (A277905bi (A277903 n) (A277904 n)))
+(define (A277905bi row col) (let outloop ((k (A019565 row)) (col col)) (if (zero? col) k (let inloop ((j (+ 1 k))) (if (= (A048675 j) row) (outloop j (- col 1)) (inloop (+ 1 j)))))))
+
+(definec (A277905rec n) (if (= 1 n) n (let ((maybe_next (A277896 (A277905rec (- n 1))))) (if (not (zero? maybe_next)) maybe_next (A019565 (A277903 n))))))
+
+
+(definec (A277905fast n)
+   (cond ((= 1 n) n)
+         ((odd? (A277903 n)) (* 2 (A277905fast (- n (A018819 (A277903 n))))))
+         (else (A277905 n))
+   )
+)
+
+;; A276528 [AK] o=1: Least number with same prime-signature as sigma(n), the sum of the divisors of n: a(n) = A046523(A000203(n)). 
+(define (A276528 n) (A046523 (A000203 n)))
+
+(define (A277906 n) (A046523 (A000010 n)))
+
+;; A278227 [AK] o=1: Least number with same prime signature as prime(n)-1.
+(define (A278227 n) (A046523 (+ -1 (A000040 n))))
+
+;; A278228 [AK] o=1: Least number with same prime signature as prime(n)+1.
+(define (A278228 n) (A046523 (+ 1 (A000040 n))))
+
+;; A174801 [Gerasimov] o=1: Prime(n)+1 is prime or semiprime. 
+(define A174801 (MATCHING-POS 1 1 (lambda (n) (<= (A278228 n) 6))))
+
+
+;; A278229 [AK] o=1: Least number with same prime signature as 2*prime(n) - 1.
+(define (A278229 n) (A046523 (+ -1 (* 2 (A000040 n)))))
+
+;; A278230 [AK] o=1: Least number with same prime signature as 2*prime(n) + 1.
+(define (A278230 n) (A046523 (+ 1 (* 2 (A000040 n)))))
+
+(define (A278218 n) (A046523 (A007318 n))) ;; [AK] o=0: T(n,k) = Least number with same prime signature as binomial(n,k) has.
+
+;; A000292 [NJAS] o=0: Tetrahedral (or triangular pyramidal) numbers: a(n) = C(n+2,3) = n*(n+1)*(n+2)/6. 
+(define (A000292 n) (/ (* n (+ 1 n) (+ 2 n)) 6))
+
+(define (A278252 n) (A046523 (A000292 n)))
+
+(define (A278253 n) (A046523 (A000217 n))) ;; o=1:
+
+;; A278257 [AK] o=1: Least number with the prime signature of A005187(n).
+(define (A278257 n) (A046523 (A005187 n)))
+
+;; A278258 [AK] o=0: Least number with the prime signature of the n-th Catalan number. 
+(define (A278258 n) (A046523 (A000108 n)))
+
+;; A005563 [NJAS] o=0: a(n) = n*(n+2) (or, (n+1)^2 - 1). 
+(define (A005563 n) (* n (+ 2 n)))
+
+;; A278160: [AK] o=1: Least number with same prime signature as (n+1)^2 - 1 has.
+(define (A278160 n) (A046523 (A005563 n)))
+
+;; A278162: [AK] o=0: Least number with same prime signature as n^2 + 1 has. 
+(define (A278162 n) (A046523 (+ 1 (* n n))))
+
+;; A278165 [AK] o=1: Least number with same prime signature as the n-th Jacobsthal number has.
+(define (A278165 n) (A046523 (A001045 n)))
+
+
+(define (A278254 n) (A000290 (A046523 n))) ;; o=1: Least number which has the same prime signature as the n^2. 
+(define (A278254v2 n) (A046523 (A000290 n))) ;; o=1: 
+
+(definec (A278240 n) (A046523 (A000225 n)))
+(definec (A278242 n) (A046523 (A000051 n)))
+
+
+
+         
+(definec (A278246 n) (A046523 (A000096 n)))
+(definec (A278247 n) (A046523 (A028387 n)))
+(definec (A278251 n) (A046523 (A002061 n)))
+
+;; A000326 [NJAS] o=0: Pentagonal numbers: a(n) = n*(3*n-1)/2. 
+(define (A000326 n) (* (/ 1 2) n (+ n n n -1)))
+
+(definec (A278255 n) (A046523 (A000326 n)))
+
+;; A001844 [] o=0: Centered square numbers: 2n(n+1)+1. Sums of two consecutive squares. Also, consider all Pythagorean triples (X, Y, Z=Y+1) ordered by increasing Z; then sequence gives Z values.
+
+(define (A001844 n) (+ 1 (* 2 (* n (+ 1 n))))) ;; a(n) = 2*n^2 + 2*n + 1.
+
+;; A278244 [AK] o=0: Least number with the prime signature of the n-th centered square number (A001844(n)).
+(define (A278244 n) (A046523 (A001844 n)))
+
+(definec (A278249 n) (A046523 (A000123 n)))
+
+(define (A278250 n) (A046523 (A001190 n)))
+
+(define (A278232 n) (A046523 (A259934 n)))
+
+(define (A278262 n) (A278222 (A179016 n)))
+
+
+;; A278482-A278544 are now reserved for your use.
+
+;; A278536 [AK] o=1: First differences of A273324.
+(define (A278536 n) (- (A273324 (+ 1 n)) (A273324 n)))
+
+
+(define (A010877 n) (modulo n 8)) ;; [NJAS] o=0: n mod 8. 
+
+(define (A278488 n) (modulo (A276573 n) 8))
+
+(define (A278265 n) (A000265 (A278498 n)))
+
+;; (same-intfuns1? A278265 (COMPOSE A065338 A000265 A276573) 1200) --> #t
+
+(define (A278509 n) (A065338 (A000265 n)))
+(define (A278509v2 n) (A000265 (A065338 n)))
+
+;; (same-intfuns1? A278509 A278509v2 1200) --> #t
+
+;; (same-intfuns1? A278509 (COMPOSE A000244 A065339) 1024) --> #t
+
+(definec (A278513 n) (A008683 (A276573 n)))
+
+(definec (A278514 n) (if (zero? n) n (+ (A278513 n) (A278514 (- n 1)))))
+
+
+
+(define (A278516 n) (A278216 (A276573 n)))
+
+;; A278515 [AK] o=0: Number of steps required to iterate map k -> A255131(k) when starting from (A000196(n)+1)^2, before n is reached, or 0 if n is not reached.
+
+(definec (A278515 n)
+ (let* ((r (A000196 n))
+        (end (A000290 r))
+       )
+  (let loop ((k (A000290 (+ 1 r))) (s 0))
+        (cond ((= k n) s)
+              ((<= k end) 0)
+              (else (loop (A255131 k) (+ 1 s)))
+        )
+  )
+ )
+)
+
+(definec (A278517 n) (if (zero? n) n (let loop ((k (A278517 (- n 1)))) (if (= (A260731 k) n) k (loop (+ 1 k))))))
+
+
+(definec (A278518 n) (- (A278517 (+ 1 n)) (A278517 n)))
+(define (A278518v2 n) (+ 1 (- (A278519 n) (A278517 n))))
+
+;; (same-intfuns0? A278518 (lambda (n) (+ 1 (A278521 n) (A278522 n))) 256) --> #t
+
+(define (A278519 n) (if (zero? n) n (+ -1 (A278517 (+ 1 n)))))
+
+(define (A278521 n) (- (A276573 n) (A278517 n)))
+
+(define (A278522 n) (- (A278519 n) (A276573 n)))
 

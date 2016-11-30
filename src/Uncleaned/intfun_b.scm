@@ -11,7 +11,7 @@
 ;;  Start with scheme --heap 13000                                        ;;
 ;;  if encountering "Out of memory" errors when compiling.                ;;
 ;;                                                                        ;;
-;;  Last edited 2016-05-31.                                               ;;
+;;  Last edited 2016-10-27.                                               ;;
 ;;                                                                        ;;
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
@@ -2620,6 +2620,22 @@
 
 (define (A227349 n) (apply * (bisect (reverse (binexp->runcount1list n)) (- 1 (modulo n 2))))) ;; Product of lengths of 1-runs
 (define (A227350 n) (apply * (bisect (reverse (binexp->runcount1list n)) (modulo n 2)))) ;; Prod. of lengths of 0-runs
+
+(definec (A106737 n) (cond ((zero? n) 1) ((even? n) (A106737 (/ n 2))) ((= 1 (modulo n 4)) (* 2 (A106737 (/ (- n 1) 2)))) (else (- (* 2 (A106737 (/ (- n 1) 2))) (A106737 (/ (- n 3) 4))))))
+
+(define (A106737v2 n) (fold-left (lambda (a r) (* a (+ 1 r))) 1 (bisect (reverse (binexp->runcount1list n)) (- 1 (modulo n 2)))))
+
+(define (A106737v3 n) (A000005 (A005940 (+ 1 n))))
+
+;; (same-intfuns0? A106737check_it A106737check_v2 16387) --> #t
+
+(define (A277335 n) (* 3 (A003714 n))) ;; XFER: Fibbinary-core.ss or such?
+
+(define A277335v2 (MATCHING-POS 0 0 (lambda (n) (odd? (A106737 n)))))
+
+;; (same-intfuns0? A277335 A277335v2 17711) --> #t
+
+
 
 (define (A246674 n) (fold-left (lambda (a r) (* a (A000225 r))) 1 (bisect (reverse (binexp->runcount1list n)) (- 1 (modulo n 2)))))
 
@@ -6639,8 +6655,7 @@
 )
 
 
-;; Cf. https://en.wikipedia.org/wiki/Solovay%E2%80%93Strassen_primality_test
-(define (is_a_Euler_witness_for_compositeness_of_n? a n)
+(define (OLD_one-is_a_Euler_witness_for_compositeness_of_n? a n)
   (let ((k (A268829auxbi a n)))
     (cond ((zero? k) #t) ;; a and n are not coprime, thus n must be composite.
           (else (not (zero? (modulo (- n (- (/ (A004198bi k 4) 2) 1))
@@ -6653,11 +6668,24 @@
   )
 )
 
+;; Cf. https://en.wikipedia.org/wiki/Solovay%E2%80%93Strassen_primality_test
+(define (is_a_Euler_witness_for_compositeness_of_n? a n)
+  (let ((k (A268829auxbi a n)))
+    (cond ((zero? k) #t) ;; a and n are not coprime, thus n must be composite.
+          (else (not (zero? (modulo (- n (- (* 2 (A000035 (/ (- k (modulo k 4)) 4))) 1))
+                                    (modular_power a (/ (- n 1) 2) n)
+                            )
+                     )
+                )
+          )
+    )
+  )
+)
+
 ;; Check that (A010051new 162401) = 0, and (A010051new 399001) = 0 among other pseudoprimes!
 
-;; As our witnesses for the compositeness of n we try 2
-;; and after that the first 127 terms of from A092539(1..) onward: 3, 6, 13, 27, 55, 110, 220, 441, ...
-;; that are not multiples of n.
+;; A000040(2^20) = A000040(1048576) = 16290047.
+;; A000040(2^20 + 1) = A000040(1048577) = 16290073.
 
 
 (define (A010051new n)
@@ -6665,12 +6693,13 @@
         ((= 2 n) 1)
         ((even? n) 0)
         (else
-           (let loop ((a 2) (i 2) (t 0)) ;; t = number of tries/testimonials so far.
+          (let ((testsize (A000079 (- (A000523 n) 1))))
+           (let loop ((a 2) (i 0) (t 0)) ;; t = number of tries/testimonials so far.
               (cond ((or (>= t n) (= t 64)) 1)
                     ((is_a_Euler_witness_for_compositeness_of_n? a n) 0)
                     (else
                       (let miniloop ((next_a (A051023 i)) (i i))
-                           (if (< next_a (A000079 (- (A000523 n) 1)))
+                           (if (< next_a testsize)
                                (miniloop (+ (A051023 (+ i 1)) next_a next_a) (+ i 1))
                                (begin
 ;;                                 (format #t "For n=~a trying (~a) next_a=~a i=~a\n" n t next_a i)
@@ -6681,12 +6710,51 @@
                     )
               )
            )
+          )
         )
   )
 )
 
+;; (testA010051new 8 233 "seqs/testA010051_upto233.txt")
+;; (testA010051new 128 65537 "seqs/testA010051_upto65537.txt")
+;; (testA010051new 1024 16290073 "/home/karttu/misc/testA010051_upto16290073.txt")
 
-(define (A010051toimii n)
+
+;; Tested up to: 2791181 is 202753:th prime (OK: prime(202753) = 2791181 in Pari GP 2.7.4)
+
+
+(define (testA010051new every_kth upto_n outfile)
+   (call-with-output-file outfile
+     (lambda (outport)
+       (let loop ((n 1) (primes_found 0) (last_prime 0))
+          (cond ((> n upto_n)
+                    (format outport "~A is ~A:th prime ~%"
+                            last_prime primes_found
+                    )
+                    (flush-output outport)
+                )
+                ((zero? (A010051new n)) (loop (+ 1 n) primes_found last_prime))
+                (else
+                  (begin
+                    (if (zero? (modulo primes_found every_kth))
+                        (format outport "~A is ~A:th prime ~%"
+                                n (+ 1 primes_found)
+                        )
+                        (flush-output outport)
+                    )
+                    (loop (+ 1 n) (+ 1 primes_found) n)
+                  )
+                )
+          )
+       )
+     )
+   )
+)
+
+;; Tested up to: 2791181 is 202753:th prime (OK: prime(202753) = 2791181 in Pari GP 2.7.4)
+;; Tested up to: 3172399 is 228353:th prime (OK).
+
+(define (A010051toimii n) ;; Same as above for now.
   (cond ((< n 2) 0)
         ((= 2 n) 1)
         ((even? n) 0)
