@@ -1,5 +1,5 @@
 
-;; Last edited 2016-11-30 by Antti Karttunen, added yet more unsorted functions to this old MIT/GNU-Scheme module.
+;; Last edited 2016-12-12 by Antti Karttunen, added yet more unsorted functions to this old MIT/GNU-Scheme module.
 
 (declare (usual-integrations))
 
@@ -365,7 +365,7 @@
 
 
 ;; Variant:
-(definec (Auusi n)
+(definec (A258851v0 n)
   (cond ((zero? n) 0)
         ((= 1 n) 0)
         ((prime? n) (A000720 n))
@@ -373,7 +373,7 @@
           (let* ((a (A020639 n))
                  (b (/ n a))
                 )
-             (+ (* a (Auusi b)) (* b (Auusi a)))
+             (+ (* a (A258851v0 b)) (* b (A258851v0 a)))
           )
         )
   )
@@ -2354,6 +2354,15 @@
    )
 )
 
+
+(define (sum_A000027_times_elements_in nums)
+   (let loop ((s 0) (nums nums) (i 1))
+      (cond ((null? nums) s)
+            (else (loop (+ s (* (car nums) i)) (cdr nums) (+ 1 i)))
+      )
+   )
+)
+
 ;; A073491 Numbers having no prime gaps in their factorization. 
 (definec (isA073491? n)
   (cond ((= 1 n) #t)
@@ -2530,6 +2539,12 @@
 
 (define (A276081v2 n) (A276075 (A260443 n)))
 
+
+(define (A278530 n) (sum_A000027_times_elements_in (A260443as_coeff_list n)))
+
+(define (A278530v2 n) (A056239 (A260443 n)))
+
+(define (A278544v2 n) (A003415 (A260443 n)))
 
 (define (A104244 n) (A104244bi (A002260 n) (A004736 n)))
 
@@ -3356,6 +3371,14 @@
 
 (define (A248692 n) (A000079 (A056239 n)))
 (define (A248692v2 n) (apply * (map A000079 (map A049084 (ifactor n)))))
+
+;; A258851: [Heinz] o=0: The pi-based arithmetic derivative of n: a(p) = pi(p) for p prime, a(u*v) = a(u)*v + u*a(v). 
+(definec (A258851 n) (if (<= n 1) 0 (+ (* (A055396 n) (A032742 n)) (* (A020639 n) (A258851 (A032742 n))))))
+
+(define (A278510 n) (- (A258851 n) (A056239 n)))
+
+(definec (A278520 n) (- (A243503 n) (A056239 n)))
+
 
 (define A242422 (NONZERO-POS 1 1 (COMPOSE A010054 A056239)))
 (define A242422v2 (ZERO-POS 1 1 (COMPOSE A002262 A056239)))
@@ -8152,4 +8175,109 @@
 (define (A278521 n) (- (A276573 n) (A278517 n)))
 
 (define (A278522 n) (- (A278519 n) (A276573 n)))
+
+
+;;;;;;
+
+;; A279336-A279357 are now reserved for your use. 
+
+
+
+(definec (A279336 n) (cond ((= 1 n) n) ((zero? (A079559 n)) (* 2 (A234016 n))) (else (A003961 (A279336 (A213714 n))))))
+
+(define (A279336v2 n) (A246278 (A256998 n)))
+
+;; For n > 1, a(n) = the number which is in the same position of array A256997 as where n is in array A246278.
+
+(definec (A279337 n) (cond ((= 1 n) n) ((even? n) (A055938 (/ n 2))) (else (A005187 (A279337 (A064989 n))))))
+
+(define (A279337v2 n) (A256997 (A252752 n)))
+
+
+(definec (A279338 n) (cond ((= 1 n) n) ((zero? (A079559 n)) (* 2 (A279338 (A256992 n)))) (else (A003961 (A279338 (A256992 n))))))
+
+;; (same-intfuns1? A279338 (COMPOSE A005940 1+ A279343) 2048) --> #t
+
+(definec (A279339 n) (cond ((= 1 n) n) ((even? n) (A055938 (A279339 (/ n 2)))) (else (A005187 (A279339 (A064989 n))))))
+
+(definec (A279348 n) (cond ((= 1 n) n) ((zero? (A079559 n)) (* 2 (A279348 (A256992 n)))) (else (A250469 (A279348 (A256992 n))))))
+
+(definec (A279349 n) (cond ((= 1 n) n) ((even? n) (A055938 (A279349 (/ n 2)))) (else (A005187 (A279349 (A268674 n))))))
+
+;; (same-intfuns1? A000027 (COMPOSE A279349 A279348) 1024) --> #t
+
+;; (same-intfuns1? A279348 (COMPOSE A250245 A279338) 1024) --> #t
+;; (same-intfuns1? A279338 (COMPOSE A250246 A279348) 1024) --> #t
+
+;; (same-intfuns1? A279348 (COMPOSE A252753 A279343) 1024) --> #t
+;; (same-intfuns1? A279348 (COMPOSE A252755 A279341) 1024) --> #t
+
+;; (same-intfuns1? A279349 (COMPOSE A279339 A250246) 85) --> #t
+;; (same-intfuns1? A279349 (COMPOSE A279344 A252754) 55) --> #t
+;; (same-intfuns1? A279349 (COMPOSE A279342 A252756) 55) --> #t
+
+
+(definec (A279341 n) (cond ((<= n 2) (- n 1)) ((zero? (A079559 n)) (* 2 (A279341 (A256992 n)))) (else (+ 1 (* 2 (A279341 (A256992 n)))))))
+
+(definec (A279342 n) (cond ((<= n 1) (+ 1 n)) ((even? n) (A055938 (A279342 (/ n 2)))) (else (A005187 (A279342 (/ (- n 1) 2))))))
+
+;; (same-intfuns1? A279341 (COMPOSE A243071 A279338) 2048) --> #t
+;; (same-intfuns0? A279342 (COMPOSE A279339 A163511) 2048) --> #t
+
+(definec (A279343 n) (cond ((= 1 n) 0) ((zero? (A079559 n)) (+ 1 (* 2 (A279343 (A256992 n))))) (else (* 2 (A279343 (A256992 n))))))
+
+
+(definec (A279344 n) (cond ((zero? n) 1) ((even? n) (A005187 (A279344 (/ n 2)))) (else (A055938 (A279344 (/ (- n 1) 2))))))
+
+;; (same-intfuns1? A279341 (COMPOSE A279343 A279347) 2048) --> #t
+
+;; (same-intfuns1? A279343 (COMPOSE A279341 A279347) 2048) --> #t
+
+;; (same-intfuns1? A279343 (COMPOSE A156552 A279338) 1024) --> #t
+
+;; (same-intfuns0? A279344 (COMPOSE A279339 A005940 1+) 511) --> #t
+
+;; (same-intfuns0? A279344 (COMPOSE A279347 A279342) 1024) --> #t
+
+;; (same-intfuns1? A256993 (COMPOSE 1+ A000523 A279341) 65537) --> #t
+;; (same-intfuns1? (COMPOSE A070939 A279341 1+) (COMPOSE A256993 1+) 65537) --> #t
+
+;; (same-intfuns1? A256993 (COMPOSE 1+ A000523 A279343) 65537) --> #t
+;; (same-intfuns1? (COMPOSE A070939 A279343 1+) (COMPOSE A256993 1+) 65537) --> #t
+
+(define (A279345 n) (A000120 (A279341 n)))
+(define (A279346 n) (A000120 (A279343 n)))
+
+(definec (A279347 n) (cond ((<= n 2) n) ((zero? (A079559 n)) (A005187 (A279347 (A256992 n)))) (else (A055938 (A279347 (A256992 n))))))
+
+(define (A279347v2 n) (A279342 (A279343 n)))
+(define (A279347v3 n) (A279344 (A279341 n)))
+
+;; (same-intfuns1? (COMPOSE  (lambda (n) (+ -1 (A279345 n) (A279346 n))) 1+) (COMPOSE A256993 1+) 16387) --> #t
+
+;; (same-intfuns1? (COMPOSE A279345 1+) (COMPOSE 1+ A080791 A279343 1+) 65537) --> #t
+;; (same-intfuns1? (COMPOSE A279346 1+) (COMPOSE 1+ A080791 A279341 1+) 65537) --> #t
+
+
+(define (A278501 n) (A046523 (A279336 n)))
+(define (A278502 n) (A046523 (A279338 n)))
+
+
+(define (A279351 n) (A249817 (A122111 n)))
+
+(define (A279352 n) (A122111 (A249818 n)))
+
+(define (A279350 n) (A046523 (A279352 n)))
+(define (A279350v2 n) (A278221 (A249818 n)))
+
+(define (A279354 n) (A046523 (A279356 n)))
+(define (A279354v2 n) (A278220 (A249818 n)))
+
+(define (A279355 n) (A249817 (A241909 n)))
+
+(define (A279356 n) (A241909 (A249818 n)))
+
+
+
+
 
