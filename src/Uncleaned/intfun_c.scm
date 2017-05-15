@@ -17,7 +17,7 @@
 ;;  (some sequences to be renumbered). Also, the current hasty            ;;
 ;;  implementation of A258012 fails with larger values of n.              ;;
 ;;                                                                        ;;
-;;  Last edited November 24 2016.                                         ;;
+;;  Last edited 2017-04-16.                                               ;;
 ;;                                                                        ;;
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
@@ -780,7 +780,22 @@
 
 (define (A225558 n) (/ (A003418 n) (A000793 n)))
 
+(define (A284567loop n)
+   (let loop ((n n) (acc 1))
+         (if (zero? n)
+             acc
+             (loop (- n 1) (A059897bi acc n))
+         )
+   )
+)
 
+(definec (A284567 n) (if (zero? n) 1 (A059897bi n (A284567 (- n 1)))))
+
+(define (A284568 n) (/ (A000142 n) (A284567 n)))
+
+(define (A001222easy n) (let loop ((n n) (z 0)) (if (= 1 n) z (loop (/ n (A020639 n)) (+ 1 z)))))
+
+(define (A284561 n) (A001222easy (A284567 n)))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
@@ -2956,6 +2971,40 @@
 
 (definec (A002487 n) (cond ((<= n 1) n) ((even? n) (A002487 (/ n 2))) (else (+ (A002487 (/ (- n 1) 2)) (A002487 (/ (+ n 1) 2))))))
 
+
+(define (A007306 n) (if (zero? n) 1 (A002487 (+ n n -1))))
+
+;; "Schroeppelian" bitwise-decompositions: http://www.inwap.com/pdp10/hbaker/hakmem/boolean.html#item23
+;; of A002487:
+
+(define (A283976 n) (if (even? n) (A002487 n) (A003986bi (A002487 (/ (- n 1) 2)) (A002487 (/ (+ n 1) 2)))))
+
+(define (A283977 n) (if (even? n) (A002487 n) (A003987bi (A002487 (/ (- n 1) 2)) (A002487 (/ (+ n 1) 2)))))
+
+(define (A283978 n) (if (even? n) 0 (A004198bi (A002487 (/ (- n 1) 2)) (A002487 (/ (+ n 1) 2)))))
+
+;; And for A007306 from n>=1 onward:
+(define (A283986 n) (A003986bi (A002487 (- n 1)) (A002487 n))) ;; o=1
+(define (A283987 n) (A003987bi (A002487 (- n 1)) (A002487 n))) ;; o=1
+(define (A283988 n) (A004198bi (A002487 (- n 1)) (A002487 n))) ;; o=1
+
+(define (A283986v2 n) (A283976 (+ n n -1)))
+(define (A283987v2 n) (A283977 (+ n n -1)))
+(define (A283988v2 n) (A283978 (+ n n -1)))
+
+;; (same-intfuns0? A283976 (lambda (n) (+ (A283977 n) (A283978 n))) 65537) --> #t
+;; (same-intfuns0? A283976 (lambda (n) (- (A002487 n) (A283978 n))) 65537)
+
+;; (same-intfuns1? A283986 (lambda (n) (+ (A283987 n) (A283988 n))) 65537) --> #t
+;; (same-intfuns1? A283986 (lambda (n) (- (A007306 n) (A283988 n))) 65537) --> #t
+
+(define A283973 (ZERO-POS 1 1 A283988))
+(define A283973v2 (MATCHING-POS 1 1 (lambda (n) (= (A007306 n) (A283986 n)))))
+(define A283973v3 (MATCHING-POS 1 1 (lambda (n) (= (A007306 n) (A283987 n)))))
+(define A283973v4 (MATCHING-POS 1 1 (lambda (n) (= (A283986 n) (A283987 n)))))
+
+(define A283974 (NONZERO-POS 1 1 A283988))
+
 ;; XXX: The next ones XFER Base2/base2-xor-recurrences.ss ?
 
 (define (A099884 n) (A099884bi (A002262 n) (A025581 n)))
@@ -3199,3 +3248,48 @@
 ;; (same-intfuns1? (COMPOSE A000027 1+) (COMPOSE (lambda (n) (A278511bi (A278538 n) (A278537 n))) 1+) 1275) --> #t
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+;; Three triangles derived from A007318 via Schroeppel's bitwise-AND-OR-XOR -decompositions:
+
+;; (same-intfuns0? A007318 (lambda (n) (+ (A285116 n) (A285118 n))) 10440) --> #t
+;; (same-intfuns0? A007318 (lambda (n) (+ (A285117 n) (* 2 (A285118 n)))) 10440) --> #t
+
+
+(definec (A285116 n) (A285116tr (A003056 n) (A002262 n)))
+
+(define (A285116tr n k)
+  (cond ((zero? k) 1)
+        ((= k n) 1)
+        (else (A003986bi (A007318tr (- n 1) (- k 1)) (A007318tr (- n 1) k)))
+  )
+)
+
+
+
+(definec (A285117 n) (A285117tr (A003056 n) (A002262 n)))
+
+(define (A285117tr n k)
+  (cond ((zero? k) 1)
+        ((= k n) 1)
+        (else (A003987bi (A007318tr (- n 1) (- k 1)) (A007318tr (- n 1) k)))
+  )
+)
+
+
+
+(definec (A285118 n) (A285118tr (A003056 n) (A002262 n)))
+
+(define (A285118tr n k)
+  (cond ((zero? k) 0)
+        ((= k n) 0)
+        (else (A004198bi (A007318tr (- n 1) (- k 1)) (A007318tr (- n 1) k)))
+  )
+)
+
+(define (A285113 n) (add A285116 (A000217 n) (+ -1 (A000217 (+ 1 n)))))
+(define (A285114 n) (add A285117 (A000217 n) (+ -1 (A000217 (+ 1 n)))))
+(define (A285115 n) (add A285118 (A000217 n) (+ -1 (A000217 (+ 1 n)))))
+
+;; Mult.encoding of above: (define (Ajoku n) (if (zero? n) 1 (A059895bi (A007188 (- n 1)) (A003961 (A007188 (- n 1))))))
+
+

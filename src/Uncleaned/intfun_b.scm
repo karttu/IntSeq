@@ -11,7 +11,7 @@
 ;;  Start with scheme --heap 13000                                        ;;
 ;;  if encountering "Out of memory" errors when compiling.                ;;
 ;;                                                                        ;;
-;;  Last edited 2016-10-27.                                               ;;
+;;  Last edited 2017-04-14.                                               ;;
 ;;                                                                        ;;
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
@@ -2621,6 +2621,37 @@
 (define (A227349 n) (apply * (bisect (reverse (binexp->runcount1list n)) (- 1 (modulo n 2))))) ;; Product of lengths of 1-runs
 (define (A227350 n) (apply * (bisect (reverse (binexp->runcount1list n)) (modulo n 2)))) ;; Prod. of lengths of 0-runs
 
+;;;;
+(define (A284558 n) (/ (A167489 n) (A284559 n)))
+
+(define (A284559 n) (apply lcm (binexp->runcount1list n))) ;; [AK] o=0: LCM of run lengths in binary representation of n
+
+(define (A284559v2 n) (reduce lcm 1 (binexp->runcount1list n)))
+
+(define (A284560 n) (- n (A284559 n)))
+
+(define (A284562 n) (/ (A227349 n) (A284569 n)))
+
+(define (A284569 n) (apply lcm (bisect (reverse (binexp->runcount1list n)) (- 1 (modulo n 2))))) ;; [AK] o=0: LCM of lengths of 1-runs
+(define (A284569v2 n) (A072411 (A005940 (+ 1 n))))
+
+(define (A284579 n) (reduce A048720bi 1 (binexp->runcount1list n)))
+(define (A284580 n) (reduce A048720bi 1 (bisect (reverse (binexp->runcount1list n)) (- 1 (modulo n 2)))))
+
+;; A038374 [Zumkeller] o=1: Length of longest contiguous block of 1's in binary expansion of n.
+
+(define (A038374 n) (apply max (bisect (reverse (binexp->runcount1list n)) (- 1 (modulo n 2)))))
+
+
+(define (A283972 n) (- n (A227349 n)))
+
+(define (A284581 n) (- n (A284579 n)))
+
+(define (A284582 n) (gcd (A227349 n) (A227350 n)))
+
+(define (A284583 n) (lcm (A227349 n) (A227350 n)))
+
+;;;;
 (definec (A106737 n) (cond ((zero? n) 1) ((even? n) (A106737 (/ n 2))) ((= 1 (modulo n 4)) (* 2 (A106737 (/ (- n 1) 2)))) (else (- (* 2 (A106737 (/ (- n 1) 2))) (A106737 (/ (- n 3) 4))))))
 
 (define (A106737v2 n) (fold-left (lambda (a r) (* a (+ 1 r))) 1 (bisect (reverse (binexp->runcount1list n)) (- 1 (modulo n 2)))))
