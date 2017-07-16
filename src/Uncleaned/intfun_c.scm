@@ -17,7 +17,7 @@
 ;;  (some sequences to be renumbered). Also, the current hasty            ;;
 ;;  implementation of A258012 fails with larger values of n.              ;;
 ;;                                                                        ;;
-;;  Last edited 2017-04-16.                                               ;;
+;;  Last edited 2017-06-28.                                               ;;
 ;;                                                                        ;;
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
@@ -2550,6 +2550,7 @@
 (define (A276944 n) (A276943 (- n)))
 
 
+
 (define (A276945bi row col) (if (= 1 col) (A276155 row) (A276154 (A276945bi row (- col 1)))))
 (defineperm1 (A276945 n) (A276945bi (A002260 n) (A004736 n)))
 
@@ -2557,6 +2558,11 @@
 
 (define (A276939 n) (+ (A002110 n) (A002110 (+ 1 n)))) ;; Row 2 of A276945.
 
+(define (A286623 n) (A286623bi (A002260 n) (A004736 n)))
+(define (A286623bi row col) (/ (A276943bi row col) (A002110 (- row 1))))
+
+(define (A286625 n) (A286625bi (A002260 n) (A004736 n)))
+(define (A286625bi row col) (/ (A276945bi row col) (A002110 (- col 1))))
 
 ;; XFER: These should be somewhere else, num-theory-misc.ss ?
 

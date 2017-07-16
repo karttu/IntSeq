@@ -1,5 +1,5 @@
 
-;; Last edited 2017-05-14 by Antti Karttunen, added yet more unsorted functions to this old MIT/GNU-Scheme module.
+;; Last edited 2017-07-12 by Antti Karttunen, added yet more unsorted functions to this old MIT/GNU-Scheme module.
 
 (declare (usual-integrations))
 
@@ -147,6 +147,19 @@
 
 (define (A082903most_likely n) (/ (A000203 n) (A161942 n)))
 
+(define (A017665 n) (numerator (/ (A000203 n) n)))
+(define (A017666 n) (denominator (/ (A000203 n) n)))
+
+(define (A009194 n) (gcd n (A000203 n))) ;; [David W. Wilson] o=1: GCD(n, sigma(n)).
+
+;; [Michel Marcus] o=1: Numbers n such that GCD(sigma(n), n) > GCD(sigma(m), m) for all m < n. 
+
+(define A216793 (RECORD-POS 1 1 A009194))
+
+
+
+;; Maybe combine: (sort-dups (map (lambda (n) (cons (A009194 n) (A017665 n))) (iota 1200)))
+
 (define (A286357 n)  (A001511 (A000203 n)))
 (define (A286357v2 n) (A070939 (/ (A000203 n) (A161942 n))))
 
@@ -206,7 +219,8 @@
 (define A159886 (MATCHING-POS 1 1 (lambda (n) (< 1 (A054973 n)))))
 
 ;; Largest squarefree number dividing n: the squarefree kernel of n, rad(n), radical of n.
-(definec (A007947 n) (apply * (uniq (ifactor n))))
+(definec (A007947old n) (apply * (uniq (ifactor n))))
+(definec (A007947 n) (if (= 1 n) n (* (A020639 n) (A007947 (A028234 n)))))
 
 (define (A003557 n) (/ n (A007947 n)))
 
@@ -1324,7 +1338,20 @@
 
 (definec (A076271 n) (if (= 1 n) n (+ (A076271 (- n 1)) (A006530 (A076271 (- n 1))))))
 
-(define (A028233 n) (expt (A020639 n) (A067029 n)))
+;; (define (A028233 n) (expt (A020639 n) (A067029 n)))
+
+(define (A028233 n)
+  (if (< n 2)
+      n
+      (let ((lpf (A020639 n)))
+        (let loop ((m lpf) (n (/ n lpf)))
+          (cond ((not (zero? (modulo n lpf))) m)
+                (else (loop (* m lpf) (/ n lpf)))
+          )
+        )
+      )
+  )
+)
 
 (define (A028234 n) (/ n (A028233 n)))
 
@@ -1337,6 +1364,16 @@
 
 ;; A051903 [Labos Elemer] Maximal exponent in prime factorization of n. 
 (definec (A051903 n) (if (= 1 n) 0 (max (A067029 n) (A051903 (A028234 n)))))
+
+;; A051904 [Labos Elemer] Minimal exponent in prime factorization of n. 
+(definec (A051904 n) (cond ((= 1 n) 0) ((= 1 (A001221 n)) (A001222 n)) (else (min (A067029 n) (A051904 (A028234 n))))))
+
+;; A157754 [Jaroslav Krizek] o=1: a(1) = 0, a(n)= LCM[A051904(n),A051903(n)] for n >= 2. 
+(define (A157754 n) (lcm (A051903 n) (A051904 n)))
+
+;; A158378 [Jaroslav Krizek] o=1: a(1) = 0, a(n) = GCD[(A051904(n),A051903(n)] for n>=2. 
+(define (A158378 n) (gcd (A051903 n) (A051904 n)))
+
 
 ;; A056169 [Labos Elemer] o=1: Number of unitary prime divisors of n.
 (definec (A056169 n) (if (= 1 n) 0 (+ (if (= 1 (A067029 n)) 1 0) (A056169 (A028234 n)))))
@@ -3227,7 +3264,18 @@
 (define (A244984fast n) (if (= 1 n) n (+ 1 (pos_of_k_in_vector (A122111 (-1+ (* 2 n))) vecA070003))))
 
 (define (A244153 n) (A156552 (A064216 n))) ;; offset 1, a(1) = 0.
-(define (A244154 n) (A048673 (A005940 (+ 1 n)))) ;; offset 0, a(0) = 1.
+(define (A244154v2 n) (A048673 (A005940 (+ 1 n)))) ;; offset 0, a(0) = 1.
+
+(definec (A244154 n)
+   (cond ((<= n 1) (+ 1 n))
+         ((even? n) (A254049 (A244154 (/ n 2))))
+         (else (+ -1 (* 3 (A244154 (/ (- n 1) 2)))))
+   )
+)
+
+(define (A286613 n) (A046523 (A244154 n)))
+(define (A286613v2 n) (A278224 (A005940 (+ 1 n))))
+(define (A286613v3 n) (A285713 (A054429 n)))
 
 (define (A245611 n) (A243071 (A064216 n))) ;; offset 1, a(1) = 0.
 (define (A245612 n) (A048673 (A163511 n))) ;; offset 0, a(0) = 1.
@@ -3825,6 +3873,8 @@
         (else (+ 1 (* 2 (A252756 (A250470 n)))))
   )
 )
+
+(define (A286550 n) (- (A252755 n) n))
 
 (define A253789 (FIXED-POINTS 1 1 (COMPOSE A252753 -1+)))
 (define A253789v2 (FIXED-POINTS 1 1 (COMPOSE 1+ A252754)))
@@ -9291,6 +9341,10 @@
 
 (define (A283467 n) (A005185 (- (+ n 1) (A005185 n))))
 
+;; A287292 [Altug Alkan] o=1: a(1) = 1, a(2) = 2; a(n) = a(n-a(n-1)+1) + a(n-a(n-2)-1) for n > 2.
+(definec (A287292 n) (if (<= n 2) n (+ (A287292 (+ 1 (- n (A287292 (- n 1))))) (A287292 (+ -1 (- n (A287292 (- n 2))))))))
+
+
 (definec (A280706 n) (if (= 1 n) 1 (+ (A280706 (- n 1)) (A283467 n))))
 
 ;; A280706 [AK] o=1: a(n) = Sum_{k=1..n} q(k+1-q(k)), where q(k) = A005185(k).
@@ -9300,8 +9354,11 @@
 
 (define (A284173 n) (modulo (A280706 n) n))
 
-;; A284019 [Altug Alkan] o=1: a(n) = A004001(n) - A005185(n).
+;; A284019 [Altug Alkan] o=1: a(n) = A004001(n) - A005185(n). "Hofstadter Chaotic Heart sequence".
 (define (A284019 n) (- (A004001 n) (A005185 n)))
+
+;; A087740 [Bagula] o=1: a(n) = 1+Abs[A004001[A005185[n]]-A005185[A004001[n]]] 
+(define (A087740 n) (+ 1 (abs (- (A004001 (A005185 n)) (A005185 (A004001 n))))))
 
 
 ;; A007955 [R. Muller] o=1: Product of divisors of n. 
@@ -9319,6 +9376,9 @@
 )
 
 (define (A283995 n) (A046523 (A007955 n)))
+
+;; A280684 [Jaroslav Krizek] o=1: a(n) = number of divisors of the product of the divisors of n. 
+(define (A280684 n) (A000005 (A007955 n)))
 
 ;; A007954 Product of proper divisors of n.
 
@@ -9534,6 +9594,15 @@
 ;; A087207 [Mitch Cervinka] o=1: A binary representation of the primes that divide a number. 
 
 (define (A087207 n) (A048675 (A007947 n)))
+(definec (A087207 n) (if (= 1 n) 0 (+ (A000079 (+ -1 (A055396 n))) (A087207 (A028234 n)))))
+
+(define A286608 (MATCHING-POS 1 1 (lambda (n) (< (A087207 n) n))))
+
+(define A286609 (MATCHING-POS 1 1 (lambda (n) (> (A087207 n) n))))
+
+(define A286611 (MATCHING-POS 1 1 (lambda (n) (<= (A019565 n) (A087207 n)))))
+
+(define A286612 (MATCHING-POS 1 1 (lambda (n) (and (< (A087207 n) n) (<= (A019565 n) (A087207 n))))))
 
 ;; (definec (A285329 n) (if (not (zero? (A008683 n))) (A013928 n) (A285329 (A285328 n))))
 
@@ -9629,6 +9698,8 @@
 
 (define (A285333 n) (A048675 (A285332 n)))
 
+(define (A286542 n) (A046523 (A285332 n)))
+
 (define (A285330 n) (if (not (zero? (A008683 n))) (A048675 n) (A285328 n)))
 
 (define (A284311 n) (A284311bi (A002260 n) (A004736 n)))
@@ -9688,6 +9759,8 @@
 (define (A285327 n) (if (zero? n) n (/ (+ n (A006519 n)) 2)))
 
 ;; XXX - XFER: ???
+
+(define (A007283 n) (* 3 (A000079 n))) ;; [NJAS] o=0: a(n) = 3*2^n. 
 
 (define (A036563 n) (- (expt 2 n) 3)) ;; [NJAS] o=0: 2^n-3.
 
@@ -10151,6 +10224,8 @@
 
 (definec (A286457 n) (if (= 1 n) 0 (* (/ 1 2) (+ (expt (+ (A078898 n) (A246277 n)) 2) (- (A078898 n)) (- (* 3 (A246277 n))) 2))))
 
+(definec (A286467 n) (* (/ 1 2) (+ (expt (+ (A101296 n) (A286545 n)) 2) (- (A101296 n)) (- (* 3 (A286545 n))) 2)))
+
 
 ;; E.g.:
 ;; (define vecA286448 (read-b-file-to-vector "seqs2/b286448_upto20000.txt" 20001))
@@ -10165,6 +10240,31 @@
 
 (define (A286459 n) (A286458 (A064216 n)))
 
+;; (define vecA101296 (read-b-file-to-vector "seqs2/b101296_upto10000_from_Michel_Marcus.txt" 10001))
+
+;; (define vecA286622 (read-b-file-to-vector "seqs2/b286622_upto8191_from_scheme.txt" 8192))
+
+;; (define vecA286565 (read-b-file-to-vector "seqs2/b286565_upto1032.txt" 1033))
+
+;; (define (A101296 n) (vector-ref vecA101296 n))
+
+;; (define (A286622 n) (vector-ref vecA286622 n))
+
+;; (define (A286565 n) (vector-ref vecA286565 n))
+
+(define (A286566 n) (* (/ 1 2) (+ (expt (+ (A101296 n) (A286565 n)) 2) (- (A101296 n)) (- (* 3 (A286565 n))) 2)))
+
+(define (A286567 n) (A020639 (A001045 n))) ;; [AK & HH] o=1: Smallest prime factor of the n-th Jacobsthal number.
+
+(define (A286568 n) (* (/ 1 2) (+ (expt (+ (A000010 n) (A286357 n)) 2) (- (A000010 n)) (- (* 3 (A286357 n))) 2)))
+
+(define (A286570 n) (* (/ 1 2) (+ (expt (+ (A046523 n) (A009194 n)) 2) (- (A046523 n)) (- (* 3 (A009194 n))) 2)))
+
+(define (A286571 n) (* (/ 1 2) (+ (expt (+ (A046523 n) (A017666 n)) 2) (- (A046523 n)) (- (* 3 (A017666 n))) 2)))
+
+(define (A286572 n) (* (/ 1 2) (+ (expt (+ (A053574 n) (A000203 n)) 2) (- (A053574 n)) (- (* 3 (A000203 n))) 2)))
+
+(define (A286573 n) (* (/ 1 2) (+ (expt (+ (A007733 n) (A046523 n)) 2) (- (A007733 n)) (- (* 3 (A046523 n))) 2)))
 
 
 (define (A286243 n) (A278222 (A064216 n)))
@@ -10223,6 +10323,25 @@
 
 (define (A286388 n) (if (= 1 n) 0 (* (/ 1 2) (+ (expt (+ (A032742 n) (A001511 (+ 1 n))) 2) (- (A032742 n)) (- (* 3 (A001511 (+ 1 n)))) 2))))
 
+(define (A286541 n) (if (<= n 2) 0 (* (/ 1 2) (+ (expt (+ (A004001 (A004001 (- n 1))) (A004001 (- n (A004001 (- n 1))))) 2) (- (A004001 (A004001 (- n 1)))) (- (* 3 (A004001 (- n (A004001 (- n 1)))))) 2))))
+
+(define (A286559 n) (if (<= n 2) 0 (* (/ 1 2) (+ (expt (+ (A005185 (- n (A005185 (- n 1)))) (A005185 (- n (A005185 (- n 2))))) 2) (- (A005185 (- n (A005185 (- n 1))))) (- (* 3 (A005185 (- n (A005185 (- n 2)))))) 2))))
+
+(define (A286560 n) (if (<= n 2) 0 (* (/ 1 2) (+ (expt (+ (A286541 n) (A286559 n)) 2) (- (A286541 n)) (- (* 3 (A286559 n))) 2))))
+
+
+(define (A286591 n) (* (/ 1 2) (+ (expt (+ (A009191 n) (A009194 n)) 2) (- (A009191 n)) (- (* 3 (A009194 n))) 2)))
+
+(define (A286592 n) (* (/ 1 2) (+ (expt (+ (A046523 n) (A286449 n)) 2) (- (A046523 n)) (- (* 3 (A286449 n))) 2)))
+
+(define (A286593 n) (* (/ 1 2) (+ (expt (+ (A089309 n) (A286449 n)) 2) (- (A089309 n)) (- (* 3 (A286449 n))) 2)))
+
+(define (A286595 n) (* (/ 1 2) (+ (expt (+ (A001511 n) (A286449 n)) 2) (- (A001511 n)) (- (* 3 (A286449 n))) 2)))
+
+(define (A286594 n) (A285721bi n (A000203 n)))
+(define (A286594v2 n) (A285721bi (A000203 n) n))
+
+
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 
@@ -10261,8 +10380,9 @@
 
 (define (A286466 n) (* (/ 1 2) (+ (expt (+ (A112049 n) (A046523 n)) 2) (- (A112049 n)) (- (* 3 (A046523 n))) 2)))
 
+(define (A286479 n) (A046523 (+ n (A000005 n))))
 
-
+(define (A286480 n) (* (/ 1 2) (+ (expt (+ (A046523 n) (A286479 n)) 2) (- (A046523 n)) (- (* 3 (A286479 n))) 2)))
 
 
 (define (A286362 n) (* (/ 1 2) (+ (expt (+ (A089309 n) (A046523 n)) 2) (- (A089309 n)) (- (* 3 (A046523 n))) 2)))
@@ -10566,6 +10686,17 @@
 
 ;;;;;;;
 
+(define (A286536 n) (A278219 (A267111 n)))
+
+(define (A286536v2 n) (A278222 (A276445 n)))
+
+(define (A286538 n) (A278222 (A267111 n)))
+
+(define (A286580 n) (A278222 (A233275 n))) ;; o=0: 
+
+(define (A286588 n) (A278222 (A246200 n)))
+
+
 (define (A286553 n) (A046523 (A252753 n)))
 
 ;; Note: A252753(n) = A250245(A005940(1+n)).
@@ -10593,9 +10724,717 @@
 
 ;;;;;;;
 
+;; A005063 [NJAS] o=1: Sum of squares of primes dividing n.
+(definec (A005063 n) (if (= 1 n) 0 (+ (A000290 (A020639 n)) (A005063 (A028234 n)))))
+(define (A005063v2 n) (+ (A005071 n) (A005075 n) (* 9 (A079978 n))))
+
+;; A005064 [NJAS] o=1: Sum of cubes of primes dividing n. Additive with a(p^e) = p^3. 
+(definec (A005064 n) (if (= 1 n) 0 (+ (A000578 (A020639 n)) (A005064 (A028234 n)))))
+(define (A005064v2 n) (+ (A005072 n) (A005076 n) (* (A079978 n) 27)))
+
+;; A005065 [NJAS] o=1: Sum of 4th powers of primes dividing n. Additive with a(p^e) = p^4. 
+(definec (A005065 n) (if (= 1 n) 0 (+ (A000583 (A020639 n)) (A005065 (A028234 n)))))
+(define (A005065v2 n) (+ (A005073 n) (A005077 n) (* (A079978 n) 81)))
+
+;; A005066 [NJAS] o=1: Sum of squares of odd primes dividing n. 
+(definec (A005066 n) (cond ((= 1 n) 0) ((even? n) (A005066 (/ n 2))) (else (+ (A000290 (A020639 n)) (A005066 (A028234 n))))))
+
+(define (A005066v2 n) (A005063 (A000265 n)))
+
+;; A005067 [NJAS] o=1: Sum of cubes of odd primes dividing n.
+(definec (A005067 n) (cond ((= 1 n) 0) ((even? n) (A005067 (/ n 2))) (else (+ (A000578 (A020639 n)) (A005067 (A028234 n))))))
+(define (A005067v2 n) (A005064 (A000265 n)))
+
+;; A005068 [NJAS] o=1: Sum of 4th powers of odd primes dividing n.
+(definec (A005068 n) (cond ((= 1 n) 0) ((even? n) (A005068 (/ n 2))) (else (+ (A000583 (A020639 n)) (A005068 (A028234 n))))))
+(define (A005068v2 n) (A005065 (A000265 n)))
+
+;; A008472 [Olivier Gérard] o=1: Sum of the distinct primes dividing n. Additive with a(p^e) = p.
+(definec (A008472 n) (cond ((= 1 n) 0) (else (+ (A020639 n) (A008472 (A028234 n))))))
+
+;; A005069 [NJAS] o=1: Sum of odd primes dividing n. Additive with a(p^e) = 0 if p = 2, p otherwise. 
+(definec (A005069 n) (cond ((= 1 n) 0) ((even? n) (A005069 (/ n 2))) (else (+ (A020639 n) (A005069 (A028234 n))))))
+(define (A005069v2 n) (A008472 (A000265 n)))
 
 ;; A005070 [NJAS] o=1: Sum of primes = 1 (mod 3) dividing n. 
 ;; Additive with a(p^e) = p if p = 1 (mod 3), 0 otherwise. 
 
 (definec (A005070 n) (if (= 1 n) 0 (+ (if (= 1 (modulo (A020639 n) 3)) (A020639 n) 0) (A005070 (A028234 n)))))
 
+;; A005071 [NJAS] o=1: Sum of squares of primes = 1 mod 3 dividing n.  (Additive with a(p^e) = p^2 if p = 1 (mod 3), 0 otherwise.)
+(definec (A005071 n) (if (= 1 n) 0 (+ (A000290 (if (= 1 (modulo (A020639 n) 3)) (A020639 n) 0)) (A005071 (A028234 n)))))
+
+;; A005072 [NJAS] o=1: Sum of cubes of primes = 1 mod 3 dividing n. (Additive with a(p^e) = p^3 if p = 1 (mod 3), 0 otherwise.)
+(definec (A005072 n) (if (= 1 n) 0 (+ (A000578 (if (= 1 (modulo (A020639 n) 3)) (A020639 n) 0)) (A005072 (A028234 n)))))
+
+;; A005073 [NJAS] o=1: Sum of 4th powers of primes = 1 mod 3 dividing n. (Additive with a(p^e) = p^4 if p = 1 (mod 3), 0 otherwise.)
+(definec (A005073 n) (if (= 1 n) 0 (+ (A000583 (if (= 1 (modulo (A020639 n) 3)) (A020639 n) 0)) (A005073 (A028234 n)))))
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+;; A005074 [NJAS] o=1: Sum of primes = 2 mod 3 dividing n. Additive with a(p^e) = p if p = 2 (mod 3), 0 otherwise.
+(definec (A005074 n) (if (= 1 n) 0 (+ (if (= 2 (modulo (A020639 n) 3)) (A020639 n) 0) (A005074 (A028234 n)))))
+(define (A005074v2 n) (- (A008472 n) (A005070 n) (* 3 (A079978 n))))
+
+
+;; A005075 [NJAS] o=1: Sum of squares of primes = 2 mod 3 dividing n. Additive with a(p^e) = p^2 if p = 2 (mod 3), 0 otherwise.
+(definec (A005075 n) (if (= 1 n) 0 (+ (A000290 (if (= 2 (modulo (A020639 n) 3)) (A020639 n) 0)) (A005075 (A028234 n)))))
+(define (A005075v2 n) (- (A005063 n) (A005071 n) (* 9 (A079978 n))))
+
+;; A005076 [NJAS] o=1: Sum of cubes of primes = 2 mod 3 dividing n. Additive with a(p^e) = p^3 if p = 2 (mod 3), 0 otherwise.
+(definec (A005076 n) (if (= 1 n) 0 (+ (A000578 (if (= 2 (modulo (A020639 n) 3)) (A020639 n) 0)) (A005076 (A028234 n)))))
+(define (A005076v2 n) (- (A005064 n) (A005072 n) (* 27 (A079978 n))))
+
+;; A005077 [NJAS] o=1: Sum of 4th powers of primes = 2 mod 3 dividing n. Additive with a(p^e) = p^4 if p = 2 (mod 3), 0 otherwise.
+
+(definec (A005077 n) (if (= 1 n) 0 (+ (A000583 (if (= 2 (modulo (A020639 n) 3)) (A020639 n) 0)) (A005077 (A028234 n)))))
+(define (A005077v2 n) (- (A005065 n) (A005073 n) (* 81 (A079978 n))))
+
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+
+;; A005078 [NJAS] o=1: Sum of primes = 1 mod 4 dividing n. Additive with a(p^e) = p if p = 1 (mod 4), 0 otherwise.
+
+(definec (A005078 n) (if (= 1 n) 0 (+ (if (= 1 (modulo (A020639 n) 4)) (A020639 n) 0) (A005078 (A028234 n)))))
+
+;; A005079 [NJAS] o=1: Sum of squares of primes = 1 mod 4 dividing n. Additive with a(p^e) = p^2 if p = 1 (mod 4), 0 otherwise.
+
+(definec (A005079 n) (if (= 1 n) 0 (+ (if (= 1 (modulo (A020639 n) 4)) (A000290 (A020639 n)) 0) (A005079 (A028234 n)))))
+
+;; A005080 [NJAS] o=1: Sum of cubes of primes = 1 mod 4 dividing n. Additive with a(p^e) = p^3 if p = 1 (mod 4), 0 otherwise. 
+
+(definec (A005080 n) (if (= 1 n) 0 (+ (if (= 1 (modulo (A020639 n) 4)) (A000578 (A020639 n)) 0) (A005080 (A028234 n)))))
+
+;; A005081 [NJAS] o=1: Sum of 4th powers of primes = 1 mod 4 dividing n. Additive with a(p^e) = p^4 if p = 1 (mod 4), 0 otherwise. 
+(definec (A005081 n) (if (= 1 n) 0 (+ (if (= 1 (modulo (A020639 n) 4)) (A000583 (A020639 n)) 0) (A005081 (A028234 n)))))
+
+
+;; A005082 [NJAS] o=1: Sum of primes = 3 mod 4 dividing n. Additive with a(p^e) = p if p = 3 (mod 4), 0 otherwise.
+
+(definec (A005082 n) (if (= 1 n) 0 (+ (* (A079978 (modulo (A020639 n) 4)) (A020639 n)) (A005082 (A028234 n)))))
+
+;; (same-intfuns1? A005082 (lambda (n) (- (A008472 n) (A005078 n) (* 2 (A059841 n)))) 1200) --> #t
+
+;; A005083 [NJAS] o=1: Sum of squares of primes = 3 mod 4 dividing n. Additive with a(p^e) = p^2 if p = 3 (mod 4), 0 otherwise.
+
+(definec (A005083 n) (if (= 1 n) 0 (+ (if (= 3 (modulo (A020639 n) 4)) (A000290 (A020639 n)) 0) (A005083 (A028234 n)))))
+
+
+;; A005084 [NJAS] o=1: Sum of cubes of primes = 3 mod 4 dividing n.
+(definec (A005084 n) (if (= 1 n) 0 (+ (if (= 3 (modulo (A020639 n) 4)) (A000578 (A020639 n)) 0) (A005084 (A028234 n)))))
+
+
+;; (same-intfuns1? A005079 (lambda (n) (- (A005063 n) (A005083 n) (* 4 (A059841 n)))) 1200)
+;; (same-intfuns1? A005083 (lambda (n) (- (A005063 n) (A005079 n) (* 4 (A059841 n)))) 1200)
+;; (same-intfuns1? A005084 (lambda (n) (- (A005064 n) (A005080 n) (* 8 (A059841 n)))) 2700)
+;; (same-intfuns1? A005085 (lambda (n) (- (A005065 n) (A005081 n) (* 16 (A059841 n)))) 2700)
+
+;; (same-intfuns1? A005080 (lambda (n) (- (A005064 n) (A005084 n) (* 8 (A059841 n)))) 2500) --> #t
+;; (same-intfuns1? A005081 (lambda (n) (- (A005065 n) (A005085 n) (* 16 (A059841 n)))) 2500) --> #t
+
+
+
+;; A005085 [NJAS] o=1: Sum of 4th powers of primes = 3 mod 4 dividing n. Additive with a(p^e) = p^4 if p = 3 (mod 4), 0 otherwise.
+
+(definec (A005085 n) (if (= 1 n) 0 (+ (if (= 3 (modulo (A020639 n) 4)) (A000583 (A020639 n)) 0) (A005085 (A028234 n)))))
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+;; A005088 [NJAS] o=1: Number of primes = 1 mod 3 dividing n. Additive with a(p^e) = 1 if p = 1 (mod 3), 0 otherwise. 
+
+(definec (A005088 n) (if (= 1 n) 0 (+ (modulo (modulo (A020639 n) 3) 2) (A005088 (A028234 n)))))
+(define (A005088v2 n) (- (A001221 n) (A005090 n) (A079978 n)))
+
+;; A005090 [NJAS] o=1: Number of primes = 2 mod 3 dividing n. Additive with a(p^e) = 1 if p = 2 (mod 3), 0 otherwise. 
+(definec (A005090 n) (if (= 1 n) 0 (+ (A004526 (modulo (A020639 n) 3)) (A005090 (A028234 n)))))
+(define (A005090v2 n) (- (A001221 n) (A005088 n) (A079978 n)))
+
+
+;; A248909 [Tom Edgar] o=1: Completely multiplicative with a(p) = p if p = 6k+1 and a(p)=1 otherwise. 
+(definec (A248909 n) (if (= 1 n) n (* (if (= 1 (modulo (A020639 n) 6)) (A020639 n) 1) (A248909 (A032742 n)))))
+
+;; A170824 [NJAS, Vos Post] o=1: a(n) = product of distinct primes of form 6k+1 that divide n. 
+(definec (A170824 n) (if (= 1 n) n (* (if (= 1 (modulo (A020639 n) 6)) (A020639 n) 1) (A170824 (A028234 n)))))
+
+;; A090002 [Zumkeller] o=0: Length of longest contiguous block of 1's in binary expansion of n-th triangular number. 
+
+(define (A090002 n) (if (zero? n) n (A038374 (A000217 n))))
+
+;; A090003 [Zumkeller] o=0: Length of longest contiguous block of 1's in binary expansion of n^3. 
+
+(define (A090003 n) (if (zero? n) n (A038374 (expt n 3))))
+
+(definec (A286468 n) (fold-left (lambda (a r) (* (A003961 a) (A000079 (- r 1)))) 1 (binexp->runcount1list n)))
+
+(definec (A286468r1 n)
+  (cond ((= 1 n) n)
+        ((zero? (modulo n 4)) (* 2 (A286468r1 (/ n 2))))
+        ((= 1 (modulo n 4)) (A003961 (A286468r1 (/ (- n 1) 2))))
+        ((= 2 (modulo n 4)) (A003961 (A286468r1 (/ n 2))))
+        ((= 3 (modulo n 4)) (* 2 (A286468r1 (/ (- n 1) 2))))
+  )
+)
+
+
+;; (same-intfuns1? (COMPOSE A286468 A007283) (COMPOSE A007283 -1+) 120) --> #t
+
+
+
+;; Run lengths in the binary expansion of n gives the vector of exponents in prime factorization of a(n)+1, with the least significant run corresponding to the exponent of the least prime, 2. 
+
+(definec (A075157 n)
+   (if (zero? n)
+       n
+       (+ -1
+          (* (A000040 (A005811 n))
+             (fold-left (lambda (a r) (* (A003961 a) (A000079 (- r 1)))) 1 (binexp->runcount1list n))
+          )
+       )
+   )
+)
+
+(define (A075157v2 n) (if (zero? n) n (- (* (A000040 (A005811 n)) (A286468 n)) 1)))
+
+(define (A075159 n) (+ 1 (A075157 (- n 1))))
+
+(definec (A278217 n) (A046523 (+ 1 (A075157 n))))
+
+
+
+(define (A286546 n) (- (A006068 n) n))
+
+(define (A286548 n) (- (A003188 n) n))
+
+;; A162512 [Gerard P. Michon] o=1: Dirichlet inverse of A162511.
+(definec (A162512 n) (if (= 1 n) n (* (- (expt -2 (- (A067029 n) 1))) (A162512 (A028234 n)))))
+
+
+;; A007953 [R. Muller] o=0: Digital sum (i.e., sum of digits) of n; also called digsum(n). 
+(define (A007953 n) (let loop ((n n) (s 0)) (if (zero? n) s (let ((d (modulo n 10))) (loop (/ (- n d) 10) (+ s d))))))
+
+
+(define (A286561 n) (A286561bi (A002260 n) (A004736 n)))
+(define (A286562 n) (A286561bi (A004736 n) (A002260 n)))
+
+(define (A286563 n) (A286561bi (A002024 n) (A002260 n)))
+(define (A286564 n) (A286561bi (A002024 n) (A004736 n)))
+
+(define (A286561bi row col) (if (= 1 col) 1 (let loop ((i 1)) (if (not (zero? (modulo row (expt col i)))) (- i 1) (loop (+ 1 i))))))
+
+
+(define (A169594 n) (add (lambda (k) (A286561bi n k)) 1 n))
+
+
+(define (A062249 n) (+ n (A000005 n))) ;; [Ahmed Fares] o=1: a(n) = n + d(n), where d(n) = number of divisors of n, cf. A000005.
+
+(define (A286529 n) (A000005 (+ n (A000005 n))))
+
+(define (A286530 n) (- (A286529 n) (A000005 n)))
+
+(define A175304 (ZERO-POS 1 1 A286530))
+
+
+(define (A286540 n) (gcd (A259934 n) (A259934 (- n 1)))) ;; o=1.
+(define (A286540v2 n) (gcd (A259934 n) (A259935 n)))
+(define (A286540v3 n) (A009191 (A259934 n)))
+
+(define (A009191 n) (gcd n (A000005 n))) ;; [David W. Wilson] o=1: GCD(n, d(n)). 
+
+(define (A009205 n) (gcd (A000005 n) (A000203 n))) ;; [David W. Wilson] o=1: GCD(d(n), sigma(n)).
+
+(define (A083258 n) (gcd n (A046523 n))) ;; [Labos Elemer] o=1:	a(n) = gcd(A046523(n), n).
+
+(define (A083261 n) (gcd (A046523 n) (A046523 (+ 1 n)))) ;; [Labos Elemer] o=1:	a(n) = gcd(A046523(n+1), A046523(n)). 
+
+(define (A039653 n) (if (zero? n) n (- (A000203 n) 1))) ;; [David W. Wilson] a(0) = 0; for n > 0, a(n) = sigma(n)-1. 
+
+(define (A009286 n) (lcm (A000010 n) (A000203 n))) ;; [David W. Wilson] o=1: lcm(sigma(n), phi(n)).
+
+(define (A009223 n) (gcd (A000010 n) (A000203 n))) ;; [David W. Wilson] o=1: a(n) = gcd(sigma(n), phi(n)).
+
+(define (A062354 n) (* (A000010 n) (A000203 n))) ;; [Jason Earls] o=1: sigma(n)*phi(n).
+
+(define (A051612 n) (- (A000203 n) (A000010 n))) ;; [Jud McCranie] o=1: sigma(n) - phi(n). 
+
+(define (A053574 n) (A007814 (A000010 n))) ;; [Labos Elemer] o=1: Exponent of 2 in phi(n) where phi(n)=A000010(n). 
+
+(define (A053575 n) (A000265 (A000010 n))) ;; [Labos Elemer] o=1: Odd part of phi(n): a(n) = A000265(A000010(n)). 
+
+;; (same-intfuns1? A000010 (lambda (n) (* (A053575 n) (A000079 (A053574 n)))) 1200) --> #t
+
+(define (A065387 n) (+ (A000010 n) (A000203 n))) ;; [Labos Elemer] o=1: a(n) = sigma(n) + phi(n). 
+
+(define (A077099 n) (gcd (A051612 n) (A065387 n))) ;; [Labos Elemer] o=1: a(n) = gcd(A051612(n), A065387(n)), where A051612(n) = sigma(n) - phi(n) and A065387(n) = sigma(n) + phi(n).
+
+(define (A077100 n) (lcm (A051612 n) (A065387 n))) ;; [Labos Elemer] o=1: a(n) = lcm(A051612(n), A065387(n)), where A051612(n) = sigma(n) - phi(n) and A065387(n) = sigma(n) + phi(n)
+
+(define (A077101 n) (* (A051612 n) (A065387 n))) ;; [Labos Elemer] o=1: a(n) = A051612(n)*A065387(n) = sigma(n)^2-phi(n)^2, where A051612(n) = sigma(n) - phi(n) and A065387(n) = sigma(n) + phi(n).
+
+;; (same-intfuns1? A077101 (lambda (n) (* (A077099 n) (A077100 n))) 1200) --> #t
+
+;; (same-intfuns1? A062354 (lambda (n) (+ (* (A039653 n) (A000010 n)) (A000010 n))) 1200) --> #t
+
+
+;; (define vecA074206 (read-b-file-to-vector "seqs2/b074206_from0_to20000_from_OEIS.txt" 20001))
+;; 
+;; (define (A074206 n) (vector-ref vecA074206 n))
+;; 
+;; (define vecA104725 (read-b-file-to-vector "seqs2/b104725_from0_to10000_by_NJAS.txt" 10001))
+;; 
+;; (define (A104725 n) (vector-ref vecA104725 n))
+;; 
+
+(define (A160086 n) (- (A104725 n) (A074206 n)))
+
+;; A280583 [Jaroslav Krizek] o=1: a(n) = product of divisors of the number of divisors of n.
+(define (A280583 n) (A007955 (A000005 n)))
+
+;; A105561 [Cino Hilliard] a(n) is the m-th prime, where m is the number of different prime factors of n.
+(define (A105561 n) (if (= 1 n) n (A000040 (A001221 n))))
+
+;; A081400 [Labos Elemer] o=1: a(n) = d[n] - bigomega[n] - A005361(n) = A000005(n) - A001222(n) - A005361(n). 
+
+(define (A081400 n) (- (A000005 n) (A001222 n) (A005361 n)))
+
+;; A138010 [Quet] o=1: a(n) = number of positive divisors of n that each divide d(n). (d(n) = number of positive divisors of n.) a(n) also equals d(GCD(n,d(n))). 
+(define (A138010 n) (A000005 (gcd n (A000005 n))))
+
+;; A059126 [Jonas Wallgren] o=0: A hierarchical sequence (W2{2} according to the description in the attached file - see link).
+
+(definec (A059126 n) (cond ((zero? (modulo n 3)) (- (A059126 (+ 1 n)) 1)) ((= 1 (modulo n 3)) (* 2 (A001511 (/ (+ 2 n) 3)))) (else (- (A059126 (+ -1 n)) 1))))
+
+;; From: https://oeis.org/A059126/a059126.txt                     0 1 2 3 4 5 6
+;; Next sequence in this set is A059127 (in its bracketed form): (1,2,1,3,1,2,1),(4,5,4,6,4,5,4),(1,2,1,3,1,2,1),... which is W2{3} since the elements are height-3-phrases.
+
+
+(definec (A059127 n)
+    (case (modulo n 7)
+       ((3) (* 3 (A001511 (/ (+ 4 n) 7))))
+       ((0) (+ -2 (A059127 (+ 3 n))))
+       ((2 4 6) (A059127 (- n (modulo n 7))))
+       ((1 5) (+ 1 (A059127 (- n 1))))
+    )
+)
+
+
+
+;; A048766 [Charles T. Le] o=0: Integer part of cube root of n. Or, number of cubes <= n. Or, n appears 3n^2 + 3n + 1 times. 
+
+(define A048766 (LEFTINV-LEASTMONO-NC2NC 0 0 A000578)) ;; Cf. A000196 /XFER: core.cube
+
+
+;; A095396 [Labos Elemer] o=1: Modified juggler map: a[n]=(1-Mod[n, 2])*Floor[n^(2/3)]]+Mod[n, 2]*Floor[n^(3/2)], i.e. for even numbers a[n]=n^(2/3) or for odd n, a[n]=sqrt[n^3]. 
+
+(define (A095396 n) (if (even? n) (A048766 (* n n)) (A000196 (* n n n))))
+
+
+;; A069739 [Valery A. Liskovets] o=1: Size of the key space for isomorphism verification of circulant graphs of order n.
+;; Multiplicative with a(p^m)=Catalan(m) (A000108).
+
+(definec (A069739 n) (if (= 1 n) n (* (A000108 (A067029 n)) (A069739 (A028234 n)))))
+
+;; (same-intfuns1? A069739 (COMPOSE A246596 A156552) 1200) --> #t
+;; (same-intfuns0? A246596 (COMPOSE A069739 A005940 1+) 8192) --> #t
+
+;; A061142 [Henry Bottomley] o=1: Replace each prime factor of n with 2: a(n)=2^bigomega(n).
+(definec (A061142 n) (if (= 1 n) n (* (A000079 (A067029 n)) (A061142 (A028234 n)))))
+
+;; (same-intfuns1? A061142 (COMPOSE A001316 A156552) 4096) --> #t
+;; (same-intfuns0? A001316 (COMPOSE A061142 A005940 1+) 16387) --> #t
+
+
+(define (A034444 n) (if (= 1 n) n (* 2 (A034444 (A028234 n)))))
+;; Yes, mathematically: (definec (A034444 n) (if (= 1 n) n (* (A040000 (A067029 n)) (A034444 (A028234 n)))))
+
+(define (A040000 n) (if (zero? n) 1 2)) ;; A040000 [NJAS] o=0: a(0)=1, a(n)=2, n >= 1. 
+
+(define (A277561 n) (A000079 (A069010 n))) ;; [Chai Wah Wu] o=0: a(n) = Sum_{k=0..n} ({binomial(n+2k,2k)*binomial(n,k)} mod 2). 
+
+;; (same-intfuns0? A277561 (COMPOSE A034444 A005940 1+) 8192) --> #t
+
+;; (same-intfuns1? A034444 (COMPOSE A277561 A156552) 1200) --> #t
+
+(definec (A112624 n) (if (= 1 n) n (* (A000142 (A067029 n)) (A112624 (A028234 n)))))
+
+;; (same-intfuns0? A246660 (COMPOSE A112624 A005940 1+) 4096) --> #t
+
+
+;; A181591 [Zumkeller] o=1: Binomial(bigOmega(n),omega(n)), where omega=A001221 and bigOmega=A001222. 
+
+(define (A181591 n)  (A007318tr (A001222 n) (A001221 n)))
+
+;; A136277 [Neven Juric] o=0: From the binary representation of n: binomial(number of ones, number of blocks of contiguous ones). 
+
+(define (A136277 n)  (A007318tr (A000120 n) (A069010 n)))
+
+;; (same-intfuns0? A136277 (COMPOSE A181591 A005940 1+) 8192) --> #t
+;; (same-intfuns1? A181591 (COMPOSE A136277 A156552) 1200) --> #t
+
+
+;; A099301 [T. D. Noe] o=1: Arithmetic derivative of d(n), the number of divisors of n. 
+
+(define (A099301 n) (A003415 (A000005 n)))
+
+
+;; A132650 [Omar E. Pol] o=1: Number of divisors of n, d(n) raised to power d(n). 
+(define (A132650 n) (expt (A000005 n) (A000005 n)))
+
+;; A006047 [Jeffrey Shallit] o=0: Number of entries in n-th row of Pascal's triangle not divisible by 3. 
+(definec (A006047 n) (if (zero? n) 1 (let ((d (modulo n 3))) (* (+ 1 d) (A006047 (/ (- n d) 3))))))
+
+;; A268444 [Tom Edgar] o=0: a(n) = Product_{i=0..k}(n_i+1) where n = Sum_{i=0..k}n_i*4^i is the base 4 representation of n.
+
+(definec (A268444 n) (if (zero? n) 1 (let ((d (modulo n 4))) (* (+ 1 d) (A268444 (/ (- n d) 4))))))
+
+;; A037445 [Yasutoshi Kohmoto] o=1: Number of infinitary divisors (or i-divisors) of n. 
+(definec (A037445 n) (if (= 1 n) n (* (A001316 (A067029 n)) (A037445 (A028234 n)))))
+
+;; (same-intfuns1? A037445 (COMPOSE A000079 A064547) 1200) --> #t
+
+
+;; A286575 [AK] o=0: Run-length transform of A001316.
+(define (A286575 n) (fold-left (lambda (a r) (* a (A001316 r))) 1 (bisect (reverse (binexp->runcount1list n)) (- 1 (modulo n 2)))))
+
+
+(define (A286574 n) (A000523 (A286575 n))) ;; [AK] o=0: a(n) = A000523(A286575(n)).
+
+;; (same-intfuns0? A286574 (COMPOSE A064547 A005940 1+) 16387) --> #t
+
+;; (same-intfuns0? A286575 (COMPOSE A037445 A005940 1+) 1024) --> #t
+;; (same-intfuns1? A037445 (COMPOSE A286575 A156552) 1024) --> #t
+
+;; (same-intfuns1? A064547 (COMPOSE A000523 A037445) 1200) --> #t
+
+;; (same-intfuns1? A064547 (COMPOSE A286574 A156552) 1200) --> #t
+
+
+;; A038148 [Yasutoshi Kohmoto] o=1: Number of 3-infinitary divisors of n: if n = Product p(i)^r(i) and d = Product p(i)^s(i), each s(i) has a digit a <= b in its ternary expansion everywhere that the corresponding r(i) has a digit b, then d is a 3-infinitary-divisor of n. 
+;; Multiplicative: If e = sum d_k 3^k, then a(p^e) = prod (d_k+1). - Christian G. Bower, May 19 2005
+
+(definec (A038148 n) (if (= 1 n) n (* (A006047 (A067029 n)) (A038148 (A028234 n)))))
+
+
+;; A074848 [Yasutoshi Kohmoto] o=1: Number of 4-infinitary divisors of n: if n=Product p(i)^r(i) and d=Product p(i)^s(i), each s(i) has a digit a<=b in its 4-ary expansion everywhere that the corresponding r(i) has a digit b, then d is a 4-infinitary-divisor of n. 
+;; Multiplicative: If e = sum d_k 4^k, then a(p^e) = prod (d_k+1). - Christian G. Bower, May 19 2005 
+
+(definec (A074848 n) (if (= 1 n) n (* (A268444 (A067029 n)) (A074848 (A028234 n)))))
+
+;; A076526 [Joseph L. Pe] o=1: a(n) = r * max(e_1, ..., e_r), where n = p_1^e_1 . .... p_r^e_r is the canonical prime factorization of n.
+(define (A076526 n) (* (A001221 n) (A051903 n)))
+
+;; A076558 [Joseph L. Pe] o=1: a(n) = r * min(e_1, ..., e_r), where n = p_1^e_1 . .... p_r^e_r is the canonical prime factorization of n, a(1) = 0.
+
+(define (A076558 n) (* (A001221 n) (A051904 n)))
+
+
+(define (A001316stand_alone n)
+  (let loop ((n n) (z 1))
+     (cond ((zero? n) z)
+           ((even? n) (loop (/ n 2) z))
+           (else (loop (/ (- n 1) 2) (* z 2)))
+     )
+  )
+)
+
+
+;; A106400 [Michael Somos] o=0: Thue-Morse sequence: let A_k denote the first 2^k terms; then A_0 = 1 and for k >= 0, A_{k+1} = A_k B_k, where B_k is obtained from A_k by interchanging 1's and -1's. 
+
+(define (A106400 n) (expt -1 (A010060 n)))
+
+;; (same-intfuns0? A106400 (COMPOSE A008836 A005940 1+) 4096) --> #t
+
+;; (same-intfuns1? A008836 (COMPOSE A106400 A156552) 1200) --> #t
+;Value: #t
+
+;; A132971 [Michael Somos] o=0: a(2*n) = a(n), a(4*n+1) = -a(n), a(4*n+3) = 0, with a(0) = 1. 
+;; If binary(n) has adjacent 1 bits then a(n) = 0 else a(n) = (-1)^A000120(n).
+
+
+(definec (A132971 n) (cond ((zero? n) 1) ((even? n) (A132971 (/ n 2))) ((= 1 (modulo n 4)) (- (A132971 (/ (- n 1) 4)))) (else 0)))
+
+;; (same-intfuns0? A132971 (COMPOSE A008683 A005940 1+) 4096) --> #t
+
+(define (A286576 n) (modulo (A132971 n) 3)) ;; [AK] o=0: a(n) = A132971(n) mod 3.
+
+
+;; A059448 [Henry Bottomley] o=1: If A_k are the terms from 2^(k-1) through to 2^k-1, then A_(k+1) is B_k A_k where B_k is A_k with 0's and 1's swapped, starting from a(1)=0; also parity of number of zero digits when n is written in binary. 
+;; a(2n)=1-a(n); a(2n+1)=a(n)=1-a(2n)
+
+(definec (A059448 n) (cond ((= 1 n) 0) ((even? n) (- 1 (A059448 (/ n 2)))) (else (A059448 (/ (- n 1) 2)))))
+
+;; (same-intfuns1? A059448 (COMPOSE A010059 A054429) 65537) --> #t
+
+;; (same-intfuns1? A059448 (COMPOSE halve 1+ A008836 A163511) 4096) --> #t
+
+;; A092248 [Mohammed Bouayoun] o=1: Parity of number of distinct primes dividing n (function omega(n)) parity of A001221.
+
+(define (A092248 n) (A000035 (A001221 n)))
+
+;; (same-intfuns0? A268411 (COMPOSE A092248 A005940 1+) 1200) --> #t
+
+
+(definec (A286577 n) (if (= 2 (modulo n 3)) (A286577 (/ (+ 1 n) 3)) n))
+
+(define (A286578 n) (A285712 (A286577 n))) ;; [AK] o=1: Cf. A285728.
+
+(define (A091304 n) (A001222 (+ -1 n n))) ;; o=1: Omega(2n-1) (prime factors counted with multiplicity).
+
+;; (same-intfuns1? A091304 (COMPOSE 1+ A285716) 1200) --> #t
+
+;; (same-intfuns1? A091304 (COMPOSE A000120 A244153) 1200) --> #t
+
+(define (A286582 n) (A001222 (A048673 n))) ;; [AK] o=1: Cf. A091304, A278224.
+
+(define (A286583 n) (A007814 (A048673 n))) 
+
+(define (A286584 n) (modulo (A048673 n) 4))
+
+(define (A286585 n) (A053735 (A048673 n)))
+
+(define (A286586 n) (A006047 (A048673 n)))
+
+(define (A286587 n) (A006047 (A244154 n)))
+(define (A286587v2 n) (A286586 (A005940 (+ 1 n))))
+
+;; (same-intfuns0? A286587 A286587v2 1200) --> #t
+
+(define (A286631 n) (A278222 (A254104 n))) ;; Cf. A286243.
+
+(define (A286632 n) (A053735 (A254103 n)))
+
+(define (A286633 n) (A006047 (A254103 n)))
+
+;; (same-intfuns0? A286632 (COMPOSE A056239 A286633) 1200) --> #t
+
+
+(define (A286596 n) (A278222 (A153141 n)))
+
+(define (A286598 n) (A278222 (A153142 n)))
+
+(define (A286601 n) (A278222 (A193231 n))) ;; Cf. A278231, A278233.
+
+;; (define vecA286622 (read-b-file-to-vector "seqs2/b286622_upto65537.txt" 65538))
+
+;; (define (A286622 n) (vector-ref vecA286622 n))
+
+(define (A286600 n) (A286622 (A193231 n)))
+
+
+;; A287654 [Altug Alkan] o=1: a(1) = 1, a(2) = a(3) = a(4) = 2; a(n) = a(a(n-1)) + a(a(n-a(n-1)) + a(n-a(n-2))) for n > 4.
+
+(definec (A287654 n)
+  (cond ((= 1 n) n)
+        ((<= n 4) 2)
+        (else (+ (A287654 (A287654 (- n 1)))
+                 (A287654 (+ (A287654 (- n (A287654 (- n 1)))) 
+                             (A287654 (- n (A287654 (- n 2))))
+                          )
+                 )
+              )
+        )
+  )
+)
+
+;; A287707 [Altug Alkan] o=1: a(1) = 1, a(2) = a(4) = a(5) = 2, a(3) = 3, a(n) = a(a(n-1)) + a(a(n-a(n-1)) + a(n-a(n-2))) for n > 5.
+
+(definec (A287707 n)
+  (cond ((or (= 1 n) (= 3 n)) n)
+        ((<= n 5) 2)
+        (else (+ (A287707 (A287707 (- n 1)))
+                 (A287707 (+ (A287707 (- n (A287707 (- n 1)))) 
+                             (A287707 (- n (A287707 (- n 2))))
+                          )
+                 )
+              )
+        )
+  )
+)
+
+
+
+;; A287730 [I. V. Serov] o=1: S-fusc, sequence s of the mutual recurrence pair: c(1)=1; s(1)=0;  c(2i+0)=s(i); c(2i+1)=s(i)+s(i+1); s(2i+0)=c(i); s(2i+1)=c(i)+c(i+1);
+
+;; A287729 [I. V. Serov] o=1: C-fusc, sequence c of the mutual diatomic recurrence pair: c(1)=1; s(1)=0; c(2i+0)=s(i); c(2i+1)=s(i)+s(i+1); s(2i+0)=c(i); s(2i+1)=c(i)+c(i+1).
+
+
+(definec (A287729 n) (cond ((= 1 n) n) ((even? n) (A287730 (/ n 2))) (else (+ (A287730 (/ (- n 1) 2)) (A287730 (/ (+ n 1) 2))))))
+
+(definec (A287730 n) (cond ((= 1 n) 0) ((even? n) (A287729 (/ n 2))) (else (+ (A287729 (/ (- n 1) 2)) (A287729 (/ (+ n 1) 2))))))
+ 
+;; Let k(n) = 1+2*A007814(n-1) = 1+2*floor(A002487(n-2)/A002487(n-1));
+
+;; let d(n) = 2*(n==2^m+1)*(-1)^A070939(n) = 2*(A002487(n-1)==1)*(-1)^A070939(n);
+
+;; then a(n) = k(n)*a(n-1)-a(n-2)-d(n). 
+
+(define (A037227 n) (+ 1 (* 2 (A007814 n)))) ;; This is k.
+
+;; (define (d n) (* (if (= 1 (A002487 (- n 1))) 1 0) 2 (expt -1 (A070939 n))))
+
+(definec (A287730v2 n)
+   (if (<= n 2)
+       (- n 1) 
+       (- (* (A037227 (- n 1)) (A287730v2 (- n 1)))
+          (A287730v2 (- n 2))
+          (* (if (= 1 (A002487 (- n 1))) 1 0) 2 (expt -1 (A070939 n)))
+       )
+   )
+)
+
+
+
+(define (A025527 n) (/ (A000142 n) (A003418 n))) ;; [Kimberling] o=1: a(n) = n!/LCM{1,2,...,n} = (n-1)!/LCM{C(n-1,0),C(n-1,1),...,C(n-1,n-1)}.
+
+
+(define (A053735new n) ;; XFER: Base-3.core.ss or such
+  (let loop ((n n) (s 0))
+     (if (zero? n)
+         s
+         (let ((d (modulo n 3)))
+           (loop (/ (- n d) 3) (+ s d))
+         )
+     )
+  )
+)
+
+;; A286590 [AK] o=1: Numbers that are divisible by the product of digits (A208575) of their factorial base representation. 
+(define A286590 (MATCHING-POS 1 1 (lambda (n) (let ((k (A208575 n))) (and (not (zero? k)) (zero? (modulo n k)))))))
+
+(define (A286604 n) (modulo n (A034968 n)))
+
+(define (A286606 n) (modulo n (A227153 n)))
+
+
+
+;; A118363 [Alonso del Arte] o=1: Factorial base Niven (or Harshad) numbers: numbers that are divisible by the sum of their factorial base digits.
+(define A118363 (ZERO-POS 1 1 A286604))
+
+;; A286607 [AK] o=1: Numbers that are not divisible by the sum of their factorial base digits (A034968).
+(define A286607 (NONZERO-POS 1 1 A286604))
+
+
+(define (A273258 n) (A019565 (A030101 (A087207 n)))) ;; [Michael De Vlieger] o=1:
+ 
+(define (A276379 n) (A054841 (A007947 n))) ;; [Michael De Vlieger] o=1:
+(define (A276379v2 n) (A007088 (A087207 n)))
+
+
+(define (A008864 n) (+ 1 (A000040 n))) ;; [N. J. A. Sloane, R. K. Guy] o=1: a(n) = prime(n) + 1.
+
+(define (A023523 n) (if (= 1 n) 3 (+ 1 (* (A000040 n) (A000040 (- n 1)))))) ;; [Clark Kimberling] o=1: a(n) = prime(n)*prime(n-1) + 1.  
+
+(define (A023523v2 n) (if (= 1 n) 3 (/ (+ (A002110 n) (A002110 (- n 2))) (A002110 (- n 2)))))
+
+
+(define (A123134 n) (* (+ 1 (A000040 (+ 1 n))) (A000040 n))) ;; [Herman Jamke] o=1: a(n) = prime(n)*(prime(n+1) + 1). 
+
+(define (A286624 n) (+ (* (A000040 (+ 1 n)) (A000040 n)) (A000040 n) 1)) ;; [AK] o=1: 
+(define (A286624v2 n) (+ 1 (* (+ 1 (A000040 (+ 1 n))) (A000040 n))))
+(define (A286624v3 n) (+ (A000040 n) (A023523 (+ 1 n))))
+
+(define (A286615 n) (A286615bi (A002260 n) (A004736 n)))
+(define (A286615bi row col) (+ -1 (A276945bi row col)))
+
+(define (A286616 n) (A286615bi (A004736 n) (A002260 n)))
+
+(define (A061720 n) (if (zero? n) 1 (* (- (A000040 (+ 1 n)) 1) (A002110 n))))
+
+(define (A286629 n) (* (- (A000040 n) 1) (A002110 n)))
+(define (A286629v2 n) (A276154 (A061720 (- n 1))))
+(define (A286629v3 n) (- (A286630 n) (A002110 n)))
+
+(define (A286630 n) (if (zero? n) 1 (* (A000040 n) (A002110 n))))
+
+;; A200213 [Luschny] o=0: Ordered factorizations of n with 2 distinct parts.
+(define (A200213 n) (if (<= n 1) 0 (- (A000005 n) 2 (A010052 n))))
+
+;; A161840 [Omar E. Pol] o=1: Number of non-central divisors of n.
+(define (A161840 n) (+ (A000005 n) 2 (- (A010052 n))))
+
+;; (same-intfuns1? (COMPOSE  (lambda (n) (+ (A200213 n) (* 2 (A010052 n)))) 1+) (COMPOSE A161840 1+) 12000) --> #t
+
+
+(define (A211159 n) (/ (- (A000005 (+ 1 n)) (A010052 (+ 1 n)) 2) 2))
+
+;; (same-intfuns1? A211159  (lambda (n) (/ (A200213 (+ 1 n)) 2)) 1200) --> #t
+
+
+;; XFER: Where?
+
+(define (A079978 n) (if (zero? (modulo n 3)) 1 0)) ;; A079978 [Vladimir Baltic] o=0: Characteristic function of multiples of three. 
+
+(define (A000583 n) (expt n 4)) ;; [NJAS] o=0: Fourth powers: a(n) = n^4.
+
+(define (A000351 n) (expt 5 n)) ;; [NJAS] o=0: Powers of 5: a(n) = 5^n.
+
+
+
+(definec (A046643 n) (if (= 1 n) n (* (A001790 (A067029 n)) (A046643 (A028234 n)))))
+
+(definec (A046644 n) (if (= 1 n) n (* (A000079 (A005187 (A067029 n))) (A046644 (A028234 n)))))
+
+(definec (A046643perA046644 n) (if (= 1 n) n (* (/ (A010050 (A067029 n)) (A000290 (A000165 (A067029 n)))) (A046643perA046644 (A028234 n)))))
+
+(define (A046643v2 n) (numerator (A046643perA046644 n)))
+(define (A046644v2 n) (denominator (A046643perA046644 n)))
+
+(definec (A046645 n) (if (= 1 n) 0 (+ (A005187 (A067029 n)) (A046645 (A028234 n)))))
+
+;; (same-intfuns1? A046643 A046643v2 10000) --> #t
+
+;; (same-intfuns1? A046644 A046644v2 10000) --> #t
+
+;; (same-intfuns1? (COMPOSE A046645 A268375) (COMPOSE A005187 A001222 A268375) 1200) --> #t
+
+
+
+;; (same-intfuns1? A268375 A268375v3 2500) --> #t
+
+;; A289617-A289628 are now reserved for your use. 
+
+(define (A289617 n) (A005187 (A001222 n)))
+
+(definec (A289618 n) (- (A289617 n) (A046645 n)))
+
+(define A268375v2 (MATCHING-POS 1 1 (lambda (n) (= (A046645 n) (A005187 (A001222 n))))))
+
+(define A268375v3 (ZERO-POS 1 1 A289618))
+
+(define A289619 (MATCHING-POS 1 1 (lambda (n) (= 1 (A289618 n)))))
+
+
+(define (A000165 n) (* (A000079 n) (A000142 n))) ;; [NJAS] o=0: Double factorial of even numbers: (2n)!! = 2^n*n!.
+
+(define (A010050 n) (A000142 (* 2 n))) ;; [Joe Keane] o=0: a(n) = (2n)!.
+
+(define (A001147 n) (/ (A010050 n) (A000165 n))) ;; [NJAS] o=0: Double factorial of odd numbers: a(n) = (2*n-1)!! = 1*3*5*...*(2*n-1).
+
+;; A000522 [NJAS] o=0: Total number of arrangements of a set with n elements: a(n) = Sum_{k=0..n} n!/k!.
+
+(definec (A000522 n) (if (zero? n) 1 (+ 1 (* n (A000522 (- n 1))))))
+
+;; A093101 [Sondow] o=0: Cancellation factor in reducing Sum_{k=0...n} 1/k! to lowest terms.
+;; GCD(n!, A(n)) where A(0) = 1, A(n) = n*A(n-1)+1, i.e. A(n) = A000522(n).
+(define (A093101 n) (gcd (A000142 n) (A000522 n)))
+
+(define (A061355 n) (/ (A000142 n) (A093101 n)))
+
+;; (same-intfuns0? A093101 (lambda (n) (/ (A000142 n) (A061355 n))) 1200) --> #t
+
+;; A124781 [Sondow] GCD(d(n), d(n+2)) where d(n) = GCD(n!, A(n)) and A(n) = A000522(n) = Sum_{k=0..n} n!/k!).
+
+(define (A124781 n) (/ (+ 3 n) (A123901 n)))
+
+
+;; A070014 [Rick L. Shepherd] o=2: Ceiling of number of prime factors of n divided by the number of n's distinct prime factors. 
+
+(define (A070014 n) (let ((a (A001222 n)) (b (A001221 n))) (if (zero? (modulo a b)) (/ a b) (+ 1 (/ (- a (modulo a b)) b)))))
+
+
+
+(define (A088529 n) (if (= 1 n) 0 (numerator (/ (A001222 n) (A001221 n))))) ;; A088529 [Cino Hilliard] o=1: Numerator of Bigomega(n)/Omega(n). 
+
+(define (A088530 n) (if (= 1 n) 0 (denominator (/ (A001222 n) (A001221 n))))) ;; A088530 [Cino Hilliard] o=1: Denominator of Bigomega(n)/Omega(n).
+
+(define (A152235 n) (A007947 (A000005 n))) ;; A152235 [Giovanni Teofilatto] o=1: Largest squarefree number dividing the number of divisors n.
