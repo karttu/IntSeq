@@ -1,5 +1,5 @@
 
-;; Last edited 2017-07-29 by Antti Karttunen, added yet more unsorted functions to this old MIT/GNU-Scheme module.
+;; Last edited 2017-11-30 by Antti Karttunen, added yet more unsorted functions to this old MIT/GNU-Scheme module.
 
 (declare (usual-integrations))
 
@@ -102,12 +102,23 @@
 
 (define (A009195 n) (gcd n (A000010 n))) ;; [David W. Wilson] o=1: a(n) = gcd(n, phi(n)).
 
+(define (A076512 n)  (/ (A000010 n) (A009195 n)))
+
 ;; A109395 [Franz Vrabec] o=1: Denominator of phi(n)/n = Prod_{p|n} (1-1/p); phi(n)=A000010(n), the Euler totient function.
 (define (A109395 n) (/ n (A009195 n)))
 
+(define (A010554 n) (A000010 (A000010 n)))
 
 (define (A051953 n) (- n (A000010 n))) ;; [Labos Elemer] o=1: Cototient(n) := n - phi(n).
 
+(define (A070556  n) (A051953 (A000010 n))) ;; [NJAS] o=1: a(n) = cototient(totient(n)).
+
+(define (A083254 n) (- (* 2 (A000010 n)) n)) ;; [Labos Elemer] o=1: a(n) = 2*phi(n) - n.
+
+(define (A293516 n) (- (A000010 n) (* 2 (A000010 (A000010 n))))) ;; [AK] o=1: phi(n) - 2*phi(phi(n)).
+(define (A293516v2 n) (- (A083254 (A000010 n)))) ;; [AK] o=1:  ;;
+
+(define (A295660 n) (A000120 (A000010 n))) ;; [AK] Number of 1-bits in binary expansion of Euler phi: a(n) = A000120(A000010(n)).
 
 ;; XFER: numtheory.jacobi.ss or such:
 
@@ -130,12 +141,82 @@
 
 ;; %F A000203 Multiplicative with a(p^e) = (p^(e+1)-1)/(p-1). - David W. Wilson, Aug 01, 2001.
 
-(definec (A000203 n)
+(define (A000203old n)
    (fold-left (lambda (prod p.e) (* prod (/ (- (expt (car p.e) (+ 1 (cdr p.e))) 1) (- (car p.e) 1))))
               1
               (if (= 1 n) (list) (elemcountpairs (ifactor n))) ;; (sort (factor n) <)
    )
 )
+
+(definec (A000203 n) (if (= 1 n) n (let ((p (A020639 n)) (e (A067029 n))) (* (/ (- (expt p (+ 1 e)) 1) (- p 1)) (A000203 (A028234 n))))))
+
+;; (same-intfuns1? A000203 (lambda (n) (/ (* (A048250 n) (A000203 (A057521 n)))  (A048250 (A057521 n)))) 10000) --> #t
+;; (same-intfuns1? A000203 (lambda (n) (* (A000203 (A057521 n)) (A048250 n) (/ 1 (A048250 (A057521 n))))) 10000) --> #t
+
+;; XXX - Demonstrating how many different kinds of functions can be defined this way:
+(definec (A010051 n) (if (= 1 n) 0 (if (= 1 (A032742 n)) 1 0)))
+
+(definec (A010052 n) (cond ((<= n 1) 1) ((odd? (A067029 n)) 0) (else (A010052 (A028234 n)))))
+
+(define (A169813 n) (A003987bi n (A000203 n))) ;; [NJAS] o=1: a(n) = n XOR sigma(n) (cf. A000203). 
+
+(define (A294896 n) (gcd (A000203 n) (A005187 n)))
+
+(define (A294898 n) (- (A005187 n) (A000203 n)))
+(define (A294899 n) (A003987bi (A005187 n) (A000203 n)))
+
+;; A295655-A295666 are now reserved for your use.
+
+(define (A295655 n) (/ (A000203 n) (A294896 n)))
+(define (A295656 n) (/ (A005187 n) (A294896 n)))
+
+(define (A062401 n) (A000010 (A000203 n))) ;; [Jason Earls] o=1: a(n) = phi(sigma(n)). 
+
+(define (A062402 n) (A000203 (A000010 n))) ;; [Jason Earls] o=1: a(n) = sigma(phi(n)). 
+
+
+(definec (A295301 n) (- n (A062401 n))) ;; [AK] o=1: a(n) = n - phi(sigma(n)).
+
+(definec (A295302 n) (- (A062402 n) n)) ;; [AK] o=1: a(n) = sigma(phi(n)) - n.
+
+
+(define (A295303 n) (sgn (A295301 n)))
+
+(define (A295304 n) (sgn (A295302 n)))
+
+(definec (A295305 n) (- (A000005 n) (A000005 (A000203 n))))
+
+(define (A295306 n) (sgn (A295305 n)))
+
+
+(define A295307 (MATCHING-POS 1 1 (lambda (n) (> (A295301 n) 0))))
+
+(define (A295308 n) (if (< (A295301 n) 0) 1 0)) ;; Characteristic function for A066694.
+
+(define (A295309 n) (if (> (A295301 n) 0) 1 0)) ;; Characteristic function for A295307.
+
+(define (A295310 n) (gcd n (A062401 n)))
+
+(define (A295311 n) (/ n (A295310 n)))
+(define (A295312 n) (/ (A062401 n) (A295310 n)))
+;; Vaiko (/ (max (A062401 n) n) (A295310 n)) ???
+
+(define (A295313 n) (A009195 (A000203 n))) ;; a(n) = gcd(sigma(n), phi(sigma(n))). 
+
+(define (A295314 n) (/ (A000203 n) (A295313 n))) ;; a(n) = sigma(n) / gcd(sigma(n), phi(sigma(n))). 
+(define (A295315 n) (/ (A062401 n) (A295313 n))) ;; a(n) = phi(sigma(n)) / gcd(sigma(n), phi(sigma(n))). 
+
+;; (same-intfuns1? A295314 (COMPOSE A109395 A000203) 1200) --> #t
+;; (same-intfuns1? A295315 (COMPOSE A076512 A000203) 5200) --> #t
+
+(define A073803 (MATCHING-POS 1 1 (lambda (n) (< (A295305 n) 0))))
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+
+(definec (A007917 n) (let loop ((k (+ 1 n))) (if (<= (A000203 k) (+ 1 n)) k (loop (- k 1)))))
+
+(definec (A070801 n) (let ((s1 (+ 1 (A000203 n)))) (let loop ((k s1)) (if (<= (A000203 k) s1) k (loop (- k 1))))))
 
 (define (A000593 n) (A000203 (A000265 n))) ;; [NJAS] o=1: Sum of odd divisors of n.
 
@@ -166,9 +247,29 @@
 
 (define (A001065 n) (- (A000203 n) n)) ;; [NJAS, Guy] o=1: Sum of proper divisors (or aliquot parts) of n: sum of divisors of n that are less than n.
 
+(define (A048050 n) (if (= 1 n) 0 (- (A001065 n) 1))) ;; [NJAS] o=1: Chowla's function: sum of divisors of n except 1 and n.
+
+;; A173455 [Omar E. Pol] o=1: Row sums of triangle A027751. Essentially the same as A001065, but with a(1)=1. 
+(define (A173455 n) (if (= 1 n) n (A001065 n)))
+
+(define (A062967 n) (+ -1 (* 2 (A001065 n)))) ;; A062967 [Jason Earls] o=1: 2*(sigma(n)-n-1)+1. 
+
 (define (A033879 n) (- (* 2 n) (A000203 n))) ;; [NJAS] o=1: Deficiency of n, or 2n - (sum of divisors of n). 
 
 (define (A033880 n) (- (A000203 n) (* 2 n))) ;; [NJAS] o=1: Abundance of n, or (sum of divisors of n) - 2n. 
+
+
+
+
+(define (A294934 n) (if (> (A033879 n) 0) 1 0)) ;; Characteristic function for deficient numbers.
+
+(define (A294935 n) (if (>= (A033879 n) 0) 1 0)) ;; Characteristic function for nonabundant numbers.
+
+(define (A294936 n) (if (>= (A033880 n) 0) 1 0)) ;; Characteristic function for nondeficient numbers.
+
+(define (A294937 n) (if (> (A033880 n) 0) 1 0)) ;; Characteristic function for abundant numbers.
+
+
 
 (define (A285702 n) (A000010 (A064216 n)))
 (define (A285703 n) (A000203 (A064216 n)))
@@ -223,6 +324,38 @@
 (definec (A007947 n) (if (= 1 n) n (* (A020639 n) (A007947 (A028234 n)))))
 
 (define (A003557 n) (/ n (A007947 n)))
+(definec (A003557r1 n) (if (= 1 n) 1 (* (expt (A020639 n) (- (A067029 n) 1)) (A003557r1 (A028234 n)))))
+
+;; A048250 [Labos Elemer] o=1: Sum of squarefree divisors of n. If n = Product p_i^e_i, a(n) = Product (p_i + 1).
+(definec (A048250 n) (if (= 1 n) 1 (* (+ 1 (A020639 n)) (A048250 (A028234 n)))))
+
+;; A092261 [Steven Finch] o=1: Sum of unitary, squarefree divisors of n, including 1. 
+;; Multiplicative with a(p)=p+1 and a(p^e)=1 for e>1. - Vladeta Jovovic, Feb 22 2004 
+;; a(n) = a(A055231(n)) = A000203(A055231(n)). - Alvar Ibeas
+;; Also a(n) = A048250(A055231(n)). - AK
+
+(definec (A092261 n) (if (= 1 n) 1 (* (+ 1 (if (> (A067029 n) 1) 0 (A020639 n))) (A092261 (A028234 n)))))
+
+;; A295294 [AK] o=1: Sum of divisors of powerful part of n. Multiplicative with a(p) = 1 and a(p^e) = (p^(e+1)-1)/(p-1).
+(definec (A295294 n) (if (= 1 n) n (let ((p (A020639 n)) (e (A067029 n))) (* (if (= 1 e) 1 (/ (- (expt p (+ 1 e)) 1) (- p 1))) (A295294 (A028234 n))))))
+
+(define (A295294v2 n) (A000203 (A057521 n)))
+
+;; A295295 [AK] o=1: Sum of squarefree divisors of the powerful part of n. Multiplicative with a(p) = 1 and a(p^e) = (p+1) for e>e1.
+
+(definec (A295295 n) (if (= 1 n) n (let ((p (A020639 n)) (e (A067029 n))) (* (if (= 1 e) 1 (+ 1 p)) (A295295 (A028234 n))))))
+
+(define (A295295v1 n) (A048250 (A057521 n)))
+(define (A295295v2 n) (/ (A048250 n) (A092261 n)))
+
+
+;; (same-intfuns1? A295294 (lambda (n) (/ (A000203 n) (A092261 n))) 1200) --> #
+;; (same-intfuns1? A000203 (lambda (n) (* (A092261 n) (A295294 n))) 1200) --> #t
+
+;; (same-intfuns1? A003557 (lambda (n) (A003557 (A057521 n))) 5200) --> #t
+;; (same-intfuns1? A057521 (COMPOSE A064549 A003557) 6200) --> #t
+
+(define (A064549 n) (* n (A007947 n)))
 
 (define (A066503 n) (- n (A007947 n))) ;; a(n) = n - squarefree kernel of n, A007947. 
 
@@ -527,6 +660,9 @@
         )
   )
 )
+
+
+(define (A229340 n) (A000010 (A003415 n))) ;; [Luca Brigada Villa] o=1: Euler totient function of the arithmetic derivative of n: phi(n'). 
 
 
 ;; Variant:
@@ -1093,6 +1229,9 @@
 (define A013929 (ZERO-POS 1 1 A008966))
 
 
+(define A039956 (MATCHING-POS 1 1 (lambda (n) (and (even? n) (not (zero? (A008966 n))))))) ;; [R. K. Guy] o=1: Even squarefree numbers. 
+
+
 (define (A107078 n) (- 1 (A008966 n)))
 
 (define (A107079 n) (+ 1 (A013928 n)))
@@ -1329,6 +1468,9 @@
 
 (definec (A064097 n) (if (= 1 n) 0 (+ 1 (A064097 (A060681 n)))))
 
+(definec (A073933 n) (if (= 1 n) n (+ 1 (A073933 (A060681 n))))) ;; [Amarnath Murthy] o=1: Number of terms in n-th row of triangle in A073932. 
+
+(definec (A073934 n) (if (= 1 n) n (+ n (A073934 (A060681 n))))) ;; [Amarnath Murthy] o=1: Sum of terms in n-th row of triangle in A073932. 
 
 (define (A006530 n) (if (< n 2) n (last (ifactor n)))) ;; Gpf(n): greatest prime dividing n (with a(1)=1). 
 
@@ -1358,8 +1500,17 @@
 ;; A005361 [Jeffrey Shallit, Olivier Gérard] Product of exponents of prime factorization of n.
 (definec (A005361 n) (if (= 1 n) 1 (* (A067029 n) (A005361 (A028234 n)))))
 
+(define (A183093 n) (- (A000005 n) (A005361 n))) ;; [Krizek] o=1: a(1) = 0; thereafter, a(n) = number of divisors d of n such that if d = Product_(i) (p_i^e_i) then all e_i <= 1. 
+
+(define (A183094 n) (- (A005361 n) 1)) ;; [Krizek] o=1: a(n) = number of powerful divisors d (excluding 1) of n.
+
+(define (A183095 n) (+ 1 (A183093 n))) ;; [Krizek] o=1: a(n) = number of divisors d of n which are either 1 or of the form Product_(i) (p_i^e_i) where the e_i are <= 1. 
+
 ;; A072411 [Labos Elemer] LCM of exponents in prime factorization of n. [XXX - Prepend! a(1) = 1]
 (definec (A072411 n) (if (= 1 n) 1 (lcm (A067029 n) (A072411 (A028234 n)))))
+
+;; A052409 [Eric W. Weisstein ] o=1: a(n) = largest integer power m for which a representation of the form n = k^m exists (for some k).
+(definec (A052409 n) (if (= 1 n) 0 (gcd (A067029 n) (A052409 (A028234 n)))))
 
 
 ;; A051903 [Labos Elemer] Maximal exponent in prime factorization of n. 
@@ -2006,6 +2157,11 @@
 
 (definec (A181819v2 n) (cond ((= 1 n) 1) ((even? n) (* (A000040 (A007814 n)) (A181819v2 (A000265 n)))) (else (A181819v2 (A064989 n)))))
 
+(definec (A295878 n) (if (= 1 n) 1 (let ((e (A067029 n))) (* (if (even? e) 1 (A000040 (/ (+ 1 e) 2))) (A295878 (A028234 n)))))) ;; a(1) = 1; for n>1, if n = Product prime(i)^e(i), then a(n) = Product prime((e(i)+1)/2)^A000035(e(i)).
+
+(definec (A295879 n) (cond ((= 1 n) 1) (else (* (A008578 (A067029 n)) (A295879 (A028234 n)))))) ;; a(1) = 1; for n>1, if n = Product prime(i)^e(i), then a(n) = Product A008578(e(i)), where A008578(1) = 1 and A008578(n>1) = prime(n-1).
+(define (A295879v2 n) (A064989 (A181819 n)))
+
 (define (A238745 n) (A122111 (A181819 n))) ;; o=1: a(1) = 1; for n > 1, if the first integer with the same prime signature as n is factorized into primorials as Product A002110(i)^e(i), then a(n) = Product prime(i)^e(i). 
 
 
@@ -2077,6 +2233,8 @@
 
 (definec (A064547v1 n) (if (= 1 n) 0 (+ (A000120 (A007814 n)) (A064547v1 (A064989 n)))))
 
+(define (A064179 n) (expt -1 (A064547 n)))
+
 
 (define A000028 (MATCHING-POS 1 1 (COMPOSE odd? A064547)))
 
@@ -2102,6 +2260,9 @@
 (define A268375 (ZERO-POS 1 1 A268374))
 
 (define A268376 (NONZERO-POS 1 1 A268374))
+
+;; A091862 [Leroy Quet] a(n) = 1 if the sum of all exponents of the prime-factorization of n has no carries when summed in base 2, or a(n) = 0 if there are any carries.
+(define (A091862 n) (if (zero? (A268374 n)) 1 0))
 
 ;; Numbers n such that any prime factor congruent to 1 mod 4 has even multiplicity.
 (define A268377 (MATCHING-POS 1 1 (COMPOSE even? A267113)))
@@ -2492,6 +2653,10 @@
 )
 
 (definec (A057521 n) (if (= 1 n) n (* (if (= 1 (A067029 n)) 1 (A028233 n)) (A057521 (A028234 n)))))
+
+;; Multiplicative with a(p)=p and a(p^e)=1 for e > 1. - Vladeta Jovovic, Nov 01 2001
+(definec (A055231 n) (if (= 1 n) 1 (* (if (= 1 (A067029 n)) (A020639 n) 1) (A055231 (A028234 n))))) ;; ~~~~
+(define (A055231old n) (/ n (A057521 n)))
 
 (define (A212173 n) (A046523 (A057521 n))) ;; [Matthew Vandermast] o=1: First integer with same second signature as n (cf. A212172). 
 
@@ -3793,7 +3958,7 @@
 (define (A243070 n) (A243070bi (A002260 n) (A004736 n)))
 
 
-(define (A003963 n) (apply * (map A049084 (ifactor n))))
+(define (A003963old n) (apply * (map A049084 (ifactor n))))
 
 (definec (A078442 n) (if (zero? (A049084 n)) 0 (+ 1 (A078442 (A049084 n)))))
 (define (A049076 n) (+ 1 (A078442 n)))
@@ -4394,6 +4559,28 @@
 ;; A055229 [Labos Elemer] o=1: Greatest common divisor of largest square dividing n and squarefree part of n.
 (define (A055229 n) (gcd (A008833 n) (A007913 n)))
 
+(define (A056622 n) (/ (A000188 n) (A055229 n)))
+
+;; A056623 [Labos Elemer] o=1: Largest unitary square divisor of n: if n=LLgggf (see A056192) and a(n)=LL, then its complementary divisor n/LL =gggf and GCD[L^2,n/LL]=1.
+;; Multiplicative with a(p^e)=p^e for even e, a(p)=1, a(p^e)=p^(e-3) for odd e>1. - Vladeta Jovovic, Apr 30 2002
+
+
+(definec (A056623 n)
+   (if (= 1 n)
+       n
+       (let ((e (A067029 n)) (rest (A056623 (A028234 n))))
+          (cond ((even? e) (* (A028233 n) rest))
+                ((= 1 e) rest)
+                (else (* (expt (A020639 n) (- e 3)) rest))
+          )
+       )
+   )
+)
+
+
+(define (A056623v2 n) (/ (A008833 n) (A000290 (A055229 n))))
+
+
 ;; A056059 [Labos Elemer] o=1: GCD of largest square and squarefree part of central binomial coefficients. 
 (define (A056059 n) (A055229 (A001405 n)))
 
@@ -4505,6 +4692,11 @@
   )
 )
 
+
+(define (A003462 n) (/ (+ -1 (expt 3 n)) 2)) ;; [NJAS] o=0: a(n) = (3^n - 1)/2.  ;; XFER: Base-3/base3-core.ss ???
+
+
+(define (A062153 n) (- (A081604 n) 1)) ;; A062153 [Bottomley] o=1: a(n) = floor(log_3(n)). 
 
 
 (definec (A030102 n) ;; XFER: Base-3/base3-core.ss
@@ -8033,6 +8225,15 @@
 
 (define (A030301 n) (A000035 (A000523 n)))
 
+(define (A030300 n) (- 1 (A030301 n)))
+
+;; A230629 [NJAS] o=0: a(0)=0; thereafter a(n) = (1+a(floor(n/2))) mod 3. 
+(definec (A230629 n) (if (zero? n) n (modulo (+ 1 (A230629 (/ (- n (if (even? n) 0 1)) 2))) 3)))
+
+;; A230630 [NJAS] o=1: a(1)=0; thereafter a(n) = (1+a(floor(n/2))) mod 3.
+(definec (A230630 n) (if (= 1 n) 0 (modulo (+ 1 (A230630 (/ (- n (if (even? n) 0 1)) 2))) 3)))
+
+
 ;; A275973 [Stanislav Sykora] o=1: A binary sequence due to Sir Harold Jeffreys. 
 
 ;; a(n)={my(p=1, np=n-1); while(np, p++; np=np\2); return(bitand(p, 1)); }
@@ -8241,6 +8442,8 @@
 ;;;;;;
 ;; A276603-A276624 are now reserved for your use. 
 
+;; A048766 [Charles T. Le] o=0: Integer part of cube root of n. Or, number of cubes <= n. Or, n appears 3n^2 + 3n + 1 times. 
+
 (define A048766 (LEFTINV-LEASTMONO-NC2NC 0 0 A000578)) ;; /XFER: core.cubes
 (define (A010057 n) (if (= n (A000578 (A048766 n))) 1 0)) ;; /XFER: core.cubes
 
@@ -8385,7 +8588,9 @@
 (define A276579 (MATCHING-POS 1 1 (lambda (n) (and (> n 1) (not (zero? (A008683 n))) (= 1 (A000120 (A268669 (A048675 n))))))))
 
 
-(define (A051063 n) (* 9 (A001651 n))) ;; o=1: [NJAS, Gary W. Adamson] 27*n+9 or 27*n+18.
+(define (A001651 n) (let ((x (- n 1))) (if (even? x) (+ 1 (* 3 (/ x 2))) (- (* 3 (/ (+ x 1) 2)) 1))))
+
+(define (A051063 n) (* 9 (A001651 n))) ;; o=1: [NJAS, Gary W. Adamson] 27*n+9 or 27*n+18. XXX - Check because offset of A001651 has changed!
 
 
 
@@ -8592,9 +8797,6 @@
 (define (A050985 n) (/ n (A008834 n))) ;; o=1: [Eric W. Weisstein] Cubefree part of n. 
 
 
-;; A048766 [Charles T. Le] o=0: Integer part of cube root of n. Or, number of cubes <= n. Or, n appears 3n^2 + 3n + 1 times. 
-
-(define A048766 (LEFTINV-LEASTMONO-NC2NC 0 0 A000578)) ;; /XFER: core.cubes
 
 ;; A277780 o=1 (or 0?): [Peter Kagey] a(n) is the least k > n such that n*k^2 is a cube. 
 (define (A277780 n) (if (zero? n) 1 (* (A050985 n) (A000578 (+ 1 (A048766 (A008834 n)))))))
@@ -8684,6 +8886,9 @@
 (definec (A046951 n) (if (= 1 n) 1 (* (A008619 (A007814 n)) (A046951 (A064989 n)))))
 
 (define (A008619 n) (+ 1 (/ (- n (modulo n 2)) 2)))
+
+;; A293575 [JSG] o=1: Difference of the number of proper divisors of n and the number of squares dividing n.
+(define (A293575 n) (- (A032741 n) (A046951 n)))
 
 
 ;; A278159 o=0: [AK] Run length transform of primorials, A002110.
@@ -8845,6 +9050,7 @@
 ;; A278536 [AK] o=1: First differences of A273324.
 (define (A278536 n) (- (A273324 (+ 1 n)) (A273324 n)))
 
+(define (A010873 n) (modulo n 4)) ;; [NJAS] o=0: a(n) = n mod 4. 
 
 (define (A010877 n) (modulo n 8)) ;; [NJAS] o=0: n mod 8. 
 
@@ -9333,6 +9539,9 @@
      )
   )
 )
+
+(define (A087810 n) (- (A029931 n) (A029931 (- n 1)))) ;; A087810 [Ralf Stephan] o=1: First differences of A029931
+
 
 ;; A124757 [Franklin T. Adams-Watters] o=0: Zero-based weighted sum of compositions in standard order.
 (define (A124757 n) (if (zero? n) n (- (A029931 n) (A070939 n))))
@@ -10555,6 +10764,17 @@
 ;; A014682 [Mohammad K. Azarian] o=0: The Collatz or 3x+1 function: a(n) = n/2 if n is even, otherwise (3n+1)/2.
 (define (A014682 n) (if (even? n) (/ n 2) (/ (+ n n n 1) 2)))
 
+(definec (A006666 n) (if (= 1 n) 0 (+ 1 (A006666 (A014682 n))))) ;; [NJAS, Bill Gosper] o=1: Number of halving steps to reach 1 in `3x+1' problem.
+
+;; A006577 [NJAS, Bill Gosper] o=1: Number of halving and tripling steps to reach 1 in `3x+1' problem, or -1 if 1 is never reached.
+(definec (A006577 n) (if (= 1 n) 0 (+ 1 (A006577 (A006370 n)))))
+
+
+(define (A076182 n) (modulo (A006666 n) 2))
+
+;; A237660 [Kival Ngaokrajang] o=1: Consider the Collatz trajectory of n; if all terms except n and 1 are even then a(n) = 0, otherwise a(n) is the last odd number before 1.
+(definec (A237660 n) (let loop ((n (A014682 n)) (last-odd 0)) (if (= 1 n) last-odd (loop (A014682 n) (if (odd? n) n last-odd)))))
+
 ;; A078719 [Joseph L. Pe] o=1: Number of odd terms among n, f(n), f(f(n)), ...., 1 for the Collatz function (that is, until reaching "1" for the first time).
 (define (A078719 n) (+ (A286380 n) (A000035 n)))
 
@@ -10564,6 +10784,84 @@
 ;; a(n) = the minimum number of iterations of the reduced Collatz function R required to yield 1. The function R (A139391) is defined as R(k) = (3k+1)/2^r, with r as large as possible.
 
 (definec (A286380 n) (if (= 1 n) 0 (+ 1 (A286380 (A139391 n))))) ;; Bisection: A075680.
+
+
+;; A258769 [Derek Orr] o=1: Number of fixed points in the modified Collatz trajectory of n.
+;; Now: a(n) = Number of times the k-th term is equal to k in the modified Collatz trajectory of n, when counting the initial term n as the 1st term: n, A014682(n), A014682(A014682(n)), ... 
+
+(definec (A258769 n) (if (= 1 n) n (let loop ((n n) (i 1) (s 0)) (if (= 1 n) s (loop (A014682 n) (+ 1 i) (+ s (if (= i n) 1 0)))))))
+
+;; A258825 [Derek Orr] o=1: Number of times that k iterations of n under the modified Collatz function yield k for some k. 
+
+(definec (A258825 n) (let loop ((n n) (i 0) (s 0)) (if (= 1 n) (+ s (if (= i 1) 1 0)) (loop (A014682 n) (+ 1 i) (+ s (if (= i n) 1 0))))))
+
+
+
+;; A135282 [Masahiko Shin] o=1: Largest k such that 2^k appears in the trajectory of the Collatz 3x+1 sequence started at n.
+
+(definec (A135282 n) (let loop ((n n) (m 0)) (if (= 1 n) m (loop (A006370 n) (if (= 1 (A209229 n)) (max (A007814 n) m) m)))))
+
+;; A232503 [Lance Luttrell] o=1: Largest power of 2 in the Collatz (3x+1) trajectory of n. 
+
+(definec (A232503 n) (let loop ((n n) (m 1)) (if (= 1 n) m (loop (A006370 n) (if (= 1 (A209229 n)) (max n m) m)))))
+
+
+;; A127885 [David Applegate & NJAS] o=1: a(n) = minimal number of steps to get from n to 1, where a step is x -> 3x+1 if x is odd, or x -> either x/2 or 3x+1 if x is even. 
+
+;; a(1) = 0; and for n > 1, if n is odd a(n) = 1 + a(3n+1), and if n is even, then a(n) = 1 + min(a(3n+1),a(n/2)).
+;; But cf. https://oeis.org/A257265
+
+(definec (A127885 n)
+  (cond ((= 1 n) 0)
+        (else
+           (let loop ((searchtree (list (cons 0 n))) (ulim (A006577 n)))
+             (if (null? searchtree) ;; If we exhausted the search-tree without finding anything ...
+                 ulim  ;; ... better than the best upper bound so far, then return that.
+                 (let ((dist (caar searchtree)) ;; Takes the distance-component of the node.
+                       (node (cdar searchtree)) ;; Takes the "node"-component (i.e. n) of the node.
+                      )
+                  (cond ((= 1 node) dist)
+                        ((>= dist ulim) (loop (cdr searchtree) ulim)) ;; Discard nodes that offer no shorter path than the currently known upper bound
+                        (else
+                           (loop (sort ;; Discard the current node, add one or two children
+                                    (append (if (or (odd? node) (< (/ node 2) n))
+;; If we dip below original n (i.e. node/2 < n) then we should know the value of a(node/2) already,
+;; so no need to expand on that:
+                                                (list (cons (+ 1 dist) (+ 1 (* 3 node))))
+                                                (list (cons (+ 1 dist) (/ node 2))
+                                                      (cons (+ 1 dist) (+ 1 (* 3 node)))
+                                                )
+                                            )
+                                            (cdr searchtree)
+                                    )
+;; This sorts by the increasing node-value:
+                                    (lambda (a b) (< (cdr a) (cdr b)))
+;; While (lambda (a b) (< (car a) (car b))) would sort by the increasing distance.
+                                 )
+                                 (cond
+                                    ((even? node)
+                                      (if (< (/ node 2) n)
+;; If we dipped below the original n, so we can access cached values to have a perhaps better (smaller) value
+;; for upper bound:
+                                          (min ulim
+                                               (+ 1 dist (A006577 (+ 1 (* 3 node))))
+                                               (+ 1 dist (A127885 (/ node 2)))
+                                          )
+                                          (min ulim (+ 1 dist (A006577 (+ 1 (* 3 node)))))
+                                      )
+                                    )
+                                    (else ulim)
+                                 )
+                           )
+                        )
+                  )
+                 )
+             )
+           )
+        )
+  )
+)
+
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
@@ -11006,6 +11304,7 @@
 
 (define (A169594 n) (add (lambda (k) (A286561bi n k)) 1 n))
 
+(define (A032741 n) (if (zero? n) n (- (A000005 n) 1))) ;; [Patrick De Geest] o=0:
 
 (define (A062249 n) (+ n (A000005 n))) ;; [Ahmed Fares] o=1: a(n) = n + d(n), where d(n) = number of divisors of n, cf. A000005.
 
@@ -11558,11 +11857,253 @@
 ;; A278908 [R. J. Mathar] Multiplicative with a(p^e) = 2^omega(e), where omega = A001221. 
 (definec (A278908 n) (if (= 1 n) n (* (A000079 (A001221 (A067029 n))) (A278908 (A028234 n)))))
 
+;; A058035 [Bottomley] o=1: Largest 4th-power-free number dividing n. Multiplicative with a(p^e) = p ^ min(e,3), p prime, e > 0.
+(definec (A058035 n) (if (= 1 n) n (* (expt (A020639 n) (min 3 (A067029 n))) (A058035 (A028234 n)))))
+(define (A062379 n) (/ n (A058035 n)))
+
+
+;; A053164 [Bottomley] o=1: 4th root of largest 4th power dividing n. Multiplicative with a(p^e) = p^[e/4].
+(definec (A053164 n) (if (= 1 n) n (* (expt (A020639 n) (A002265 (A067029 n))) (A053164 (A028234 n)))))
+(define (A053164v2 n) (A000188 (A000188 n)))
+
+;; A295883 [AK] o=1: Number of exponents that are 3 in the prime factorization of n.
+(definec (A295883 n) (if (= 1 n) 0 (+ (if (= 3 (A067029 n)) 1 0) (A295883 (A028234 n)))))
+(define (A295883v2 n) (- (A295659 n) (A295884 n)))
+
+;; A295884 [AK] o=1: Number of exponents larger than 3 in the prime factorization of n.
+(definec (A295884 n) (if (= 1 n) 0 (+ (if (> (A067029 n) 3) 1 0) (A295884 (A028234 n)))))
+(define (A295884v2 n) (A001221 (A053164 n)))
+
+
+;; A295875-A295897 are now reserved for your use.
+
+;; A203639 [R. J. Mathar] o=1: Multiplicative with a(p^e) = e*p^(e-1). 
+(definec (A203639 n) (if (= 1 n) n (* (A067029 n) (expt (A020639 n) (+ -1 (A067029 n))) (A203639 (A028234 n)))))
+
+;; A203640 [R. J. Mathar] o=1: Length of the cycle reached for the map x->A203639(x), starting at n. 
+(definec (A203640 n)
+  (let loop ((visited (list n)) (i 1))
+     (let ((next (A203639 (car visited))))
+         (cond ((member next visited) => (lambda (prepath) (+ 1 (- i (length prepath)))))
+               (else (loop (cons next visited) (+ 1 i)))
+         )
+     )
+  )
+)
+
+
+;; (define (Auuuusi n k) (cond ((= 1 k) n) ((even? k) (A000203 (Auuuusi n (- k 1)))) (else (A000010 (Auuuusi n (- k 1))))))
+
+;; If lista begins as (a b ... x a b ... x y z ...) returns the length of a b ... x part, otherwise #f.
+;; This still returns an incorrect answer for lists like (has-repeated-prefix? (list 1 2 2 1 1 2 2 1))
+(define (has-repeated-prefix? lista)
+  (let loop ((sp (cdr lista)))
+    (cond
+       ((null? sp) #f)
+       ((member (car lista) sp)
+            =>
+           (lambda (np)
+              (let* ((maybepref (reverse (list-tail (reverse lista) (length np))))
+                     (pl (length maybepref))
+                    )
+                 (and (<= pl (length np))
+                      (equal? maybepref (list-head np pl))
+                      pl
+                 )
+              )
+           )
+       )
+       (else (loop (cdr sp)))
+    )
+  )
+)
+
+;; A096864 [Labos Elemer] o=1: Function A062402(x) = sigma(phi(x)) is iterated. Starting with n, a(n) is the largest term arising in trajectory, either in transient or in terminal cycle
+(definec (A096864 n)
+     (let loop ((visited (list n)) (m n))
+        (let ((next (A062402 (car visited))))
+            (cond ((member next visited) m)
+                  (else (loop (cons next visited) (max m next)))
+            )
+        )
+     )
+)
+
+;; A096866 [Labos Elemer] o=1: Function A062402(x) = sigma(phi(x)) is iterated. Starting with n, a(n) is the smallest term arising in trajectory, either in transient or in terminal cycle. 
+(definec (A096866 n)
+     (let loop ((visited (list n)) (m n))
+        (let ((next (A062402 (car visited))))
+            (cond ((member next visited) m)
+                  (else (loop (cons next visited) (min m next)))
+            )
+        )
+     )
+)
+
+;; A096861 [Labos Elemer] o=1: Function A062401(x) = phi(sigma(x)) = f(x) is iterated. Starting with n, a(n) is the largest term arising in trajectory. 
+(definec (A096861 n)
+     (let loop ((visited (list n)) (m n))
+        (let ((next (A062401 (car visited))))
+            (cond ((member next visited) m)
+                  (else (loop (cons next visited) (max m next)))
+            )
+        )
+     )
+)
+
+
+;; A096865 [Labos Elemer] o=1: Function A062401[x]=phi[sigma[x]] is iterated. Starting with n, a(n) is the smallest term arising in trajectory, either in transient or in terminal cycle. 
+(definec (A096865 n)
+     (let loop ((visited (list n)) (m n))
+        (let ((next (A062401 (car visited))))
+            (cond ((member next visited) m)
+                  (else (loop (cons next visited) (min m next)))
+            )
+        )
+     )
+)
+
+
+
+;; A096859 [Labos Elemer] o=1: Function A062401(x)=phi(sigma(x))=f(x) is iterated. Starting with n, a(n) is the count of distinct terms arising in trajectory; a(n)=t(n)+c(n)=t+c, where t=number of transient terms, c=number of recurrent terms (in the terminal cycle). 
+(definec (A096859 n)
+     (let loop ((visited (list n)) (i 1))
+        (let ((next (A062401 (car visited))))
+            (cond ((member next visited) i)
+                  (else (loop (cons next visited) (+ 1 i)))
+            )
+        )
+     )
+)
+
+;; A096860 [Labos Elemer] o=1: Function A062401(x) = phi(sigma(x)) = f(x) is iterated. Starting with n, a(n) is the count of distinct terms arising in the transient of this trajectory, that is: a(n) = A096859(n) - A095955(n).
+(definec (A096860 n)
+     (let loop ((visited (list n)))
+        (let ((next (A062401 (car visited))))
+            (cond ((member next visited) => (lambda (transientplusone) (- (length transientplusone) 1)))
+                  (else (loop (cons next visited)))
+            )
+        )
+     )
+)
+
+
+;; A082991 [Benoit Cloitre] o=1: a(1) = 1, and for n > 1, a(n) = 2 * length of the cycle reached for the map x->A062401(x), starting at n, or -1 if no finite cycle is ever reached.
+
+(definec (A082991 n)
+  (let loop ((visited (list n)) (i 1))
+     (let ((next ((if (odd? i) A000203 A000010) (car visited))))
+         (cond ((has-repeated-prefix? (cons next visited))
+                  => (lambda (pl) pl)
+               )
+               (else (loop (cons next visited) (+ 1 i)))
+         )
+     )
+  )
+)
+
+(definec (A082991maybe n)
+ (if (= 1 n)
+     n
+     (let loop ((visited (list n)) (i 1))
+        (let ((next (A062401 (car visited))))
+            (cond ((member next visited) => (lambda (prepath) (* 2 (+ 1 (- i (length prepath))))))
+                  (else (loop (cons next visited) (+ 1 i)))
+            )
+        )
+     )
+ )
+)
+
+;; A095955 [Labos Elemer] o=1 Function f(x)=phi(sigma(x)) is iterated with initial value=n; a(n) is the length of cycle into which the trajectory merges.
+(define (A095955 n) (if (= 1 n) n (/ (A082991maybe n) 2)))
+
+;; A003023 [NJAS] o=1: "Length" of aliquot sequence for n. 
+;; Sequence gives (length of transient part of trajectory) - 1 (if trajectory ends in 0)
+;; or, provided that cycle is nonzero,
+;; (length of transient part of trajectory) + (length of cycle) = length of trajectory.
+(definec (A003023 n)
+  (let loop ((visited (list n)) (i 0))
+     (let ((next (A001065 (car visited))))
+         (cond ((zero? next) i)
+               ((member next visited) (+ 1 i))
+               (else (loop (cons next visited) (+ 1 i)))
+         )
+     )
+  )
+)
+
+;; A098007 [NJAS] o=1: Length of aliquot sequence for n, or -1 if aliquot sequence never cycles. 
+(definec (A098007 n)
+  (let loop ((visited (list n)) (i 1))
+     (let ((next (A001065 (car visited))))
+         (cond ((zero? next) (+ 1 i))
+               ((member next visited) i)
+               (else (loop (cons next visited) (+ 1 i)))
+         )
+     )
+  )
+)
+
+;; A098008 [NJAS] o=1: Length of transient part of aliquot sequence for n, or -1 if transient part is infinite.
+(definec (A098008 n)
+  (let loop ((visited (list n)) (i 1))
+     (let ((next (A001065 (car visited))))
+         (cond ((zero? next) i)
+               ((member next visited) => (lambda (transientplus1) (- (length transientplus1) 1)))
+               (else (loop (cons next visited) (+ 1 i)))
+         )
+     )
+  )
+)
+
+;; A007906 [Michael Gerenrot] o=1: Number of steps for aliquot sequence for n to converge to 0, or 0 if it never reaches 0.
+(definec (A007906 n)
+  (let loop ((visited (list n)) (i 1))
+     (let ((next (A001065 (car visited))))
+         (cond ((zero? next) i)
+               ((member next visited) -1)
+               (else (loop (cons next visited) (+ 1 i)))
+         )
+     )
+  )
+)
+
+;; A153023 [Andrew Carter] o=1: a(1)=1. If n is prime then a(n)=n. Otherwise, start with n and iterate the map (k -> (sum of proper divisors of k)-1 until we reach a prime p; then a(n) = p. If we never reach a prime, a(n) = -1. 
+(definec (A153023 n)
+  (let loop ((n n) (visited (list n)))
+     (let ((next (A048050 n)))
+         (cond ((or (= 1 n) (= 1 (A010051 n))) n)
+               ((member next visited) -1)
+               (else (loop next (cons next visited)))
+         )
+     )
+  )
+)
+
+
+;; A153024 [Andrew Carter] o=1: a(n) is the number of iterations of the map k -> A048050(k) to reach 0. If we never reach zero, then a(n) = -1. A048050 gives the sum of proper divisors of k, excluding both 1 and n from the sum.
+
+(definec (A153024 n)
+  (let loop ((n n) (visited (list n)) (i 0))
+     (let ((next (A048050 n)))
+         (cond ((zero? n) i)
+               ((member next visited) -1)
+               (else (loop next (cons next visited) (+ 1 i)))
+         )
+     )
+  )
+)
+
 ;; (define vecA057826 (read-b-file-to-vector "seqs2/b057826_upto10000_from_Noe.txt" 10001))
 ;; (define (A057826 n) (vector-ref vecA057826 n))
 
 ;; A071181 [Benoit Cloitre] o=1: Number of k such that phi(k) divides phi(n).
 (definec (A071181 n) (if (<= n 2) 2 (let ((ph (A000010 n))) (let loop ((k (A057826 (/ ph 2))) (s 0)) (if (zero? k) s (loop (- k 1) (+ s (if (zero? (modulo ph (A000010 k))) 1 0))))))))
+
+;; A028476 [Vladeta Jovovic] o=1: Greatest k such that phi(k) = phi(n), where phi is Euler's totient function. 
+(define (A028476 n) (if (<= n 2) 2 (A057826 (/ (A000010 n) 2))))
+
 
 ;; A066412 Number of elements in the set phi_inverse(phi(n)). 
 
@@ -11625,6 +12166,30 @@
 ;; Additive with a(p^e) = A059841(e).
 (definec (A162641 n) (if (= 1 n) 0 (+ (A059841 (A067029 n)) (A162641 (A028234 n)))))
 
+;; A162642 [Zumkeller] o=1: Number of odd exponents in the canonical prime factorization of n.
+;; Additive with a(p^e) = A000035(e).
+(definec (A162642 n) (if (= 1 n) 0 (+ (A000035 (A067029 n)) (A162642 (A028234 n)))))
+
+;; A295659 [AK] o=1: Number of exponents larger than 2 in the prime factorization of n. Additive with a(p^e) = 1 if (e>2), 0 otherwise.
+(definec (A295659 n) (if (= 1 n) 0 (+ (if (> (A067029 n) 2) 1 0) (A295659 (A028234 n)))))
+
+(define (A295659v2 n) (A056170 (A003557 n)))
+
+;; A295664 [AK] o=1:  Exponent of highest power dividing number of divisors of n: a(n) = A007814(A000005(n)). 
+;; Additive with a(p^e) = A007814(1+e).
+(definec (A295664 n) (if (= 1 n) 0 (+ (A007814 (+ 1 (A067029 n))) (A295664 (A028234 n)))))
+(define (A295664v2 n) (A007814 (A000005 n)))
+
+;; Additive with a(p) = 0, a(p^e) = A007814(1+e) if e > 1.
+(definec (A295663 n) (if (= 1 n) 0 (+ (if (= 1 (A067029 n)) 0 (A007814 (+ 1 (A067029 n)))) (A295663 (A028234 n)))))
+(define (A295663v2 n) (- (A295664 n) (A056169 n)))
+
+;; A295662 [AK] o=1: Number of odd exponents larger than one in the canonical prime factorization of n.
+;; Additive with a(p) = 0, a(p^e) = A000035(e) if e > 1.
+(definec (A295662 n) (if (= 1 n) 0 (+ (if (= 1 (A067029 n)) 0 (A000035 (A067029 n))) (A295662 (A028234 n)))))
+(define (A295662v2 n) (- (A162642 n) (A056169 n)))
+
+(define A295661 (NONZERO-POS 1 1 A295662))
 
 (define (A212181 n) (A000265 (A000005 n))) ;; [Matthew Vandermast] o=1: Largest odd divisor of tau(n): a(n) = A000265(A000005(n)).
 
@@ -11680,6 +12245,100 @@
 (definec (A154271 n) (cond ((= 1 n) 1) ((zero? (modulo n 3)) (* -1 (A154271 (/ n 3)))) (else 0)))
 
 
+;; A216282 [V. Raman] o=1: Number of nonnegative solutions to the equation x^2 + 2*y^2 = n. 
+(definec (A216282 n)
+   (cond ((< n 2) 1)
+         (else ;; Note: we should consider only k's with the same parity as n has.
+           (let loop ((k (- (A000196 n) (modulo (- n (A000196 n)) 2))) (s 0))
+             (if (< k 0)
+                 s
+                 (let ((x (/ (- n (* k k)) 2)))
+                    (loop (- k 2) (+ s (A010052 x)))
+                 )
+             )
+           )
+         )
+   )
+)
+
+;; A216283 [V. Raman] o=1: Number of nonnegative solutions to the equation x^2 + 5*y^2 = n. 
+(definec (A216283 n)
+   (cond ((< n 2) 1)
+         (else
+           (let loop ((k (A000196 n)) (s 0))
+             (if (< k 0)
+                 s
+                 (let ((x (- n (* k k))))
+                    (loop (- k 1) (+ s (if (zero? (modulo x 5)) (A010052 (/ x 5)) 0)))
+                 )
+             )
+           )
+         )
+   )
+)
+
+
+
+;; A255270 [Bruno Berselli] o=0: Integer part of fourth root of n.
+(define A255270 (LEFTINV-LEASTMONO-NC2NC 0 0 A000583)) ;; /XFER: core.expt4
+
+;; (same-intfuns0? A255270  (lambda (n) (floor->exact (expt n (/ 1 4)))) 65537) --> #t
+
+;; (same-intfuns0? A048766  (lambda (n) (floor->exact (expt n (/ 1 3)))) 65537) --> #t
+
+;; A216284 [V. Raman] o=1: Number of solutions to the equation x^4+y^4 = n with x >= y > 0.
+
+(definec (A216284 n)
+   (let loop ((x (A255270 n)) (s 0))
+     (let* ((x4 (A000583 x))
+            (y4 (- n x4))
+           )
+       (if (< x4 y4)
+           s
+           (loop (- x 1) (+ s (if (and (> y4 0) (= (A000583 (A255270 y4)) y4)) 1 0)))
+       )
+     )
+   )
+)
+
+
+;; A025455 [David W. Wilson] o=0: a(n) is the number of partitions of n into 2 positive cubes.
+(definec (A025455 n)
+   (let loop ((x (A048766 n)) (s 0))
+     (let* ((x3 (A000578 x))
+            (y3 (- n x3))
+           )
+       (if (< x3 y3)
+           s
+           (loop (- x 1) (+ s (if (and (> y3 0) (= (A000578 (A048766 y3)) y3)) 1 0)))
+       )
+     )
+   )
+)
+
+;; A025468 [David W. Wilson] o=0: Number of partitions of n into 2 distinct positive cubes.
+
+(definec (A025468 n)
+   (let loop ((x (A048766 n)) (s 0))
+     (let* ((x3 (A000578 x))
+            (y3 (- n x3))
+           )
+       (if (<= x3 y3)
+           s
+           (loop (- x 1) (+ s (if (and (> y3 0) (= (A000578 (A048766 y3)) y3)) 1 0)))
+       )
+     )
+   )
+)
+
+
+;; A025464 [David W. Wilson] o=0: Number of partitions of n into 2 distinct nonnegative cubes
+;; A025465 [David W. Wilson] o=0: Number of partitions of n into 3 distinct nonnegative cubes.
+;; A025469 [David W. Wilson] o=0: Number of partitions of n into 3 distinct positive cubes.
+
+;; So A025465(n) = A025468(n) + A025469(n).
+
+
 
 ;; A290081 [AK] o=0: Number of ways of writing n as the sum of two odd positive squares.
 
@@ -11720,7 +12379,20 @@
 )
 
 
+;; A283760 [] o=1: Expansion of (Sum_{i>=1} x^prime(i))*(Sum_{j>=1} x^(j^3)); Number of representations of n as the sum of a prime number and a positive cube.
 
+(definec (A283760 n)
+   (cond ((< n 2) 0)
+         (else
+           (let loop ((k (A048766 n)) (s 0))
+             (if (< k 1)
+                 s
+                 (loop (- k 1) (+ s (A010051 (- n (expt k 3)))))
+             )
+           )
+         )
+   )
+)
 
 
 ;; A136567 [Leroy Quet] o=1: a(n) = number of exponents occurring only once each in the prime-factorization of n.
@@ -11746,6 +12418,90 @@
 (define (A005386 n) (A005386off0 (- n 1)))
 
 (definec (A005386off0 n) (cond ((zero? n) n) ((even? n) (* 3 (A005386off0 (/ n 2)))) (else (+ 1 (* 3 (A005386off0 (/ (- n 1) 2)))))))
+
+(definec (A291770 n)
+ (if (zero? n)
+     n
+     (let loop ((n n) (b 1) (s 0))
+        (if (< n 3)
+            s
+            (let ((d (modulo n 3)))
+               (if (zero? d)
+                   (loop (/ n 3) (+ b b) (+ s b))
+                   (loop (/ (- n d) 3) (+ b b) s)
+               )
+            )
+        )
+     )
+ )
+)
+
+(define (A291771 n) (A278222 (A291770 n))) ;; [AK] o=1: Filter based on 0-digits of base-3 expansion: a(n) = A278222(A291770(n)).
+
+(define (A213370 n) (A004198bi n (+ n n))) ;; [Alex Ratushnyak] o=0: a(n) = n AND n*2, where AND is the bitwise AND operator.
+
+
+;; A292370-A292385 are now reserved for your use.
+;;
+
+;; A292370 [AK] o=0: A binary encoding of the nonleading zeros in base-4 representation of n. 
+(definec (A292370 n)
+ (if (zero? n)
+     n
+     (let loop ((n n) (b 1) (s 0))
+        (if (< n 4)
+            s
+            (let ((d (modulo n 4)))
+               (if (zero? d)
+                   (loop (/ n 4) (+ b b) (+ s b))
+                   (loop (/ (- n d) 4) (+ b b) s)
+               )
+            )
+        )
+     )
+ )
+)
+
+;; A292371 [AK] o=0: A binary encoding of 1-digits in base-4 representation of n. 
+(definec (A292371 n)
+   (if (zero? n)
+       n
+       (let ((d (modulo n 4)))
+          (+ (if (= 1 d) 1 0) (* 2 (A292371 (/ (- n d) 4))))
+       )
+   )
+)
+
+;; (same-intfuns0? A292371 (COMPOSE A059905 A292272) 4096) --> #t
+
+
+;; A292372 [AK] o=0: A binary encoding of 2-digits in base-4 representation of n. 
+(definec (A292372 n)
+   (if (zero? n)
+       n
+       (let ((d (modulo n 4)))
+          (+ (if (= 2 d) 1 0) (* 2 (A292372 (/ (- n d) 4))))
+       )
+   )
+)
+
+;; A292373 [AK] o=0: A binary encoding of 3-digits in base-4 representation of n. 
+(definec (A292373 n)
+   (if (zero? n)
+       n
+       (let ((d (modulo n 4)))
+          (+ (if (= 3 d) 1 0) (* 2 (A292373 (/ (- n d) 4))))
+       )
+   )
+)
+
+;; (same-intfuns1? A292371 (lambda (n) (A059905 (A004198bi n (A003188 n)))) 16385) --> #t
+;; (same-intfuns1? A292372 (lambda (n) (A059906 (A004198bi n (A048724 n)))) 16385) --> #t
+
+
+;; (same-intfuns0? A292373 (COMPOSE A059905 A048735) 49152) --> #t
+;; (same-intfuns0? A292373 (COMPOSE A059906 A213370) 16385) --> #t
+
 
 ;; A289813 [Rémy Sigrist] o=0: A binary encoding of the ones in ternary representation of n
 
@@ -11800,6 +12556,9 @@
 (define (A117942v2 n) (* (A000079 (A081603 n)) (expt -1 (+ (A062756 n) (A081603 n)))))
 
 
+;; A189820 [Clark Kimberling] o=1: a(3k-2)=a(k), a(3k-1)=a(k), a(3k)=1; k>=1, a(1)=0
+(definec (A189820 n) (cond ((= 1 n) 0) ((zero? (modulo n 3)) 1) (else (A189820 (+ 1 (/ (- n (modulo n 3)) 3))))))
+
 ;;;;;;;;;;;;;;;;;;;;;;;
 
 
@@ -11833,6 +12592,7 @@
 
 (define (A105661 n) (cond ((= 1 (A001222 n)) 1) ((and (even? n) (= 2 (A001222 n))) 2) (else 0))) ;; [Giovanni Teofilatto] o=1: a(n)=1 if n is a prime, 2 if n is an even semiprime, otherwise 0. 
 
+(define (A107279 n) (cond ((<= n 1) 0) ((even? n) 2) (else (A010051 n)))) ;; [Giovanni Teofilatto] o=1: a(n) = 1 if n is an odd prime, a(n) = 2 if n is a nonzero even number, otherwise a(n) = 0.
 
 ;; A014577 [NJAS, Eric W. Weisstein] o=0: The regular paper-folding sequence (or dragon curve sequence).
 ;; a(n) is the complement of the bit to the left of the least significant "1" in the binary expansion of n. E.g., n = 4 = 100, so a(4) = (complement of bit to left of 1) = 1. (Seems to be one off, n+1 really).
@@ -11881,4 +12641,1981 @@
 (definec (A271102 n) (if (= 1 n) n (* (if (= 2 (A067029 n)) -1 0) (A271102 (A028234 n)))))
 
 
+;; A240231 [Wolfdieter Lang] o=1: Number of factors needed in the unique factorization of positive integers into members of A186285 or their squares.
+
+(define (A240231 n) (if (= 1 n) n (A240231with_a1_0 n)))
+(definec (A240231with_a1_0 n) (if (= 1 n) 0 (+ (A053735 (A067029 n)) (A240231with_a1_0 (A028234 n)))))
+
+
+
 (define (A061853 n) (- (A053669 n) (A007978 n))) ;; [Bottomley] o=1: Difference between smallest number coprime to n and smallest non-divisor of n.
+
+(definec (A180633 n) (if (zero? n) n (+ 1 (A180633 (+ -1 (A000010 n))))))
+
+;; A049115 [Labos Elemer] o=1: Repeatedly apply Euler phi to n; a(n) = number of iterations that are applied to numbers that are not powers of 2. 
+(definec (A049115 n) (if (= 1 (A209229 n)) 0 (+ 1 (A049115 (A000010 n)))))
+
+;; A069177 [Sharon Sela] o=1: Maximal power of 2 that divides Phi(n), or the size of the Sylow 2-subgroup of the group of units mod n
+;; a(n) = 2^A053574(n). Multiplicative with a(2^e) = 2^(e-1) and a(p^e) = power of 2 in prime factorization of p - 1 for an odd prime p. - Vladeta Jovovic, Apr 10 2002
+
+(definec (A069177 n)
+   (cond ((= 1 n) n)
+         ((zero? (modulo n 4)) (* 2 (A069177 (/ n 2))))
+         ((even? n) (A069177 (/ n 2)))
+         (else (* (A006519 (+ -1 (A020639 n))) (A069177 (A028234 n))))
+   )
+)
+
+
+(define (A078704 n) (A000196 (A000010 n))) ;; [Joseph L. Pe] o=1: Integer part of the square root of phi(n)
+
+
+;; A064988 [Vladeta Jovovic] o=1: Multiplicative with a(p^e) = prime(p)^e. 
+(definec (A064988 n) (if (= 1 n) n (* (A000040 (A020639 n)) (A064988 (A032742 n)))))
+
+;; A290641 [Michel Marcus] o=1: Multiplicative with a(p^e) = prime(p-1)^e.
+(definec (A290641 n) (if (= 1 n) n (* (A000040 (+ -1 (A020639 n))) (A290641 (A032742 n)))))
+
+;; A166698 [Jaroslav Krizek] o=1: Totally multiplicative sequence with a(p) = a(p-1) - 1 for prime p. 
+(definec (A166698 n) (if (= 1 n) n (* (+ -1 (A166698 (+ -1 (A020639 n)))) (A166698 (A032742 n)))))
+
+(define (A166698fast n) (* (A000035 n) (A008836 n)))
+
+
+;; A133639 [Michael Somos] o=1: Mobius transform of b(n) where b(8n + 1) = A080995(n).
+;; a(n) is multiplicative with a(2^e) = a(3^e) = -1 if e=1, 0 if e>1, a(p^e) = (-1)^e if p > 3.
+(definec (A133639 n)
+   (cond
+      ((= 1 n) n)
+      ((zero? (modulo n 4)) 0)
+      ((zero? (modulo n 9)) 0)
+      ((even? n) (- (A133639 (/ n 2))))
+      ((zero? (modulo n 3)) (- (A133639 (/ n 3))))
+      (else (- (A133639 (A032742 n))))
+   )
+)
+
+;; A069733 [Valery A. Liskovets] o=1: Number of divisors m of n such that m or n/m is odd. Number of non-orientable coverings of the Klein bottle with n lists.
+;; Multiplicative defined by f(2^k)=2 and f(p^k)=k+1 for k>0 and an odd prime p.
+(definec (A069733 n) (cond ((= 1 n) n) ((even? n) (* 2 (A069733 (A000265 n)))) (else (* (+ 1 (A067029 n)) (A069733 (A028234 n))))))
+
+;; A007434 [NJAS] o=1: Jordan function J_2(n) (a generalization of phi(n)).
+;; Multiplicative with a(p^e) = p^(2e) - p^(2e-2).
+;; XXX - Do similarly: A000010, &  A059376 -  A059378.
+(definec (A007434 n) (if (= 1 n) n (let ((p (A020639 n)) (e (A067029 n))) (* (- (expt p (+ e e)) (expt p (+ e e -2))) (A007434 (A028234 n))))))
+
+;; A173557 [José María Grau Ribas] o=1: a(n) = product_{p-1 | p is prime and divisor of n}. Multiplicative with a(p^e) = p-1, e>=1.
+(definec (A173557 n) (if (= 1 n) 1 (* (- (A020639 n) 1) (A173557 (A028234 n)))))
+
+(definec (A023900 n) (if (= 1 n) 1 (* (- 1 (A020639 n)) (A023900 (A028234 n)))))
+
+;; A126690 [NJAS; Yasutoshi Kohmoto] o=1: Multiplicative function defined for prime powers by a(p^k) = p + p^2 + p^3 + ... + p^(k-1) - 1 (k >= 1). 
+(definec (A126690 n)
+  (cond ((= 1 n) n)
+        ((= 1 (A067029 n)) (- (A126690 (A028234 n))))
+        (else (* (+ -1 (add (lambda (k) (expt (A020639 n) k)) 1 (- (A067029 n) 1))) (A126690 (A028234 n))))
+  )
+)
+
+;; Multiplicative with a(2^e)=(-1)^e and a(p^e)=prevprime(p)^e for odd primes p. 
+(definec (A290099 n) (cond ((= 1 n) n) ((even? n) (- (A290099 (/ n 2)))) (else (* (A000040 (+ -1 (A055396 n))) (A290099 (A032742 n))))))
+
+;; A295657 [AK] o=1: Multiplicative with a(p^e) = p^floor((e-1)/2). a(n) = A000188(A003557(n)).
+(definec (A295657 n) (if (= 1 n) 1 (* (expt (A020639 n) (A004526 (- (A067029 n) 1))) (A295657 (A028234 n)))))
+
+;; A295658 [AK] o=1: Multiplicative with a(p^e) = p^max(0,(floor(e/2)-1)). a(n) = A003557(A000188(n)).
+(definec (A295658 n) (if (= 1 n) 1 (* (expt (A020639 n) (max 0 (+ -1 (A004526 (A067029 n))))) (A295658 (A028234 n)))))
+
+;; A000189 [NJAS] o=1: Number of solutions to x^3 == 0 (mod n). Multiplicative with a(p^e) = p^[2e/3].
+(definec (A000189 n) (if (= 1 n) 1 (* (expt (A020639 n) (A002264 (* 2 (A067029 n)))) (A000189 (A028234 n)))))
+
+;; A053150 [Bottomley] o=1: Cube root of largest cube dividing n.  Multiplicative with a(p^e) = p^[e/3]
+(definec (A053150 n) (if (= 1 n) 1 (* (expt (A020639 n) (A002264 (A067029 n))) (A053150 (A028234 n)))))
+
+;; A061704 [Bottomley] o=1: Number of cubes dividing n. Multiplicative with a(p^e) = floor(e/3) + 1.
+(definec (A061704 n) (if (= 1 n) 1 (* (+ 1 (A002264 (A067029 n))) (A061704 (A028234 n)))))
+
+
+
+;; A007948 [R. Muller] o=1: Largest cubefree number dividing n. Multiplicative with a(p^e) = p^(min(e, 2)).
+(definec (A007948 n) (if (= 1 n) n (* (expt (A020639 n) (min 2 (A067029 n))) (A007948 (A028234 n)))))
+
+(define (A062378 n) (/ n (A007948 n))) ;; [Bottomley] o=1: n divided by largest cubefree factor of n.
+
+;; A071773 [Zumkeller] o=1: a(n) = gcd(rad(n), n/rad(n)), where rad(n) = A007947(n) is the squarefree kernel of n.
+;; Product of primes dividing n more than once.
+(definec (A071773 n) (if (= 1 n) n (* (if (zero? (modulo n (expt (A020639 n) 2))) (A020639 n) 1) (A071773 (A028234 n)))))
+
+
+;; A056191 [Labos Elemer] o=1: Characteristic cube divisor of n: cube of g=GCD[K,F], where K is the largest square root divisor of n (A000188) and F=n/(K*K)=A007913(n) is its squarefree part; g^2 divides K^2=A008833(n)=g^2*L^2 and g divides F=gf. 
+;; Multiplicative with a(p^e)=1 for even e, a(p)=1, a(p^e)=p^3 for odd e>1. - Vladeta Jovovic,
+(definec (A056191 n) (cond ((= 1 n) n) ((or (= 1 (A067029 n)) (even? (A067029 n))) (A056191 (A028234 n))) (else (* (A000578 (A020639 n)) (A056191 (A028234 n))))))
+
+
+;; A062368 [Vladeta Jovovic] o=1: Multiplicative with a(p^e) = (e+1)*(e+2)*(4*e+3)/6.
+(definec (A062368 n) (if (= 1 n) n (let ((e (A067029 n))) (* 1/6 (+ 1 e) (+ 2 e) (+ 3 (* 4 e)) (A062368 (A028234 n))))))
+
+;; A113061 [Paul Barry] o=1: Sum of cube divisors of n. 
+;; Multiplicative with a(p^e) = (p^(3*(1+floor(e/3)))-1)/(p^3-1). The Dirichlet generating function is zeta(s)*zeta(3s-3).
+
+
+(definec (A113061 n)
+   (if (= 1 n)
+       n
+       (let ((p (A020639 n)) (e (A067029 n)))
+          (* (/ (+ -1 (expt p (* 3 (+ 1 (A002264 e))))) (+ -1 (expt p 3)))
+             (A113061 (A028234 n))
+          )
+       )
+   )
+)
+
+
+
+;; A079458 [Vladeta Jovovic] Number of Gaussian integers in a reduced system modulo n.
+;; Multiplicative with a(2^e) = 2^(2*e-1), a(p^e) = (p^2-1)*p^(2*e-2) if p mod 4=3 and a(p^e) = (p-1)^2*p^(2*e-2) if p mod 4=1.
+(definec (A079458 n)
+   (cond ((= 1 n) n)
+         ((even? n) (* (A000079 (+ -1 (* 2 (A007814 n)))) (A079458 (A028234 n))))
+         (else
+            (let ((p (A020639 n)))
+              (* (if (= 3 (modulo p 4)) (-1+ (* p p)) (A000290 (- p 1)))
+                 (expt p (* 2 (+ -1 (A067029 n))))
+                 (A079458 (A028234 n))
+              )
+            )
+         )
+   )
+)
+
+;; (define veca239611 (read-b-file-to-vector "seqs2/b239611_upto2101.txt" 2102))
+;; (define (A239611 n) (vector-ref vecA239611 n))
+
+(define (A239614 n) (/ (A239611 n) (A079458 n))) ;; o=1: 
+
+
+;; A092089 [John W. Layman] o=1: Number of odd-length palindromes among the k-tuples of partial quotients of the continued fraction expansions of n/r, r = 1, ..., n
+;; Multiplicative with a(p^e) = 2e+1 if p is odd; a(2) = 2, a(2^e)= 4*(e-1), if e > 1. - Michel Marcus, Jun 26 2014
+(definec (A092089 n) (cond ((= 1 n) n) ((zero? (modulo n 4)) (* 4 (+ -1 (A067029 n)) (A092089 (A000265 n)))) ((even? n) (* 2 (A092089 (/ n 2)))) (else (* (+ 1 (* 2 (A067029 n))) (A092089 (A028234 n))))))
+
+ 	
+;; A241663 [Colin Defant] o=1: Number of positive integers k less than or equal to n such that GCD(k,n) = GCD(k+1,n) = GCD(k+2,n) = GCD(k+3,n) = 1. 
+;; Multiplicative with a(p^e) = p^(e-1)*(p-4) for p>3. a(2^e)=a(3^e)=0 for e>0. 
+(definec (A241663 n) (if (= 1 n) n (let ((p (A020639 n))) (if (<= p 3) 0 (* (- p 4) (expt p (- (A067029 n) 1)) (A241663 (A028234 n)))))))
+
+;; A241666 [Colin Defant] o=0: Gives the value (either 0 or 1) that the trajectory of n under A241663 eventually reaches. 
+(definec (A241666 n) (if (<= n 1) n (A241666 (A241663 n))))
+
+;; A096936 [Michael Somos] o=1: Half of number of integer solutions to the equation x^2 + 3y^2 = n.
+;; Multiplicative with a(2^e) = 3*(1+(-1)^e)/2, a(3^e) = 1, a(p^e) = (1+(-1)^e)/2 if p==2 (mod 3) and a(p^e) = 1+e if p==1 (mod 3).
+
+(definec (A096936 n)
+   (if (= 1 n)
+       n
+       (let ((p (A020639 n)) (e (A067029 n)) (rest (A096936 (A028234 n))))
+          (cond ((= 2 p) (* (if (odd? e) 0 3) rest))
+                ((= 3 p) rest)
+                ((= 1 (modulo p 3)) (* (+ 1 e) rest))
+                (else (* (if (odd? e) 0 1) rest))
+          )
+       )
+   )
+)
+
+;; A115979 [Michael Somos] o=1: Expansion of (1-theta_4(q)theta_4(q^3))/2 in powers of q.
+(define (A115979 n) (- (* (expt -1 n) (A096936 n)))) ;; A115978(n)=-2*A115979(n) if n>0. a(n)=-(-1)^n*A096936(n).
+
+
+;; [Marc LeBrun] o=1: Fully multiplicative with a(p) = k if p is the k-th prime.
+(definec (A003963 n) (if (= 1 n) 1 (* (A055396 n) (A003963 (A032742 n)))))
+
+;; A156061 [Ctibor O. Zizka] o=1: a(n) = product of indices of distinct prime factors of n; where index(i-th prime) = i.
+(definec (A156061 n) (if (= 1 n) 1 (* (A055396 n) (A156061 (A028234 n)))))
+
+;; Fully multiplicative with a(prime(k)) = prime(y) if k is y-th prime, and a(prime(k)) = 1 if k is not a prime.
+(definec (A295665 n) (if (= 1 n) 1 (let ((k (A055396 n))) (* (if (zero? (A010051 k)) 1 k) (A295665 (A032742 n))))))
+
+(define (A295666 n) (A295665 (A294876 n)))
+
+;; (define vecA294876 (read-b-file-to-vector "seqs2/b294876_upto16384.txt" 16385))
+;; (define (A294876 n) (vector-ref vecA294876 n))
+
+;;
+;; (same-intfuns1? A056170 (COMPOSE A001221 A295666) 5200) --> #t
+;; While (same-intfuns1? A056170 (COMPOSE A001221 A003557) 5220), where A056170 = Number of non-unitary prime divisors of n. 
+
+;; 
+(definec (A290103 n) (if (= 1 n) n (lcm (A055396 n) (A290103 (A028234 n)))))
+(define (A290104 n) (/ (A003963 n) (A290103 n)))
+(define (A290105 n) (/ (A156061 n) (A290103 n)))
+(define (A290106 n) (/ (A003963 n) (A156061 n)))
+
+(definec (A290106r1 n) (if (= 1 n) 1 (* (expt (A055396 n) (- (A067029 n) 1)) (A290106r1 (A028234 n)))))
+
+;; (same-intfuns1? A290106 A290106r1 10001) --> #t
+
+;; (same-intfuns1? A290106 (COMPOSE A003963 A003557) 10000) --> #t
+
+;; (same-intfuns1? (COMPOSE A290104 A181819) (lambda (n) (/ (A005361 n) (A072411 n))) 12000) --> #t
+
+;; (same-intfuns1? A156061 (lambda (n) (/ (A003963 n) (A290106 n))) 10000) --> #t
+;; (same-intfuns1? A156061 (lambda (n) (* (A290103 n) (A290105 n))) 10000) --> #t
+
+(define (A290107 n) (A156061 (A181819 n)))
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+;; A153285 [Walter Carlini] o=1: a(n) = n^2 + sum((-1)^j*a(j)); for j=1 to n-1; with a(1)=1.
+;; a(n) = 2n-1 if n is 1 or an even number;
+;; a(n) = 6n-7 if n is an odd number other than 1. 
+
+(define (A153285 n) (cond ((= 1 n) n) ((even? n) (+ n n -1)) (else (+ (* 6 n) -7))))
+
+
+(define (A053794 n) (modulo (+ (* n n) n) 8)) ;; A053794 [Stuart M. Ellerstein] o=0: n^2+n modulo 8.
+
+
+(define (A105198 n) (modulo (* 1/2 n (+ 1 n)) 4)) ;; A105198 [Oscar Takeshita] o=0: a(n) = n(n+1)/2 mod 4. 
+
+(define (A110549 n) (+ 1 (A105198 n))) ;; [Paul Barry] o=0: Periodic {1,2,4,3,3,4,2,1}.
+
+
+(define (A110550 n) (list-ref '(1 3 2 4 4 2 3 1) (modulo n 8))) ;; [Paul Barry] o=0: Periodic {1,3,2,4,4,2,3,1}.
+
+(define (A111951 n) (list-ref '(0 3 1 2 2 1 3 0) (modulo n 8))) ;; [Paul Barry] o=0: Periodic {0,3,1,2,2,1,3,0}. Was: Permutation of {0,1,2,3} followed by its reversal, repeated.
+
+(define (A128130 n) (list-ref '(1 -1 0 0 -1 1 0 0) (modulo n 8))) ;; [Paul Barry] o=0: Expansion of (1-x)/(1+x^4); Period 8: repeat [1,-1,0,0,-1,1,0,0].
+
+;; a(0)=1, a(1)=0, a(2)=-3, a(3)=-3, a(4)=0, a(n)=-a(n-4) [From Harvey P. Dale, Mar 24 2012]
+(definec (A109247 n) (case n ((0) 1) ((1 4) 0) ((2 3) -3) (else (- (A109247 (- n 4))))))
+ ;; [Paul Barry] o=0:  Expansion of (1-3x^2-3x^3+x^4)/(1+x^4).
+
+(define (A132380 n) (list-ref '(0 0 1 1 0 0 -1 -1) (modulo n 8))) ;; [Paul Curtz] o=0: Period 8: 0, 0, 1, 1, 0, 0, -1, -1.
+
+(define (A132380v2 n) (if (zero? n) n (/ (A109247 n) -3)))
+
+(define (A131082 n) (list-ref '(15 11 5 1 1 5 11 15) (modulo (- n 1) 8))) ;; [Klaus Brockhaus] o=1: Periodic sequence (15, 11, 5, 1, 1, 5, 11, 15). 
+
+
+(define (A206546 n) (list-ref '(1 7 11 13 13 11 7 1) (modulo (- n 1) 8))) ;; [Wolfdieter Lang] o=1: Period 8: repeat 1, 7, 11, 13, 13, 11, 7, 1.
+
+
+(define (A090281 n) (list-ref '(1 2 3 4 4 3 2 1) (modulo (- n 1) 8))) ;; A090281 [NJAS] o=1: "Plain Bob Minimus"
+;; A090281 [NJAS] o=1: "Plain Bob Minimus" in bell-ringing is a sequence of permutations p_1=(1,2,3,4), p_2=(2,1,4,3), .. which runs through all permutations of {1,2,3,4} with period 24; sequence gives position of bell 1 (the treble bell) in n-th permutation. 
+
+
+;; A105202 [Bagula] o=0: Triangle read by rows: row n gives the word f(f(f(...(1)))) [with n applications of f], where f is the morphism 1->{1,2,1}, 2->{2,3,2}, 3->{3,1,3}.
+
+
+(definec (A105202 n)
+   (if (zero? n)
+       1
+       (let* ((r (A062153 (+ 1 (* 2 n))))
+              (c (- n (A003462 r)))
+              (p (A105202 (+ (A003462 (- r 1)) (/ (- c (modulo c 3)) 3))))
+             )
+          (if (= 2 (modulo n 3))
+              (+ 1 (modulo p 3))
+              p
+          )
+       )
+   )
+)
+
+;; A105203 [Bagula] o=0: Trajectory of 1 under the morphism f: 1->{1,2,1}, 2->{2,3,2}, 3->{3,1,3}.
+
+(define (A105203 n) (if (zero? n) 1 (A105202 (+ n (A003462 (+ 1 (A062153 n)))))))
+
+;; A007400 [Plouffe, Shallit] o=0: Continued fraction for sum(n>=0, 1/2^(2^n) ) = 0.8164215090218931...
+;; From Ralf Stephan, May 17 2005:
+;; 
+;; a(0)=0, a(1)=1, a(2)=4; for n>2:
+;; a(8k)    = a(8k+3)   = 2;
+;; a(8k+4)  = a(8k+7)   = a(16k+5) = a(16k+14) = 4;
+;; a(16k+6) = a(16k+13) = 6;
+;; a(8k+1)  = a(4k+1);
+;; a(8k+2)  = a(4k+2).
+
+(definec (A007400 n)
+   (cond ((<= n 1) n)
+         ((= 2 n) 4)
+         (else
+           (case (modulo n 8)
+              ((0 3) 2)
+              ((4 7) 4)
+              ((1) (A007400 (/ (+ 1 n) 2)))
+              ((2) (A007400 (/ (+ 2 n) 2)))
+              (else
+                (case (modulo n 16)
+                   ((5 14) 4)
+                   ((6 13) 6)
+                )
+              )
+          )
+        )
+   )
+)
+
+
+(define (A088431 n) (* 1/2 (A007400 (+ 1 n)))) ;; [Cloitre] o=1: Half of the (n+1)-st component of the continued fraction expansion of sum(k>=1,1/2^(2^k)).
+
+;; A092910 [Cloitre] o=0: a(n)=(3n+2)-th component of the continued fraction for sum(k>=0,2^(-k!)). a(n)=5-A007400(n+2)/2
+(define (A092910 n) (- 5 (* 1/2 (A007400 (+ 2 n)))))
+
+
+;; (define vecA004200 (read-b-file-to-vector "seqs2/b004200_upto20000_from_Harry_J_Smith.txt" 20001))
+;; (define (A004200 n) (vector-ref vecA004200 n))
+
+(define (A088435 n) (* 1/2 (+ 1 (A004200 (+ 1 n))))) ;; [Cloitre] o=1: 1/2 + half of the (n+1)-st component of the continued fraction expansion of sum(k>=1,1/3^(2^k)).
+
+;; A004200 [NJAS] o=0: Continued fraction for Sum[ 1/3^(2^n),{n,0,Infinity} ]. 
+
+;; Recurrence:
+;; a(0)=0, a(1)=2, a(2)=5,
+;; a(16n+5) = a(16n+12) = a(32n+9) = a(32n+24)=1,
+;; a(8n+3) = a(8n+6) = a(16n+4) = a(16n+13) = a(32n+8) = a(32n+25) = 3,
+;; a(8n+2) = a(8n+7) = 5, a(16n)=a(8n), a(16n+1) = a(8n+1). - Ralf Stephan, May 17 2005
+;; (XXX - Something missing from that?!)
+
+;; A005043 		Motzkin sums: a(n) = (n-1)*(2*a(n-1) + 3*a(n-2))/(n+1). Also called Riordan numbers or ring numbers.
+(definec (A005043 n) (if (<= n 1) (- 1 n) (/ (* (- n 1) (+ (* 2 (A005043 (- n 1))) (* 3 (A005043 (- n 2))))) (+ 1 n))))
+
+;; A001006 [NJAS] o=0: Motzkin numbers: number of ways of drawing any number of nonintersecting chords joining n (labeled) points on a circle.
+(define (A001006 n) (+ (A005043 n) (A005043 (+ 1 n))))
+
+(definec (A186034 n) (A007814 (A001006 n))) ;; [Paul Barry] o=0: 2-adic valuation of the n-th Motzkin number. 
+
+(define (A186035 n) (expt -1 (A186034 n))) ;; [Paul Barry] o=0: a(n) = (-1)^A186034(n).
+
+(define (A093803 n) (/ n (if (odd? n) (A020639 n) (A006519 n)))) ;; A093803 [Zumkeller] o=1: Greatest odd proper divisor of n; a(1)=1.
+
+;; (same-intfuns1? A093803 (COMPOSE A000265 A032742) 12000) ;; --> #t
+
+(define (A014673 n) (A020639 (/ n (A020639 n)))) ;; [Zumkeller] o=1: Smallest prime factor of greatest proper divisor of n. 
+
+;; A070821 [Zumkeller] o=1: Integer part of n/(lpf(n)*gpf(n)), where lpf=A020639 is the least prime factor and gpf=A006530 the greatest prime factor.
+
+(define (A070821 n) (floor->exact (/ (A032742 n) (A006530 n))))
+
+;; A069157 [Quet] o=1: Number of positive divisors of n that are divisible by smallest prime that divides n.
+(define (A069157 n) (let ((e_n (A067029 n))) (* (/ e_n (+ 1 e_n)) (A000005 n))))
+
+(define (A115561 n) (A020639 (A054576 n))) ;; [Zumkeller] o=1: lpf((n/lpf(n))/lpf(n/lpf(n))), where lpf=A020639, least prime factor. 
+
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+;; A290095 [AK] o=0: a(n) = A275725(A060126(n)); prime factorization encodings of cycle-polynomials computed for finite permutations listed in the order that is used in table A055089 (A195663).
+(definec (A290095 n) (A275725 (A060126 n)))
+
+(definec (A290096 n) (A046523 (A290095 n)))
+
+;; (same-intfuns0? A290096 (COMPOSE A278225 A060126) 120) --> #t
+
+;; A290097 the rgs-transform of A290096.
+
+(define (A055090 n) (A056170 (A290095 n)))
+(define (A055091 n) (A046660 (A290095 n)))
+(define (A055092 n) (A072411 (A290095 n)))
+(define (A055093 n) (A275812 (A290095 n)))
+
+
+(definec (A051548 n) (if (<= n 1) 1 (lcm (A000005 n) (A051548 (- n 1))))) ;; [NJAS] o=0: a(n) = LCM { tau(1), ..., tau(n) }. 
+
+
+
+
+
+;; A087179 [Sam Alexander] o=1: a(n) = ((...(x1^x2)^x3)^x4)^...) where x1,x2,... are the exponents in the prime factorization of n.
+
+(definec (A087179 n) (if (<= (A001221 n) 1) (A067029 n) (expt (A087179 (A051119 n)) (A071178 n))))
+
+
+(definec (A290109 n) (if (= 1 n) 1 (expt (A067029 n) (A290109 (A028234 n)))))
+
+;; A137843 [Leroy Quet] o=1: Define S(1) = {1}, S(n+1) = S(n) U S(n) if a(n) is even, S(n+1) = S(n) U (n+1) U S(n) if a(n) is odd. Sequence {a(n), n >= 1} is limit as n approaches infinity of S(n). (U represents concatenation.). 
+
+;; A291753(n)
+;;     1       S(1) = {1}.
+;;     3       S(2) = {1,2,1}, because a(1) = 1, which is odd.
+;;     6       S(3) = {1,2,1,1,2,1}, because a(2) = 2, which is even.
+;;    13       S(4) = {1,2,1,1,2,1,4,1,2,1,1,2,1}.
+;;
+;;                         a(3) = a(3-2)          2 = A291753(2) - A291753(1)
+;;                           a(4) = a(4-3)           3 = A291753(3) - A291753(2)
+;;                             a(5) = a(5-3)         3 = A291753(3) - A291753(2)
+;;                               a(6) = a(6-3)       3 = A291753(3) - A291753(2)
+;;                                   a(8) = a(8-7)            7 = A291753(4) - A291753(3)
+;;                                     a(9) = a(9-7)
+;;      A291753(k) at: 1   2     3                 4                                         5
+;;                  k: 1 2 2 3 3 3 4 4 4  4  4  4  4  5
+;;
+;;                  n: 1,2,3,4,5,6,7,8,9,10 11 12 13 14 15 16 17 18 19 20 21 22 23 24 25 26 27
+;;
+;;    27       S(5) = {1,2,1,1,2,1,4,1,2, 1, 1, 2, 1, 5, 1, 2, 1, 1, 2, 1, 4, 1, 2, 1, 1, 2, 1}
+;;    54
+;;   109
+;; Whenever n = A291753(k) for some k >= 1, then we are at the end of the k-th subsection.
+;; Whenever n = 1+A291753(k) for some k >= 1, then we are at the beginning of the (k+1)-th subsection,
+;;  and then the first term of that (k+1)-th subsection is 1 if a(k) is even, and (k+1) if a(k) is odd.
+;; Otherwise, if we are at the (k+1)-th subsection (but not in the beginning) that begins at 1+A291753(k)
+;;  we set a(n) = a(n-(A291753(k)+A000035(a(k)))).
+
+
+(definec (A137843 n)
+   (if (= 1 n)
+       n
+       (let ((k (let loop ((j 1)) (if (>= (A291753 j) n) j (loop (+ 1 j)))))) ;; k = least j for which A291753(j) >= n
+;;        (format #t "n=~a k=~a\n" n k)
+          (cond ((= (+ 1 (A291753 (- k 1))) n) ;; If n = A291753(k-1)+1, that is, we are after the end of subsection
+                   (if (odd? (A137843 (- k 1))) k 1) ;; If a(k-1) is odd, insert k between, otherwise no padding.
+                )
+;; Otherwise, we are past the start of the next subsection, copy a value from appropriate position from prev. section:
+                (else
+                     (A137843 (- n (+ (A291753 (- k 1)) (A000035 (A137843 (- k 1))))))
+                )
+          )
+       )
+   )
+)
+
+
+(definec (A291753 n) (if (= 1 n) 1 (+ (* 2 (A291753 (- n 1))) (A000035 (A137843 (- n 1))))))
+
+;; A291750-A291771 are now reserved for your use. 
+
+;; A137844 [Leroy Quet] o=1: Define S(1) = {1}, S(n+1) = S(n) U S(n) if a(n) is even, S(n+1) = S(n) U n U S(n) if a(n) is odd. Sequence {a(n), n >= 1} is limit as n approaches infinity of S(n). (U represents concatenation.).
+
+;; A291754(n)
+;;    1     S(1) = {1}.
+;;    3     S(2) = {1,1,1}, because a(1) = 1, which is odd.
+;;    7     S(3) = {1,1,1,2,1,1,1}, because a(2) = 1, which is odd.
+;;   15     S(4) = {1,1,1,2,1,1,1,3,1,1,1,2,1,1,1}.
+;;   30     S(5) = {1,1,1,2,1,1,1,3,1,1,1,2,1,1,1,1,1,1,2,1,1,1,3,1,1,1,2,1,1,1}, because a(4) = 2, which is even. 
+;;   61
+;;  123
+;;  246
+
+
+
+(definec (A137844 n)
+   (if (= 1 n)
+       n
+       (let ((k (let loop ((j 1)) (if (>= (A291754 j) n) j (loop (+ 1 j)))))) ;; k = least j for which A291754(j) >= n
+;;        (format #t "n=~a k=~a\n" n k)
+          (cond ((= (+ 1 (A291754 (- k 1))) n) ;; If n = A291754(k-1)+1, that is, we are after the end of subsection
+                   (if (odd? (A137844 (- k 1))) (- k 1) 1) ;; If a(k-1) is odd, insert k-1 between, otherwise no padding.
+                )
+;; Otherwise, we are past the start of the next subsection, copy a value from appropriate position from prev. section:
+                (else
+                     (A137844 (- n (+ (A291754 (- k 1)) (A000035 (A137844 (- k 1))))))
+                )
+          )
+       )
+   )
+)
+
+
+(definec (A291754 n) (if (= 1 n) 1 (+ (* 2 (A291754 (- n 1))) (A000035 (A137844 (- n 1))))))
+
+
+
+;; 
+;; (define vecA101296 (read-b-file-to-vector "seqs2/b101296_upto10e5.txt" 100001))
+;; (define (A101296 n) (vector-ref vecA101296 n))
+;;
+;; (define vecA291751 (read-b-file-to-vector "seqs2/b291751_upto65537.txt" 65538))
+;; 
+;; (define (A291751 n) (vector-ref vecA291751 n))
+
+
+(definec (A291752 n) (* (/ 1 2) (+ (expt (+ (A101296 n) (A291751 n)) 2) (- (A101296 n)) (- (* 3 (A291751 n))) 2)))
+
+
+;; (define (A035263 n) (A000035 (A001511 n))) ;; [Karamanos Konstantinos, NJAS] o=1: Trajectory of 1 under the morphism 0 -> 11, 1 -> 10. 
+(define (A035263 n) (let loop ((n n) (i 1)) (cond ((odd? n) (modulo i 2)) (else (loop (/ n 2) (+ 1 i))))))
+
+(define (A089608 n) (- 5 (* 4 (A035263 n)))) ;; [Cloitre] o=1: a(n)=((-1)^(n+1)*A002425(n)) modulo 6.
+
+(define (A290108 n) (modulo (A268819 n) 8))
+
+;; (same-intfuns1? A253786 (COMPOSE A007814 A064216) 5000) --> #t
+
+;; (same-intfuns1? A007814 (COMPOSE A253786 A048673) 10000) --> #t
+
+;; (same-intfuns1? A007814 (COMPOSE A253786 A254103) 10000) --> #t
+;; (same-intfuns1? A253786 (COMPOSE A007814 A254104) 10000) --> #t
+
+(define (A135523 n) (+ (A007814 n) (A209229 n))) ;; o=1: [NJAS, based on a message from Guy Steele and Don Knuth]
+
+;; (same-intfuns1? (COMPOSE A007814 1+) (COMPOSE A253786 A244154) 3000) --> #t
+
+;; (same-intfuns1? A135523 (COMPOSE A253786 A245612) 3000) --> #t
+
+;; (same-intfuns1? A253786 (COMPOSE A135523 A245611) 3000) --> #t
+
+(define (A291759 n) (A289814 (A048673 n))) ;; o=1: Binary encoding of 2-digits in ternary representation of A048673.
+
+(define (A291760 n) (A289814 (A254103 n))) ;; o=0: Binary encoding of 2-digits in ternary representation of A254103.
+
+(define (A291763 n) (A289814 (A245612 n))) ;; o=0: Binary encoding of 2-digits in ternary representation of A245612.
+
+
+;; A292239-A292274 are now reserved for your use.
+
+(definec (A292240 n) (A291770 (A254103 n))) ;; o=0: Binary encoding of 0-digits in ternary representation of A254103.
+(definec (A292250 n) (A291770 (A048673 n))) ;; o=1: Binary encoding of 0-digits in ternary representation of A048673.
+(definec (A292260 n) (A291770 (A245612 n))) ;; o=0: Binary encoding of 0-digits in ternary representation of A245612.
+
+(define (A292241 n) (A007949 (A254103 n)))
+(define (A292251 n) (A007949 (A048673 n)))
+(define (A292261 n) (A007949 (A245612 n)))
+
+;; (same-intfuns1? A292241 (lambda (n) (+ -1 (A007949 (* 3 (A254103 n))))) 10000) --> #t
+;; (same-intfuns0? A292241 (lambda (n) (A007814 (+ 1 (A292240 n)))) 16384) --> #t
+
+;; (same-intfuns1? A292251 (lambda (n) (+ -1 (A007949 (* 3 (A048673 n))))) 5000) --> #t
+;; (same-intfuns1? A292251 (lambda (n) (A007814 (+ 1 (A292250 n)))) 16384) --> #t
+
+;; (same-intfuns1? A292261 (lambda (n) (+ -1 (A007949 (* 3 (A245612 n))))) 5000) --> #t
+;; (same-intfuns1? A292261 (lambda (n) (A007814 (+ 1 (A292260 n)))) 4096) --> #t
+
+(define (A292242 n) (A007949 (+ 1 (A254103 n))))
+(define (A292242v1 n) (A007814 (+ 1 (A291760 n))))
+(define (A292242v2 n) (cond ((zero? n) n) ((odd? n) 0) (else (+ 1 (A292241 (/ n 2))))))
+
+(definec (A292243 n) (if (= 1 n) n (+ (modulo n 3) (* 3 (A292243 (A253889 n)))))) ;; [AK] o=1: a(1) = 1; for n > 1, a(n) = 3*a(A253889(n)) + (n mod 3).
+
+(define (A292244 n) (A291770 (A292243 n)))
+
+(definec (A292245 n) (if (= 1 n) 1 (+ (if (= 1 (modulo n 3)) 1 0) (* 2 (A292245 (A253889 n))))))
+(define (A292245v2 n) (A289813 (A292243 n)))
+
+(definec (A292246 n) (if (= 1 n) 0 (+ (floor->exact (/ (modulo n 3) 2)) (* 2 (A292246 (A253889 n))))))
+(define (A292246v2 n) (A289814 (A292243 n)))
+
+(define (A292247 n) (A292244 (A048673 n)))
+(define (A292248 n) (A292245 (A048673 n)))
+
+;; (same-intfuns1? A000004 (lambda (n) (A004198bi (A292244 n) (A292245 n))) 1200) --> #t
+;; (same-intfuns1? A000004 (lambda (n) (A004198bi (A292244 n) (A292246 n))) 1200) --> #t
+;; (same-intfuns1? A000004 (lambda (n) (A004198bi (A292245 n) (A292246 n))) 1200) --> #t
+;; (same-intfuns1? A064216 (lambda (n) (+ (A292244 n) (A292245 n))) 10000) --> #t
+
+;; (same-intfuns1? A254045 (COMPOSE A000120 A292246) 2400) --> #t
+
+(define (A292380 n) (A048735 (A156552 n))) ;; o=1: !!!
+(define (A292380v2 n) (A292370 (A292384 n)))
+(define (A292381 n) (A292371 (A292384 n)))
+(define (A292382 n) (A292372 (A292384 n)))
+
+(definec (A292383 n) (if (= 1 n) 0 (+ (if (= 3 (modulo n 4)) 1 0) (* 2 (A292383 (A252463 n))))))
+(define (A292383v2 n) (A292373 (A292384 n)))
+
+(definec (A292384 n) (if (= 1 n) n (+ (modulo n 4) (* 4 (A292384 (A252463 n)))))) ;; [AK] o=1: a(1) = 1; for n > 1, a(n) = 4*a(A252463(n)) + (n mod 4).
+
+(definec (A292385 n) (if (<= n 2) (- n 1) (+ (if (= 1 (modulo n 4)) 1 0) (* 2 (A292385 (A252463 n))))))
+;; (same-intfuns1? A243071 (lambda (n) (+ (A292383 n) (A292385 n))) 1200) --> #t
+;; (same-intfuns1? (COMPOSE A292381 1+) (COMPOSE A004754 A292385 1+) 1200) --> #t
+
+(definec (A292374 n) (cond ((even? n) 0) ((= 1 n) 1) (else (+ (if (= 1 (modulo n 4)) 1 0) (A292374 (A064989 n))))))
+(definec (A292375 n) (if (= 1 n) 1 (+ (if (= 1 (modulo n 4)) 1 0) (A292375 (A252463 n)))))
+(define (A292375v2 n) (A000120 (A292381 n)))
+
+(definec (A292376 n) (if (or (even? n) (= 1 n)) 0 (+ (floor->exact (/ (modulo n 4) 3)) (A292376 (A064989 n)))))
+(definec (A292377 n) (if (= 1 n) 0 (+ (floor->exact (/ (modulo n 4) 3)) (A292377 (A252463 n)))))
+(define (A292377v2 n) (A000120 (A292383 n)))
+
+(define (A292378 n) (+ 1 (- (A292377 n) (A292375 n))))
+;; (same-intfuns1? A038698 (COMPOSE A292378 A000040) 1000) --> #t
+
+;; (same-intfuns1? A267097 (COMPOSE -1+ A292375 A000040) 1000) --> #t
+;; (same-intfuns1? A267098 (COMPOSE A292377 A000040) 1000) --> #t
+
+;; Odd bisection of A292374(n) + A292376(n) = A038802(n), check!
+
+;; (same-intfuns1? (COMPOSE A061395 1+)  (COMPOSE (lambda (n) (+ (A292375 n) (A292377 n))) 1+) 1200) --> #t
+
+;; (same-intfuns1? (COMPOSE A055396 1+) (COMPOSE (lambda (n) (+ 1 (A292374 n) (A292376 n))) 1+) 1200) --> #t
+
+
+;; (same-intfuns1? A001222 (lambda (n) (+ (A000120 (A292380 n)) (A000120 (A292382 n)))) 1200) --> #t
+;; (same-intfuns1? (COMPOSE A061395 1+) (COMPOSE (lambda (n) (+ (A000120 (A292381 n)) (A000120 (A292383 n)))) 1+) 1200) --> #t
+
+;; (same-intfuns1? A156552 (lambda (n) (+ (A292380 n) (A292382 n))) 1200) --> #t
+;; (same-intfuns1? A000004 (lambda (n) (A004198bi (A292380 n) (A292382 n))) 1200) --> #t
+;; (same-intfuns1? A000004 (lambda (n) (A004198bi (A292381 n) (A292383 n))) 1200) --> #t
+
+;; (same-intfuns1? (COMPOSE A292383 double) (COMPOSE double A292383) 120) --> #t
+
+(define (A048735check_it n) (A292380 (A005940 (+ 1 n))))
+(define (A292272 n) (- n (A048735 n)))
+(define (A292272v2 n) (A003987bi n (A048735 n)))
+(define (A292272check_it n) (A292382 (A005940 (+ 1 n))))
+
+;; (same-intfuns0? A292272 (lambda (n) (A004198bi n (A003188 n))) 65536) --> #t
+
+;; (same-intfuns1? A292380 (COMPOSE A048735 A156552) 600) --> #t
+
+;; (same-intfuns0? A001477 (lambda (n) (+ (A048735 n) (A292272 n))) 500) --> #t
+
+(define (A292271 n) (A292385 (A163511 n)))
+
+(define (A292274 n) (A292383 (A163511 n)))
+
+;; (same-intfuns1? A000027 (lambda (n) (+ (A292271 n) (A292274 n))) 1200) --> #t
+;; (same-intfuns1? A292271 (lambda (n) (- n (A292274 n))) 8192) --> #t
+
+(define (Anewperm n) (/ (A005940 (+ 1 (A255068 (- n 1)))) 3))
+
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+;; A292582-A292603 are now reserved for your use. 
+
+(define (A292589 n) (A046523 (A003557 n)))
+
+
+;; (define vecA292583 (read-b-file-to-vector "seqs2/b292583_upto16384.txt" 16385))
+;; (define (A292583 n) (vector-ref vecA292583 n))
+;;
+;; (define vecA292585 (read-b-file-to-vector "seqs2/b292585_upto16384.txt" 16385))
+;; (define (A292585 n) (vector-ref vecA292585 n))
+
+(define (A292586 n) (A002110 (A001221 n)))
+(define (A292586v2 n) (A278222 (A292382 n)))
+
+(definec (A292584 n) (* 1/2 (+ (expt (+ (A292583 n) (A292585 n)) 2) (- (A292583 n)) (- (* 3 (A292585 n))) 2)))
+
+(definec (A292587 n) (* 1/2 (+ (expt (+ (A001221 n) (A292582 n)) 2) (- (A001221 n)) (- (* 3 (A292582 n))) 2)))
+(definec (A292588 n) (* 1/2 (+ (expt (+ (A292582 n) (A292583 n)) 2) (- (A292582 n)) (- (* 3 (A292583 n))) 2)))
+
+
+
+(definec (A292590 n) (if (<= n 1) 0 (+ (if (zero? (modulo n 3)) 1 0) (* 2 (A292590 (A285712 n)))))) ;; [AK] o=1: a(1) = 0; and for n > 1, a(n) = 2*a(A285712(n)) + [0 == (n mod 3)].
+
+(definec (A292591 n) (if (<= n 2) (- n 1) (+ (if (= 1 (modulo n 3)) 1 0) (* 2 (A292591 (A285712 n)))))) ;; [AK] o=1: a(1) = 0, a(2) = 1; and for n > 2, a(n) = 2*a(A285712(n)) + [1 == (n mod 3)].
+
+(definec (A244153v2 n) (if (= 1 n) 0 (+ (floor->exact (/ (modulo n 3) 2)) (* 2 (A244153v2 (A285712 n)))))) ;; [AK] o=1: a(1) = 0; for n > 0, a(n) = 2*a(A285712(n)) + [2 == (n mod 3)].
+
+;; (same-intfuns1? A245611 (lambda (n) (+ (A292590 n) (A292591 n))) 1200)
+
+(define (A292592 n) (A292590 (A245612 n))) ;; o=0:
+(define (A292593 n) (A292591 (A245612 n))) ;; o=0:
+
+;; (same-intfuns1? A001477 (lambda (n) (+ (A292592 n) (A292593 n))) 257)
+
+(definec (A292594 n) (if (<= n 1) 0 (+ (if (zero? (modulo n 3)) 1 0) (A292594 (A285712 n))))) ;; o=1: a(1) = 0; and for n > 1, a(n) = A079978(n) + a(A285712(n)).
+(define (A292594v2 n) (A000120 (A292590 n))) ;; o=1:
+
+(definec (A292595 n) (if (<= n 2) (- n 1) (+ (if (= 1 (modulo n 3)) 1 0) (A292595 (A285712 n))))) ;; o=1: a(1) = 0; and for n > 1, a(n) = a(A285712(n)) + [1 == (n mod 3)].
+(define (A292595v2 n) (A000120 (A292591 n))) ;; o=1:
+
+;; (same-intfuns1? A285715 (lambda (n) (+ (A292594 n) (A292595 n))) 1200) --> #t
+
+
+(definec (A292596 n) (if (<= n 2) 0 (+ (A010051 n) (* 2 (A292596 (floor->exact (/ n 2)))))))
+
+(definec (A292597 n) (if (= 1 n) 1 (+ (* (A000035 n) (- 1 (A010051 n))) (* 2 (A292597 (floor->exact (/ n 2)))))))
+
+;; (same-intfuns1? A000027 (lambda (n) (+ (A292596 n) (A292597 n))) 1200) --> #t
+
+(definec (A292598 n) (if (<= n 2) 0 (+ (A010051 n) (A292598 (floor->exact (/ n 2))))))
+
+(definec (A292599 n) (if (<= n 1) 0 (+ (A010051 n) (* 2 (A292599 (floor->exact (/ n 2)))))))
+
+;; A292936-A292947 are now reserved for your use. 
+(define (A292936 n) (A007814 (1+ (A292599 n))))
+
+(definec (AdoNOTsubmit n) (if (= 1 n) 1 (+ (if (odd? n) (modulo (jacobi-symbol 3 n) 3) 3) (* 4 (AdoNOTsubmit (A252463 n)))))) ;; o=1:
+
+(define (A292943veeviis n) (A292370 (AdoNOTsubmit n))) ;; Cf. A292943 ???
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+(definec (A292941 n) (if (<= n 2) (- n 1) (+ (if (= 1 (modulo n 6)) 1 0) (* 2 (A292941 (A252463 n)))))) ;; o=1:
+(define (A292942 n) (A292941 (A163511 n))) ;; o=0:
+
+(definec (A292941v2 n) (if (<= n 2) (- n 1) (+ (if (and (odd? n) (= 1 (jacobi-symbol (- n 3) n))) 1 0) (* 2 (A292941v2 (A252463 n))))))
+
+(define (A292943 n) (A292944 (A243071 n)))
+
+(definec (A292943r1 n) (if (<= n 1) 0 (+ (if (= 3 (modulo n 6)) 1 0) (* 2 (A292943r1 (A252463 n)))))) ;; o=1:
+
+(define (A292944 n) (let ((x (+ n (A053644 n)))) (- (A292272 x) (A053644 x))))
+(define (A292944v1 n) (- (A292272 (A004754 n)) (* 2 (A053644 n))))
+(define (A292944v2 n) (A292943 (A163511 n))) ;; o=0:
+
+;; (same-intfuns0? A292944 (lambda (n) (A004198bi (A292944 n) n)) 512) --> #t
+;; (same-intfuns0? A292944 A292944v1 1024) --> #t
+;; (same-intfuns0? A292944 A292944v2 1024) --> #t
+
+
+(definec (A292945 n) (if (<= n 1) 0 (+ (if (= 5 (modulo n 6)) 1 0) (* 2 (A292945 (A252463 n)))))) ;; o=1:
+(define (A292946 n) (A292945 (A163511 n))) ;; o=0:
+
+(definec (A292945v2 n) (if (<= n 1) 0 (+ (if (and (odd? n) (= -1 (jacobi-symbol (- n 3) n))) 1 0) (* 2 (A292945v2 (A252463 n)))))) ;; o=1:
+
+
+(definec (A292253 n) (if (<= n 2) (- n 1) (+ (if (and (odd? n) (= 1 (jacobi-symbol 3 n))) 1 0) (* 2 (A292253 (A252463 n)))))) ;; o=1:
+(define (A292254 n) (A292253 (A163511 n))) ;; o=0:
+
+(definec (A292255 n) (if (<= n 1) 0 (+ (if (and (odd? n) (= -1 (jacobi-symbol 3 n))) 1 0) (* 2 (A292255 (A252463 n)))))) ;; o=1:
+(define (A292256 n) (A292255 (A163511 n))) ;; o=0:
+
+(define (A292263 n) (A292264 (A243071 n)))
+(definec (A292263r1 n) (if (<= n 2) (- n 1) (+ (floor->exact (* (A000035 n) (/ (+ 1 (modulo n 3)) 2))) (* 2 (A292263 (A252463r1 n)))))) ;; o=1:
+(definec (A292263v2 n) (if (<= n 2) (- n 1) (+ (* (A000035 n) (abs (jacobi-symbol 3 n))) (* 2 (A292263v2 (A252463 n))))))
+(define (A292263v3 n) (+ (A292941 n) (A292945 n)))
+(define (A292263v4 n) (+ (A292253 n) (A292255 n)))
+
+(define (A292264 n) (- n (A292944 n)))
+(define (A292264v2 n) (A292263 (A163511 n))) ;; o=0:
+
+;; (same-intfuns0? A292264 (lambda (n) (+ (A292254 n) (A292256 n))) 512) --> #t
+;; (same-intfuns0? A292264 (lambda (n) (+ (A292942 n) (A292946 n))) 120) --> #t
+;; (same-intfuns0? A001477 (lambda (n) (+ (A292264 n) (A292944 n))) 120)  --> #t
+
+
+;; (same-intfuns1? A243071 (lambda (n) (+ (A292941 n) (A292943 n) (A292945 n))) 1200) --> #t
+;; (same-intfuns1? A000027 (lambda (n) (+ (A292942 n) (A292944 n) (A292946 n))) 512) --> #t
+
+;; (same-intfuns1? A243071 (lambda (n) (+ (A292253 n) (A292943v2 n) (A292255 n))) 1200) --> #t
+;; (same-intfuns1? A000027 (lambda (n) (+ (A292254 n) (A292944 n) (A292256 n))) 512) --> #t
+
+
+;; (same-intfuns1? A292253  (lambda (n) (A004198bi (A292263 n) (A003987bi (A292383 n) (A292941 n)))) 4096) --> #t
+;; (same-intfuns1? A292254 (lambda (n) (A004198bi (A292264 n) (A003987bi (A292274 n) (A292942 n)))) 512) --> #t
+
+;; (same-intfuns1? A292255 (lambda (n) (A004198bi (A292263 n) (A003987bi (A292945 n) (A292383 n)))) 4096) --> #t
+;; (same-intfuns1? A292255 (lambda (n) (A004198bi (A292263 n) (A003987bi (A292941 n) (A292385 n)))) 4096) --> #t
+
+;; (same-intfuns1? A292256 (lambda (n) (A004198bi (A292264 n) (A003987bi (A292946 n) (A292274 n)))) 512) --> #t
+;; (same-intfuns1? A292256 (lambda (n) (A004198bi (A292264 n) (A003987bi (A292942 n) (A292271 n)))) 512) --> #t
+
+;; (same-intfuns1? A292941  (lambda (n) (A004198bi (A292263 n) (A003987bi (A292253 n) (A292383 n)))) 4096) --> #t
+;; (same-intfuns1? A292941 (lambda (n) (A004198bi (A292263 n) (A003987bi (A292255 n) (A292385 n)))) 1200) --> #t
+
+;; (same-intfuns1? A292942 (lambda (n) (A004198bi (A292264 n) (A003987bi (A292254 n) (A292274 n)))) 512) --> #t
+
+;; (same-intfuns1? A292945 (lambda (n) (A004198bi (A292263 n) (A003987bi (A292255 n) (A292383 n)))) 4096) --> #t
+;; (same-intfuns1? A292945 (lambda (n) (A004198bi (A292263 n) (A003987bi (A292253 n) (A292385 n)))) 4096) --> #t
+
+
+;; (same-intfuns1? A292946 (lambda (n) (A004198bi (A292264 n) (A003987bi (A292256 n) (A292274 n)))) 512) --> #t
+;; (same-intfuns1? A292946 (lambda (n) (A004198bi (A292264 n) (A003987bi (A292254 n) (A292271 n)))) 512) --> #t
+
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+
+
+(define (A086694 n) (- 1 (A079944 (- n 1))))
+
+(definec (A078349 n) (if (<= n 1) 0 (+ (A010051 n) (A078349 (floor->exact (/ n 2))))))
+
+(define (A292600 n) (A006068 (floor->exact (/ n 2))))
+
+(define (A292601 n) (- n (A292600 n)))
+
+(definec (A292602 n) (if (<= n 2) 0 (+ (A010051 n) (* 2 (A292602 (A292600 n))))))
+
+(definec (A292603 n) (if (<= n 1) n (+ (* (A000035 n) (- 1 (A010051 n))) (* 2 (A292603 (A292600 n))))))
+
+;; (same-intfuns0? A234613 (lambda (n) (+ (A292602 n) (A292603 n))) 1024) --> #t
+
+(define (Ajoku2 n) (A292602 (A234613 n)))
+(define (Ajoku3 n) (A292603 (A234613 n)))
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+;; Some similar stuff for Collatz. Use A006370 instead of A014682 ?
+(definec (Arenum4 n) (if (= 1 n) n (+ (modulo n 3) (* 3 (Arenum4 (A014682 n)))))) ;; [AK] o=1: a(1) = 1; for n > 1, a(n) = 3*a(A014682(n)) + (n mod 3).
+
+(define (Arenum0 n) (A291770 (Arenum4 n))) ;; Trisection is A038712 ?
+(define (Arenum1 n) (A289813 (Arenum4 n)))
+(define (Arenum2 n) (A289814 (Arenum4 n)))
+
+
+(define (A292252 n) (A007949 (+ 1 (A048673 n))))
+(define (A292252v1 n) (A007814 (+ 1 (A291759 n))))
+(define (A292252v2 n) (if (odd? n) 0 (+ 1 (A292251 (/ n 2)))))
+
+(define (A292262 n) (A007949 (+ 1 (A245612 n))))
+(define (A292262v1 n) (A007814 (+ 1 (A291763 n))))
+(define (A292262v2 n) (cond ((<= n 1) n) ((odd? n) 0) (else (+ 1 (A292261 (/ n 2))))))
+
+
+;; (same-intfuns0? A292242 A292242v1 10000) --> #t
+;; (same-intfuns0? A292242 A292242v2 10000) --> #t
+
+;; (same-intfuns1? A292252 A292252v2 5000) --> #t
+;; (same-intfuns0? A292252 A292252v1 7000) --> #t
+
+;; (same-intfuns0? A292262 A292262v2 2000) --> #t
+;; (same-intfuns0? A292262 A292262v1 2000) --> #t
+
+
+
+(define (A080545 n) (if (= 1 n) 1 (if (even? n) 0 (A010051 n)))) ;; Characteristic function of {1} union {odd primes}: 1 if n is 1 or an odd prime, else 0.
+
+
+;; A081729 [Ralf Stephan] o=0: Expansion of Sum(k>=0, x^(2^k)) + 1/(1+x). First differences of A007456 (gossip sequence) for n>1. a(n) = A209229(n) + A033999(n).
+
+(define (A081729 n) (+ (A209229 n) (expt -1 n)))
+
+(define (A021444 n) (cond ((<= n 1) 0) ((= 2 n) n) ((even? n) 7) (else 2))) ;; [NJAS] o=0: Decimal expansion of 1/440.
+
+(define (A021796 n) (cond ((<= n 1) 0) ((= 2 n) 1) ((even? n) 6) (else 2))) ;; [NJAS] o=0: Decimal expansion of 1/792.
+
+
+
+(define (A163522 n) (cond ((<= n 2) (expt 2 n)) ((= 3 n) 7) ((even? n) 13) (else 16))) ;; A163522 a(1)=2; for n>1, a(n) = sum of digits of a(n-1)^2.
+
+;; A158515 [Jaume Oliver Lafont] o=0: Number of colors needed to paint a wheel graph on n nodes.
+(define (A158515 n) (if (< n 4) n (- 4 (modulo n 2))))
+
+;; A129000 Start with an integer (in this case, 1). First, add 5 or 8 if the integer is odd or even, respectively. Then divide by 2.
+(definec (A129000 n) (if (= 1 n) n (let ((prev (A129000 (- n 1)))) (/ (+ prev (if (odd? prev) 5 8)) 2))))
+
+;; A061358 [Amarnath Murthy] o=0: Number of ways of writing n = p+q with p, q primes and p >= q. 
+(definec (A061358 n)
+   (cond ((<= n 2) 0)
+         ((odd? n) (A010051 (- n 2)))
+         (else (add (lambda (k) (* (A010051 k) (A010051 (- n k)))) 2 (/ n 2)))
+   )
+)
+
+;; A068307 [Naohiro Nomoto] o=1: From Goldbach problem: number of decompositions of n into a sum of three primes. 
+;; For even n>2, a(n) = A061358(n-2).
+
+(definec (A068307 n)
+   (cond ((<= n 5) 0)
+         ((even? n) (A061358 (- n 2)))
+         (else
+           (let outloop ((s 0) (x (A000720 n)))
+              (if (zero? x)
+                  s
+                  (let inloop ((s s) (y x))
+                    (if (zero? y)
+                        (outloop s (- x 1))
+                        (let ((k (- n (A000040 x) (A000040 y)))) ;; Our candidate for the third and the smallest prime
+                          (cond
+                             ((< k 2) (inloop s (- y 1)))
+                             ((> k (A000040 y)) (outloop s (- x 1)))
+                             (else (inloop (+ s (A010051 k)) (- y 1)))
+                          )
+                        )
+                    )
+                  )
+              )
+           )
+         )
+   )
+)
+
+
+;; A083338 [Zumkeller] o=1: Number of partitions of odd numbers into three primes and of even numbers into two primes.
+
+(define (A083338 n) (if (even? n) (A061358 n) (A068307 n)))
+
+
+;; A083339 [Zumkeller] o=1: Number of distinct prime factors of n that occur in prime-partitions confirming Goldbach's conjectures. 
+
+(define (A083339 n) (if (even? n) (A083339_for_even n) (A083339_for_odd n)))
+
+;; We know that a(2n) = 1 only when n is an even semiprime (A100484), and 0 otherwise:
+
+(definec (A083339_for_even n)
+   (cond ((< n 4) 0)
+         (else
+;; Note: divs works as our set of prime factors still unencountered as a part of valid partitions:
+           (let loop ((s 0) (x (A000720 n)) (divs (A007947 n)))
+              (if (or (zero? x) (= 1 divs))
+                  s
+                  (let ((k (- n (A000040 x)))) ;; Our candidate for the second and the smallest prime
+                    (cond
+                       ((> k (A000040 x)) s) ;; k grew larger than prime(x), we are done.
+                       ((or (< k 2) (zero? (A010051 k))) (loop s (- x 1) divs)) ;; k not a prime.
+;; At this point we know that prime(x)+k is a two-prime partition of n, with prime(x) >= k.
+;; So, if prime(x) is a prime factor of n, and still uncounted, increment s by 1, and roll an EXTRA time in the loop:
+                       ((zero? (modulo divs (A000040 x))) (loop (+ 1 s) x (/ divs (A000040 x))))
+;; If k is still an uncounted prime factor, add one to s and keep on looping (with x decremented by one):
+                       ((zero? (modulo divs k)) (loop (+ 1 s) (- x 1) (/ divs k)))
+;; Otherwise k is a prime that does not divide n, or a prime factor that has already been counted, so keep s same:
+                       (else (loop s (- x 1) divs))
+                    )
+                  )
+              )
+           )
+         )
+   )
+)
+
+
+(definec (A083339_for_odd n)
+   (cond ((<= n 5) 0)
+         (else
+;; Note: divs works as our set of prime factors still unencountered as a part of valid partitions:
+           (let outloop ((s 0) (x (A000720 n)) (divs (A007947 n)))
+              (if (or (zero? x) (= 1 divs))
+                  s
+                  (let inloop ((s s) (y x) (divs divs))
+                    (if (zero? y)
+                        (outloop s (- x 1) divs)
+                        (let ((k (- n (A000040 x) (A000040 y)))) ;; Our candidate for the third and the smallest prime
+                          (cond
+                             ((or (< k 2) (zero? (A010051 k))) (inloop s (- y 1) divs)) ;; k not a prime.
+                             ((> k (A000040 y)) (outloop s (- x 1) divs))
+;; At this point we know that prime(x)+prime(y)+k is a three-prime partition of n, with prime(x) >= prime(y) >= k.
+;; So, if prime(x) is a prime factor of n, and still uncounted, increment s by 1, and roll an EXTRA time in the loop:
+                             ((zero? (modulo divs (A000040 x))) (inloop (+ 1 s) y (/ divs (A000040 x))))
+;; Similarly, if prime(y) is a still uncounted prime factor of n, add 1 to s, and roll an EXTRA time in the loop:
+                             ((zero? (modulo divs (A000040 y))) (inloop (+ 1 s) y (/ divs (A000040 y))))
+;; If k is still an uncounted prime factor, add one to s and keep on looping (with y decremented by one):
+                             ((zero? (modulo divs k)) (inloop (+ 1 s) (- y 1) (/ divs k)))
+;; Otherwise k is a prime that does not divide n, or a prime factor that has already been counted, so keep s same:
+                             (else (inloop s (- y 1) divs))
+                          )
+                        )
+                    )
+                  )
+              )
+           )
+         )
+   )
+)
+
+
+(define (A292273 n) (* (- (A000035 n) 1) (A008683 n)))
+
+
+;; A178411 [Shevelev] a(1)=2, a(2)=1; for n>=3, a(n) is defined by recursion: Sum_{d|n}((-1)^(n/d))*a(d) = -1.
+(define (A178411 n) (cond ((<= n 2) (- 3 n)) ((= 1 (A209229 n)) n) (else (A008683 n))))
+
+
+(definec (A292258 n) (if (= 1 n) n (* (A000040 (+ -1 (A101296 n))) (A292258 (A004526 n)))))
+
+;; (define vecA025487 (read-b-file-to-vector "seqs2/b025487_upto10001_from_OEIS.txt" 10002))
+
+;; (define (A025487 n) (vector-ref vecA025487 n))
+
+(definec (A293233v2 n)
+  (let loop ((m 1) (n (A292258 n)))
+     (if (= 1 n)
+         m
+         (loop (* m (A008683 (A025487 (+ 1 (A055396 n)))))
+               (A032742 n)
+         )
+     )
+  )
+)
+
+;; (same-intfuns1? A078349 (COMPOSE A007814 A292258) 1200) --> #t
+
+;; A073752 [Zumkeller] o=1: Greatest common divisor of n/spf(n) and n/gpf(n) where spf(n) is the smallest and gpf(n) is the greatest prime factor of n (see A020639, A006530). 
+
+(definec (A073752 n) (gcd (/ n (A020639 n)) (/ n (A006530 n))))
+
+(define (A073753 n) (A073752 (A073752 n)))
+
+
+;; A267084 [Ctibor O. Zizka] o=1: a(n) = ceiling(A007504(n)/n) - floor(A007504(n)/n) 
+(define (A267084 n) (if (zero? (modulo (A007504 n) n)) 0 1))
+
+
+;; A179680 [Vladimir Shevelev] o=1: The number of exponents >1 in a recursive reduction of 2n-1 until reaching an odd part equal to 1
+
+;; Let N=2n-1. Then consider the following algorithm of updating pairs (l,m) indicating highest exponents of 2
+;; and odd part: Initialize at step 1 by l(1)= A007814(N+1) and m(1) = A000265(N+1). Iterate over steps i>=2:
+;;   l(i) = A007814(N+m(i-1)), m(i)=A000265(N+m(i-1)) using the previous odd part m(i-1) until some m(k)=1.
+;; a(n) is defined as the count of the l(i) which are larger than 1.
+;; This is an algorithm to compute A002326 because the sum l(1)+l(2)+ ... +l(k) of the exponents is A002326(n-1). 
+
+;; Mathar's Maple-program:
+;; A179680 := proc(n) local l, m, a , N;
+;;   N := 2*n-1 ; a := 0; l := A007814(N+1); m := A000265(N+1);
+;;   if l > 1 then a := a+1 ; end if;
+;;   while m <> 1
+;;    do
+;;       l := A007814(N+m);
+;;       if l > 1 then a := a+1 ; end if;
+;;       m := A000265(N+m) ;
+;;    end do:
+;;   a;
+;; end proc:
+;; 
+
+(definec (A179680 n)
+  (let ((x (+ n n -1)))
+    (let loop ((s (- 1 (A000035 n))) (k 1))
+       (let ((m (A000265 (+ x k))))
+         (if (= 1 m)
+             s
+             (loop (+ s (if (> (A007814 (+ x m)) 1) 1 0))
+                   m
+             )
+         )
+       )
+    )
+  )
+)
+
+;; A179382 [Vladimir Shevelev] o=1: a(n) is the smallest period of pseudo-arithmetic progression with initial term 1 and difference 2n-1. 
+
+;; A000265(n) = n>>valuation(n, 2)
+;; A179382(n) = { my(d=2*n-1, k=1, t=1); while((t=A000265(t+d))>1, k++); k; } \\ Charles R Greathouse IV, May 15 2013 
+
+(definec (A179382 n) ;; 
+  (let ((x (+ n n -1)))
+    (let loop ((s 1) (k 1))
+       (let ((m (A000265 (+ x k))))
+         (if (= 1 m)
+             s
+             (loop (+ s 1)
+                   m
+             )
+         )
+       )
+    )
+  )
+)
+
+
+
+(define (Atest_it n)
+  (let ((x (+ n n -1)))
+    (let loop ((z (list (A007814 (+ 1 x)))) (k 1))
+       (let ((m (A000265 (+ x k))))
+         (if (= 1 m)
+             z
+             (loop (append z (list (A007814 (+ x m))))
+                   m
+             )
+         )
+       )
+    )
+  )
+)
+
+(definec (A292239 n)
+  (let ((x (+ n n +1)))
+    (let loop ((z (A000040 (A007814 (+ 1 x)))) (k 1))
+       (let ((m (A000265 (+ x k))))
+         (if (= 1 m)
+             z
+             (loop (* z (A000040 (A007814 (+ x m))))
+                   m
+             )
+         )
+       )
+    )
+  )
+)
+
+;; (same-intfuns0? A002326 (COMPOSE A056239 A292239) 62) --> #t
+;; (same-intfuns0? (COMPOSE A179382 1+) (COMPOSE A001222 A292239) 62)
+
+(definec (A292265 n)
+  (let ((x (+ n n +1)))
+    (let loop ((z (A019565 (A007814 (+ 1 x)))) (k 1))
+       (let ((m (A000265 (+ x k))))
+         (if (= 1 m)
+             z
+             (loop (* z (A019565 (A007814 (+ x m))))
+                   m
+             )
+         )
+       )
+    )
+  )
+)
+
+(definec (A292270 n)
+  (let ((x (+ n n +1)))
+    (let loop ((z (/ (+ 1 x) (A006519 (+ 1 x)))) (k 1))
+       (let ((m (A000265 (+ x k))))
+         (if (= 1 m)
+             z
+             (loop (+ z (/ (+ x m) (A006519 (+ x m))))
+                   m
+             )
+         )
+       )
+    )
+  )
+)
+
+(define A292938 (NONZERO-POS 1 0 (COMPOSE A010052 A292270)))
+
+(define (A292939 n) (+ 1 (* 2 (A292938 n))))
+
+(define A292940 (COMPOSE 1+ double (MATCHING-POS 1 0 (lambda (n) (and (zero? (A036987 n)) (= 1 (A010052 (A292270 n))))))))
+
+(define A292379 (COMPOSE 1+ double (MATCHING-POS 1 0 (lambda (n) (and (= 1 (A010052 (A292270 n))) (< (A292270 n) (A000290 n)))))))
+
+(define (A292947 n) (A007947 (A292270 n)))
+
+(define (A293218 n) (A007913 (A292270 n)))
+
+(define (A293219 n) (A000188 (A292270 n)))
+
+;; (define vecA001122 (read-b-file-to-vector "seqs2/b001122_upto10000.txt" 10001))
+;; (define (A001122 n) (vector-ref vecA001122 n))
+
+(define (A163782maybe-check n) (A000196 (A292270 (* 1/2 (- (A001122 (+ 1 n)) 1)))))
+
+
+
+
+(definec (Atrythis2butdoNOTsubmit n)
+  (let ((x (+ n n +1)))
+    (let loop ((z (A260443 (A007814 (+ 1 x)))) (k 1))
+       (let ((m (A000265 (+ x k))))
+         (if (= 1 m)
+             z
+             (loop (* z (A260443 (A007814 (+ x m))))
+                   m
+             )
+         )
+       )
+    )
+  )
+)
+
+;; (same-intfuns0? A002326 (COMPOSE A048675 A292265) 120) --> #t
+;; (same-intfuns0? A002326 (COMPOSE A048675 Atrythis2) 62) --> #t
+
+;; A291755 [AK] o=0: Compound filter (multiplicative order of 2 mod 2n+1 & eulerphi(2n+1)): a(n) = P(A002326(n), A037225(n)), where P(n,k) is sequence A000027 used as a pairing function.
+
+;; a(n) = (1/2)*(2 + ((A002326(n) + A000010(2n+1))^2) - A002326(n) - 3*A000010(2n+1)).
+
+(definec (A291755 n) (* 1/2 (+ (expt (+ (A002326 n) (A000010 (+ 1 n n))) 2) (- (A002326 n)) (- (* 3 (A000010 (+ 1 n n)))) 2))) ;; o=0:
+
+;; (define listA291766 (rgs-transform-of-list (map A291755 (iota0 128))))
+;; (define (A291766 n) (list-ref listA291766 n))
+
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+
+(define (A053446 n) ;; With Shevelev's algorithm.
+  (define (next_one k m) (if (zero? (modulo (+ k m) 3)) (+ k m) (+ k m m)))
+  (let* ((u (A001651 n))
+         (x_init (next_one 1 u))
+        )
+    (let loop ((x x_init) (s (A007949 x_init)))
+       (let ((r (A038502 x)))
+;;       (format #t "n=~a u=~a x=~a s=~a r=~a\n" n u x s r)
+         (if (= 1 r)
+             s
+             (let ((x_next (next_one r u)))
+                (loop x_next (+ s (A007949 x_next)))
+             )
+         )
+       )
+    )
+  )
+)
+
+(definec (A053446memoized n) (A053446 n))
+
+(define (A293445 n) ;; Analogous to A292265
+  (define (next_one k m) (if (zero? (modulo (+ k m) 3)) (+ k m) (+ k m m)))
+  (let* ((u (A001651 n))
+         (x_init (next_one 1 u))
+        )
+    (let loop ((x x_init) (z (A019565 (A007949 x_init))))
+       (let ((r (A038502 x)))
+;;       (format #t "n=~a u=~a x=~a s=~a r=~a\n" n u x s r)
+         (if (= 1 r)
+             z
+             (let ((x_next (next_one r u)))
+                (loop x_next (* z (A019565 (A007949 x_next))))
+             )
+         )
+       )
+    )
+  )
+)
+
+;; (same-intfuns1? A053446 (COMPOSE A048675 A293445) 120) --> #t
+
+(definec (A293445memoized n) (A293445 n))
+
+;; (define listA293445long (map A293445memoized (cdr (iota0 13122))))
+;; (define listA293446 (rgs-transform-of-list listA293445long))
+;; (define (A293446 n) (list-ref listA293446 (- n 1)))
+
+(define (A293220 n)
+  (define (next_one k m) (if (zero? (modulo (+ k m) 3)) (+ k m) (+ k m m)))
+  (let* ((u (A001651 n))
+         (x_init (next_one 1 u))
+        )
+    (let loop ((x x_init) (z (A038502 x_init)))
+       (let ((r (A038502 x)))
+;;       (format #t "n=~a u=~a x=~a z=~a r=~a\n" n u x z r)
+         (if (= 1 r)
+             z
+             (let ((x_next (next_one r u)))
+                (loop x_next
+                      (+ z (A038502 x_next))
+                )
+             )
+         )
+       )
+    )
+  )
+)
+
+
+(definec (A293220memoized n) (A293220 n))
+
+;; 
+;; I subtract some triangular number from the
+;; first terms to obtain a square or cube
+;; (I do not know, if such a (con)sequence useful)
+;; 
+;; 1-0, 1-0, 2-1, 7-3, 12-3, 1-0, 8-0, 10-1, 1-0, 30-3, 12-3, 91-10
+;;
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+
+
+(define (A037226 n) (/ (A000010 (+ n n 1)) (A002326 n))) ;; o=0:
+
+
+;; A292249: [AK] o=0: Compound filter (multiplicative order of 2 mod 2n+1 & prime signature of 2n+1): a(n) = P(A002326(n), A046523(2n+1)), where P(n,k) is sequence A000027 used as a pairing function.
+
+;; a(n) = (1/2)*(2 + ((A002326(n) + A046523(2n+1))^2) - A002326(n) - 3*A046523(2n+1)).
+
+(definec (A292249 n) (* 1/2 (+ (expt (+ (A002326 n) (A046523 (+ 1 n n))) 2) (- (A002326 n)) (- (* 3 (A046523 (+ 1 n n)))) 2))) ;; o=0:
+
+;; Cf. A278223
+
+;; (define listA291769 (rgs-transform-of-list (map A292249 (iota0 2048))))
+;; (define (A291769 n) (list-ref listA291769 n))
+
+;; (define vecA286573 (read-b-file-to-vector "seqs2/b286573.txt" 10001))
+;; (define (A286573 n) (vector-ref vecA286573 n))
+;; (define listA291769v2 (rgs-transform-of-list (map (lambda (n) (A286573 (+ 1 n n))) (iota0 2048))))
+;; (define (A291769v2 n) (list-ref listA291769v2 n))
+
+;;  (A002326 n) (A007814 (+ 2 n n))))
+(define (A292268 n) (* 1/2 (+ (expt (+ (A002326 n) (A007814 (+ 2 n n))) 2) (- (A002326 n)) (- (* 3 (A007814 (+ 2 n n)))) 2))) ;; o=0:
+
+;; A292268: [AK] o=0: Compound filter (multiplicative order of 2 mod 2n+1 & number of trailing 1's in binary expansion of 2n+1): a(n) = P(A002326(n), A007814(2n+2)), where P(n,k) is sequence A000027 used as a pairing function.
+
+;; a(n) = (1/2)*(2 + ((A002326(n) + A007814(2n+2))^2) - A002326(n) - 3*A007814(2n+2)).
+
+;; (define listA292267 (rgs-transform-of-list (map A292268 (iota0 128))))
+;; (define (A292267 n) (list-ref listA292267 n))
+
+
+;; A293214-A293235 are now reserved for your use. 
+
+;; Compound filter: a(n) = P(A293224(n), A293223(n)), where P(n,k) is sequence A000027 used as a pairing function.
+
+;; a(n) = (1/2)*(2 + ((A293224(n) + A293223(n))^2) - A293224(n) - 3*A293223(n)).
+
+(define (A293225 n) (* 1/2 (+ (expt (+ (A293224 n) (A293223 n)) 2) (- (A293224 n)) (- (* 3 (A293223 n))) 2))) ;; o=1:
+
+
+;; A072165 [Jani Melik] o=1: Values of Moebius function of the products of two (not necessarily distinct) primes (semiprimes or 2-almost primes, A001358). 
+(define (A072165 n) (A008683 (A001358 n)))
+
+;; A130638 [Giovanni Teofilatto] o=1: a(n) = 1 iff d(n) = d(n+1), otherwise a(n)=0, where d(n) is the number of divisors of n, A000005. 
+
+(define (A130638 n) (if (= (A000005 n) (A000005 (+ 1 n))) 1 0))
+
+;; A171387 [Juri-Stepan Gerasimov] o=1: The characteristic function of primes > 3: 1 if n is prime such that neither prime+-1 is prime else 0.
+
+(define (A171387 n) (if (> n 3) (A010051 n) 0))
+
+;; A080545 [NJAS] o=1: Characteristic function of {1} union {odd primes}: 1 if n is 1 or an odd prime, else 0.
+
+(define (A080545 n) (cond ((= 1 n) n) ((odd? n) (A010051 n)) (else 0)))
+
+;; A119288 [Zumkeller] o=1: Least prime factor of n divided by the maximal power of the least prime factor of n. a(n) = A020639(A028234(n)); 
+
+(define (A119288 n) (A020639 (A028234 n)))
+
+;; A292269 [AK] o=1: If n is 1 or a prime, then a(n) = 1, otherwise a(n) = the third smallest divisor of n. 
+;; If A020639(n)^2 divides n [when n is in A283050] and either (A119288(n) = 1 or A020639(n)^2 < A119288(n)), then a(n) = A020639(n)^2, otherwise a(n) = A119288(n).
+
+(define (A292269 n)
+   (let ((x (A000290 (A020639 n))) (y (A119288 n)))
+      (if (and (zero? (modulo n x)) (or (= 1 y) (< x y)))
+          x
+          y
+      )
+   )
+)
+
+(define (A292269v1 n)
+   (let ((x (A000290 (A020639 n))) (y (A119288 n)))
+      (if (zero? (modulo n x))
+          (if (or (= 1 y) (< x y)) x y)
+          y
+      )
+   )
+)
+
+
+;; A094497 [Labos Elemer] o=0: Triangular table A(n,j) = C(n,j) - C(n,j) mod n^3, difference of binomial coefficients and its residue mod n^3, read by rows. 
+
+(define (A094497 n) (if (zero? n) 1 (A094497tr (A003056 n) (A002262 n))))
+(define (A094497tr r k) (let ((x (A007318tr r k))) (- x (modulo x (* r r r)))))
+
+
+;; XXX - XFER: Base-10.core.ss ?
+;; A007954 [R. Muller] o=0: Product of decimal digits of n. 
+
+(define (A007954 n) (if (zero? n) n (let loop ((n n) (m 1)) (if (zero? n) m (let ((d (modulo n 10))) (loop (/ (- n d) 10) (* d m)))))))
+
+;; A031346 [Eric W. Weisstein] o=0: Multiplicative persistence: number of iterations of "multiply digits" needed to reach a number < 10. 
+
+(define (A031346 n) (let loop ((n n) (k 0)) (if (< n 10) k (loop (A007954 n) (+ 1 k)))))
+
+
+(define (A014566 n) (+ 1 (expt n n))) ;; [Eric W. Weisstein] o=0: Sierpinski numbers of the first kind: n^n + 1. 
+
+;; A131836 [Paolo P. Lava and Giorgio Balzarotti] o=1: Multiplicative persistence of the Sierpinski numbers of the first kind. 
+
+(definec (A131836 n) (A031346 (A014566 n)))
+
+
+;; From Robert I.:
+;; If you want to check that floor(a sqrt(5) + b) = c, where a and b are rationals and c of course an integer,
+;; you can compare 5*a^2 to (c-b)^2 and (c+1-b)^2.  
+
+
+;; A188470 o=1: a(n) = [5r]-[nr]-[5r-nr], where r=(1+sqrt(5))/2 and []=floor. 
+
+(define (A188470 n) (let ((r (* 1/2 (+ 1 (expt 5 1/2))))) (inexact->exact (- (floor (* 5 r)) (floor (* r n)) (floor (* (- 5 n) r))))))
+
+(define (ispow3 n) (let loop ((k 1)) (cond ((> k n) 0) ((= n k) 1) (else (loop (* 3 k)))))) ;; Cf. A000035(A281228(n))
+
+
+;; XXX - XFER: Base-2.misc.ss ???
+
+;; A056974 [Eric W. Weisstein] o=1: Number of blocks of {0, 0, 0} in the binary expansion of n.
+;; a(2n) = a(n) + [n congruent to 0 mod 4], a(2n+1) = a(n). - Ralf Stephan, Aug 22 2003
+
+(definec (A056974 n) (cond ((= 1 n) 0) ((even? n) (+ (if (zero? (modulo n 8)) 1 0) (A056974 (/ n 2)))) (else (A056974 (/ (- n 1) 2)))))
+
+
+;; A140685 [Roger L. Bagula and Mats Granvik] o=1: Triangle T(n,k) read by rows: T = 1 if n is odd and k=(n-1)/2; T = 2 otherwise. 
+
+(define (A140685 n) (A140685tr (A002024 n) (- (A002260 n) 1)))
+(define (A140685tr n k) (if (and (odd? n) (= k (/ (- n 1) 2))) 1 2))
+
+;; A089012 [Paul Boddington] o=1: 1 is n is an exponent of the Weyl group W(E_6), 0 otherwise. 
+
+(define (A089012 n) (if (member n '(1 4 5 7 8 11)) 1 0))
+
+
+;; A043567 [Clark Kimberling] o=1: Number of runs in base 15 representation of n.
+
+(define (A043567 n)
+    (let loop ((n n) (runs 1) (pd (modulo n 15)))
+       (if (zero? n)
+           runs
+           (let ((d (modulo n 15)))
+             (loop (/ (- n d) 15)
+                   (+ runs (if (not (= d pd)) 1 0))
+                   d
+             )
+           )
+       )
+    )
+)
+
+
+(definec (A293229 n) (if (zero? n) n (+ (- (A008966 (+ 3 (* 4 n))) (A008966 (+ 1 (* 4 n)))) (A293229 (- n 1)))))
+
+(definec (A293428 n) (if (zero? n) 1 (+ -1 (A008966 (+ 1 (* 4 n))) (A008966 (+ 3 (* 4 n))) (A293428 (- n 1)))))
+(definec (A293428v2 n) (if (zero? n) 1 (+ (- (A008966 (+ 1 (* 4 n))) (- 1 (A008966 (+ 3 (* 4 n))))) (A293428v2 (- n 1)))))
+
+(definec (A293429 n) (if (zero? n) n (+ (- (A008966 (+ -1 (* 4 n))) (A008966 (+ 1 (* 4 n)))) (A293429 (- n 1)))))
+
+(definec (A293233 n) (if (= 1 n) 1 (* (A008683 n) (A293233 (/ (- n (A000035 n)) 2))))) ;; [AK] o=1: a(1) = 1; for n > 1, a(n) = mu(n) * a(floor(n/2)), where mu is Moebius function, A008683.
+
+(definec (A293230 n) (add (lambda (k) (abs (A293233 k))) (A000079 n) (+ -1 (A000079 (+ 1 n)))))
+
+(define A293430 (NONZERO-POS 1 1 A293233))
+
+(definec (A293441 n) (add (lambda (k) (* (A000035 k) (abs (A293233 k)))) (A000079 n) (+ -1 (A000079 (+ 1 n)))))
+
+
+(define A293437 (MATCHING-POS 1 1 (lambda (n) (and (not (zero? (A293233 n))) (not (zero? (A293233 (A163511 n))))))))
+
+;; A293521 o=0: Number of surviving branches at generation n in tree of persistently squarefree numbers (see A293230).
+;; a(n) = Sum_{k=(2^n)..(2^(1+n))-1)] abs(A293233(k))*[1 == (A008966(2k)+A008966(1+2k))].
+
+(definec (A293521 n) (add (lambda (k) (* (if (= 1 (+ (A008966 (+ k k)) (A008966 (+ 1 k k)))) 1 0) (abs (A293233 k)))) (A000079 n) (+ -1 (A000079 (+ 1 n)))))
+
+(definec (A293518 n) (add (lambda (k) (* (if (and (= 0 (A008966 (+ k k))) (= 1 (A008966 (+ 1 k k)))) 1 0) (abs (A293233 k)))) (A000079 n) (+ -1 (A000079 (+ 1 n)))))
+
+(definec (A293519 n) (add (lambda (k) (* (if (and (= 1 (A008966 (+ k k))) (= 0 (A008966 (+ 1 k k)))) 1 0) (abs (A293233 k)))) (A000079 n) (+ -1 (A000079 (+ 1 n)))))
+
+(define (A293517 n) (- (A293518 n) (A293519 n)))
+
+(define (A293517v2 n) (- (A293441 (+ 1 n)) (A293441 n)))
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+(definec (proper-divisors n)
+  (let loop ((k n) (divs (list)))
+     (cond ((= 1 k) divs)
+           ((zero? (modulo n k)) (loop (- k 1) (cons k divs)))
+           (else (loop (- k 1) divs))
+     )
+  )
+)
+
+(define (divisors n) (cons 1 (proper-divisors n)))
+
+
+;; A163820 [Leroy Quet] o=1: Number of permutations of the divisors of n that are greater than 1, in which consecutive elements are not coprime. 
+
+;; This works, at least up to n=71. Don't screw it:
+
+(definec (A163820 n)
+  (let ((fr (A046523 n)))
+    (if (< fr n) ;; If the first representative of this prime signature is less < n,
+        (A163820 fr) ;; then dig the result from the memoized cache.
+        (let ((pds (proper-divisors n)))
+          (fold-left
+             (lambda (s d) (+ s (A163820apu d (delete d pds))))
+             0
+             pds
+          )
+        )
+    )
+  )
+)
+
+;; Gives the number of possible ways to construct a list that begins with d
+;; and which is then followed by some other divisor e found from rest-of-divs
+;; such that gcd(d,e) > 1, and that gcd(e,f) > 1, gcd(f,g) > 1, etc. where
+;; f, g, etc. are the rest of divisors in the arrangement.
+(define (A163820apu d rest-of-divs)
+   (if (null? rest-of-divs) ;; If no more divisors, then we have found one way to arrange divisors.
+       1
+       (let ((pnos (remove (lambda (e) (= 1 (gcd d e))) rest-of-divs))) ;; pnos = possible next-ones (successors)
+         (if (null? (cdr rest-of-divs))
+             (length pnos) ;; An optimization for cases where only one divisor left.
+             (let loop ((possible-next-ones pnos)
+                        (s 0)
+                       )
+                 (cond ((null? possible-next-ones) s) ;; Finished the list of possible-next-ones, return the sum.
+                       (else
+                          (loop (cdr possible-next-ones)
+                                (+ s (A163820apu (car possible-next-ones)
+                                                 (delete (car possible-next-ones) rest-of-divs)
+                                     )
+                                )
+                          )
+                       )
+                 )
+             )
+         )
+       )
+   )
+)
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+
+(define (divisors-noncoprime-with d rest-of-divs) (remove (lambda (e) (= 1 (gcd d e))) rest-of-divs))
+
+;; In other words, append together all lists obtained by filtering divisors e >= d (with A007947(e) = A007947(d)
+;; for each divisor d present in rest-of-divs:
+
+;; Remove such divisors e for which the exists any other divisor f such that f < e and A007947(f) = A007947(e).
+;; Note that (remove-nonleast-representatives (iota up_to_some_n)) gives A005117, squarefree numbers.
+
+(define (remove-nonleast-representatives rest-of-divs)
+   (remove (lambda (e)
+             (let ((esfr (A007947 e)))
+               (not (null? (filter (lambda (f) (and (< f e) (= (A007947 f) esfr))) rest-of-divs)))
+             )
+           )
+           rest-of-divs
+   )
+)
+
+
+(define (possible-successors d rest-of-divs)
+   (remove-nonleast-representatives (divisors-noncoprime-with d rest-of-divs))
+)
+
+
+(definec (A293900 n)
+  (let ((fr (A046523 n)))
+    (if (< fr n) ;; If the first representative of this prime signature is less < n,
+        (A293900 fr) ;; then dig the result from the memoized cache.
+        (let ((pds (proper-divisors n)))
+          (fold-left
+             (lambda (s d) (+ s (A293900apu d (delete d pds))))
+             0
+             (remove-nonleast-representatives pds)
+          )
+        )
+    )
+  )
+)
+
+;; Gives the number of possible ways to construct a list that begins with d
+;; and which is then followed by some other divisor e found from rest-of-divs
+;; such that gcd(d,e) > 1, and that gcd(e,f) > 1, gcd(f,g) > 1, etc. where
+;; f, g, etc. are the rest of divisors in the arrangement, and FURTHERMORE,
+;; that no g may occur later than any k = f, e or d if g < k and A007947(g) = A007947(k).
+;; (That is, the divisors sharing the same squarefree part occur always in ascending order).
+
+(define (A293900apu d rest-of-divs)
+   (if (null? rest-of-divs) ;; If no more divisors, then we have found one way to arrange divisors.
+       1
+       (let ((pnos (possible-successors d rest-of-divs))) ;; pnos = possible next-ones (successors)
+;;       (if (null? (cdr rest-of-divs))
+;;           (length pnos) ;; An optimization for cases where only one divisor left.
+             (let loop ((possible-next-ones pnos)
+                        (s 0)
+                       )
+                 (cond ((null? possible-next-ones) s) ;; Finished the list of possible-next-ones, return the sum.
+                       (else
+                          (loop (cdr possible-next-ones)
+                                (+ s (A293900apu (car possible-next-ones)
+                                                 (delete (car possible-next-ones) rest-of-divs)
+                                     )
+                                )
+                          )
+                       )
+                 )
+             )
+;;       )
+       )
+   )
+)
+
+
+(define (A293902 n) (if (= 1 n) n (/ (A163820 n) (A293900 n))))
+
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+;; (define vecA293215 (read-b-file-to-vector "seqs2/b293215_upto16384.txt" 16385))
+;; (define (A293215 n) (vector-ref vecA293215 n))
+
+;; (define vecA293232 (read-b-file-to-vector "seqs2/b293232_upto65537.txt" 65538))
+;; (define (A293232 n) (vector-ref vecA293232 n))
+;;
+;; (prev-nonprime-cases-for A293232 256)
+;; ((10 . 49) (33 . 65) (99 . 117) (95 . 119) (129 . 153) (117 . 171) (105 . 175) (155 . 187) (209 . 217) (93 . 221) (123 . 235) (222 . 246) (125 . 253))
+;; Note: 129 = 3*43, 153 = 3*3*17. And 105 = 3*5*7, 175 = 5*5*7.
+
+(define (prevcase-for Asomefun n not-this)
+ (let ((x (Asomefun n)))
+   (if (= not-this x)
+       #f
+       (let loop ((k (- n 1)))
+           (cond ((zero? k) #f)
+                 ((= (Asomefun k) x) (cons k n))
+                 (else (loop (- k 1)))
+           )
+       )
+   )
+ )
+)
+
+(define (prev-nonprime-cases-for Asomefun up_to)
+   (delete #f (map (lambda (n) (prevcase-for Asomefun n 2)) (cdr (iota0 up_to))))
+)
+
+(define (prev-nonprime-cases-for-A293215 up_to) (prev-nonprime-cases-for A293215 up_to))
+
+;; (prev-nonprime-cases-for-A293215 512)
+;; --> ((10 . 49) (39 . 55) (80 . 104) (95 . 119) (69 . 133) (152 . 188) (155 . 203) (125 . 221) (160 . 232) (87 . 247) (93 . 253) (164 . 254) (215 . 287) (183 . 295) (203 . 299) (141 . 301) (50 . 341) (159 . 343) (34 . 361) (287 . 407) (292 . 446) (416 . 464) (213 . 469) (320 . 488))
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+;; A115751 [Leroy Quet] o=1: a(1)=1. a(n) = number of positive divisors of n which are not among the first (n-1) terms of the sequence.
+
+
+(definec (A115751 n) (if (= 1 n) n (length (remove (lambda (d) (zero? (modulo (Aauxseq_forA115751 (- n 1)) (A000040 d)))) (divisors n)))))
+
+(definec (Aauxseq_forA115751 n) (if (= 1 n) 2 (lcm (A000040 (A115751 n)) (Aauxseq_forA115751 (- n 1)))))
+
+
+(define (A086436 n) (if (= 1 n) n (A001222 n))) ;; Maximum number of parts possible in a factorization of n. 
+
+;; A073811 [Labos Elemer] o=1: Number of common divisors of n and phi(n). 
+
+(definec (A073811 n) (length (filter (lambda (d) (zero? (modulo n d))) (divisors (A000010 n)))))
+(definec (A073811v2 n) (let ((phn (A000010 n))) (length (filter (lambda (d) (zero? (modulo phn d))) (divisors n)))))
+
+
+;; A069016 [Amarnath Murthy] o=1: Look at all the different ways to factorize n as a product of numbers bigger than 1, and for each factorization write down the sum of the factors; a(n) = number of different sums.
+
+(definec (A069016 n)
+  (if (= 1 n)
+      n
+      (let ((sums (list n)))
+        (let fork ((s 0) (m 1) (divs (proper-divisors n)))
+           (cond ((= m n) (attach! s sums))
+                 ((or (null? divs) (> (* (car divs) m) n)) #f)
+                 (else
+                   (begin
+                       (fork (+ s (car divs)) (* m (car divs)) divs)
+                       (fork s m (cdr divs))
+                   )
+                 )
+           )
+        )
+        (length (uniq (sort sums <)))
+      )
+  )
+)
+
+;; A069023 [Murthy] o=1: Define a subset of divisors of n to be a dedicated subset if the product of any two members is also a divisor of n. 1 is not allowed as a member as it gives trivially 1*d = d a divisor. a(n) is the number of dedicated subsets of divisors of n with at least two members. 
+
+(definec (A069023 n)
+ (let ((fprs (A046523 n))) ;; First representative of this prime-signature.
+  (if (< fprs n)           ;; Is smaller than n ?
+      (A069023 fprs)       ;; So use the cached value!
+;; and only if we have a term of A025487 as an argument, we do some real work:
+      (let ((sols (list 0))) ;; The number of solutions, incremented with set-car!
+    ;; We loop over the proper divisors of n:
+        (let loop ((props (proper-divisors n)))
+          (if (null? props) ;; If finished ?
+              (car sols)    ;; Then return the solution count.
+    ;; Otherwise, count the number of dedicated subsets for all subsets that begin with (car props).
+    ;; dedisubs contains the so-far constructed subset that is still dedicated. divs are the divisors in the reserve.
+              (begin
+                (let fork ((dedisubs (list (car props))) (divs (cdr props)))
+                  (if (null? divs)
+                      #f ;; Divisors exhausted, backtrack.
+                      (let ((d (car divs)))
+          ;; If adding divisor d to a dedicated subset dedisubs keeps it as dedicated?
+                        (if (for-all? dedisubs (lambda (e) (zero? (modulo n (* e d)))))
+                           (begin
+          ;; Then we have found another dedicated subset...
+                             (set-car! sols (+ 1 (car sols)))    ;; so increment solution count
+                             (fork (cons d dedisubs) (cdr divs)) ;; and search for more solutions with that divisor included.
+                           )
+                        )
+                        (fork dedisubs (cdr divs)) ;; In any case, search for more solutions with this divisor skipped.
+                      )
+                   )
+                )
+                (loop (cdr props))
+              )
+          )
+        )
+      )
+  )
+ )
+)
+
+;; A077565 [Murthy] o=1: Number of factorizations into factors with distinct prime signatures.
+
+;; For n = 30 the solutions are 30, 2*15, 3*10, 5*6, thus a(30) = 4.
+;; For n = 36 the solutions are 36, 2*18, 3*12, thus a(36) = 3.
+;; For n = 60 the solutions are 60, 2*30, 3*20, 4*15, 5*12, thus a(60) = 5.
+;; For n = 72 the solutions are 72, 2*36, 3*24, 4*18, 6*12, 8*9, 3*4*6, thus a(72) = 7.
+
+(definec (A077565 n)
+ (if (< (A046523 n) n)
+     (A077565 (A046523 n))
+   (let ((allsigs (list 0)))
+      (let fork ((sigmult 1) (m 1) (divs (proper-divisors n)))
+         (cond ((= m n) (attach! sigmult allsigs)) ;; We found a valid factorization, add sigmult mask to allsigs
+               ((or (null? divs) (> (* (car divs) m) n)) #f) ;; Bum, we didn't find a valid partition, return
+               (else
+                 (begin
+                   (let ((pm (A000040 (A046523 (car divs)))))
+                     (fork (* pm sigmult) (* m (car divs)) (cdr divs))
+                     (fork sigmult m (cdr divs)) ;; And/or just skip this divisor without using it.
+                   )
+                 )
+               )
+         )
+      )
+      (length (remove (lambda (sig) (or (zero? sig) (zero? (A008966 sig)))) allsigs)) ;; Only squarefree sigs are counted.
+   )
+ )
+)
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+
+;; A093659 [Paul D. Hanna] o=0: First column of lower triangular matrix A093658; Factorial of the number of 1's in binary expansion of n.
+(define (A093659 n) (A000142 (A000120 n)))
+
+;; A139329 [Max Sills] o=0: Number of permutation symmetries of the 0s in the binary expansion of n. Consider the symmetric group that permutes floor(lg(n)) elements acting on the 0s.
+
+(define (A139329 n) (A000142 (A080791 n)))
+(define (A139329v2 n) (A000142 (A023416 n)))
+
+
+;; A293442 If n = p_1^e_1 * ... p_k^e_k then a(n) = Product_{e} A019565(e). 
+;; Multiplicative with a(p^e) = A019565(e).
+(definec (A293442 n) (if (= 1 n) n (* (A019565 (A067029 n)) (A293442 (A028234 n)))))
+;; Cf. A293214
+
+;; A294926-A294937 are now reserved for your use. 
+
+
+(definec (A294931 n) (if (= 1 n) n (* (A019565 (A289813 (A067029 n))) (A294931 (A028234 n))))) ;; Multiplicative with a(p^e) = A019565(A289813(e)).
+
+(definec (A294932 n) (if (= 1 n) n (* (A019565 (A289814 (A067029 n))) (A294932 (A028234 n))))) ;; Multiplicative with a(p^e) = A019565(A289814(e)).
+
+;; Compound filter: a(n) = P(A294932(n), A294931(n)), where P(n,k) is sequence A000027 used as a pairing function.
+;; a(n) = (1/2)*(2 + ((A294932(n) + A294931(n))^2) - A294932(n) - 3*A294931(n)).
+
+(define (A294933 n) (* 1/2 (+ (expt (+ (A294932 n) (A294931 n)) 2) (- (A294932 n)) (- (* 3 (A294931 n))) 2))) ;; o=1:
+
+
+(define (A293444 n) (A293442 (A293442 n)))
+
+
+;; Multiplicative with a(p^e) = A019565(A193231(e)).
+(definec (A293443 n) (if (= 1 n) n (* (A019565 (A193231 (A067029 n))) (A293443 (A028234 n)))))
+
+;; (same-intfuns1? (COMPOSE A001221 A270428) (COMPOSE A007814 A293443 A270428) 1200) --> #t
+
+
+
+;; A057567 [Leroy Quet] o=1: Number of partitions of n where product of parts divides n. 
+
+(definec (A057567 n)
+  (let ((z (list 0)))
+    (let loop ((k n))
+      (cond ((zero? k) (car z))
+            ((not (zero? (modulo n k))) (loop (- k 1))) ;; Skip non-divisors of n.
+            (else
+              (begin
+                (fold_over_partitions_of
+                    n
+                    1
+                    *
+                    (lambda (partprod) (if (= n (* k partprod)) (set-car! z (+ 1 (car z)))))
+                )
+                (loop (- k 1))
+              )
+            )
+      )
+    )
+  )
+)
+
+
+;; A113309 [Leroy Quet] o=1: a(n) = the number of finite sequences of positive integers {b(k)} where (product b(k)) * (sum b(k)) = n. Different orderings of the same sequence {b(k)} are not counted separately. 
+
+
+(definec (A113309 n)
+  (let ((z (list 0)))
+    (let loop ((k n))
+      (cond ((zero? k) (car z))
+            ((not (zero? (modulo n k))) (loop (- k 1))) ;; Skip non-divisors of n.
+            (else
+              (begin
+                 (fold_over_partitions_with_uplim_cut
+                     k
+                     1
+                     *
+                     (lambda (partprod) (if (= n (* k partprod)) (set-car! z (+ 1 (car z)))))
+                     (/ n k)
+                 )
+                 (loop (- k 1))
+              )
+            )
+      )
+    )
+  )
+)
+
+(define (fold_over_partitions_with_uplim_cut m initval addpartfun colfun uplim)
+   (let recurse ((m m) (b m) (n 0) (partition initval))
+        (cond ((zero? m) (colfun partition))
+              ((> partition uplim) #f)
+              (else
+                 (let loop ((i 1))
+                      (recurse (- m i) i (+ 1 n) (addpartfun i partition))
+                      (if (< i (min b m)) (loop (+ 1 i)))
+                 )
+              )
+        )
+   )
+)
+
+
+(definec (A113309naive n)
+  (let ((z (list 0)))
+    (let loop ((k n))
+      (cond ((zero? k) (car z))
+            ((not (zero? (modulo n k))) (loop (- k 1))) ;; Skip non-divisors of n.
+            (else
+              (begin
+                (fold_over_partitions_of
+                    k
+                    1
+                    *
+                    (lambda (partprod) (if (= n (* k partprod)) (set-car! z (+ 1 (car z)))))
+                )
+                (loop (- k 1))
+              )
+            )
+      )
+    )
+  )
+)
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+
+(define (A169695 n) (- 2 (A010052 n))) ;; A169695 [NJAS] o=0: a(n) = 1 if n is a square, otherwise a(n) = 2.
+
+(define (A158387 n) (expt -1 (A010052 n))) ;; A158387 [Krizek] o=1: Sign of parity of number of divisors of n.
+
+(define (A037011maybe n) (A000035 (A106737 n)))
+
+(define (A037011v2 n) (A010052 A005940 1+))
+
+(define (A143259 n) (- (A010052 n) (A010052 (* 2 n)))) ;; [Michael Somos] o=1: a(n) = 1 if n is a nonzero square, -1 if n is twice a nonzero square, 0 otherwise.
+
+
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+(definec (A293447 n)
+    (cond ((= 1 n) 0)
+          (else (+ (A005187 (A087207 n)) (A293447 (A003557 n))))
+    )
+)
+
+
+(definec (A293447v2 n) (if (= 1 n) 0 (+ (A005187 (A000079 (+ -1 (A061395 n)))) (A293447v2 (/ n (A006530 n))))))
+
+;; (same-intfuns1? A046645  (COMPOSE  A293447 A293442) 16387) --> #t
+
+;; Cf. A273258.
+
+(definec (A293448not_this n)
+    (cond ((= 1 n) 1)
+          (else (* (A019565 (A057889 (A087207 n))) (A293448not_this (A003557 n))))
+    )
+)
+
+
+
+;; A294878 [AK] o=0: Characteristic function for A001608, Perrin sequence.
+(definec (A294878 n) (let loop ((k 1)) (if (>= (A001608 k) n) (if (= (A001608 k) n) 1 0) (loop (+ 1 k)))))
+
+
+(define (A087624 n) (- (A001221 n) (A010051 n))) ;; [Michele Dondi] o=1: a(n)=0 if n is prime, A001221(n) otherwise
+
+(define (A033273 n) (- (A000005 n) (A001221 n))) ;; [NJAS] o=1: Number of nonprime divisors of n.
+
+
+(definec (A293449 n) (if (= 1 n) n (* (A010051 (A067029 n)) (A293449 (A028234 n))))) ;; Multiplicative with a(p^e) = A010051(e).
+
+;; A295316 ;; Multiplicative with a(p^e) = A000035(e).
+(definec (A295316 n) (if (= 1 n) n (if (even? (A067029 n)) 0 (A295316 (A028234 n)))))
+
+;; A078705 [Joseph L. Pe] o=1: Integer part of the square root of sigma(n). 
+
+(define (A078705 n) (A000196 (A000203 n)))
+
+;; A067342 [Labos Elemer] o=1: Sum of decimal digits of sum of divisors of n.
+
+(define (A067342 n) (A007953 (A000203 n)))
+
+;; A077650 [Labos Elemer] o=1: Initial digits of sigma[n], the sum of divisors of n.
+
+(define (A077650 n) (A000030 (A000203 n)))
+
+;; A080398 [Labos Elemer] o=1: Largest squarefree number dividing sum of divisors of n.
+(define (A080398 n) (A007947 (A000203 n)))
+
+(define (A235127 n) (A004526 (A007814 n))) ;; [Tom Edgar] o=1: Greatest k such that 4^k divides n. 
+
+
+(define (A135481 n) (- (A006519 (+ 1 n)) 1)) ;; [NJAS] o=1: 2^A007814(n+1) - 1. ;; XXX - XFER: base-2.core.ss or such?
+
+
+;; A228368 [Omar E. Pol] o=1: Difference between the n-th element of the ruler function and the highest power of 2 dividing n
+
+(define (A228368 n) (- (A001511 n) (A006519 n)))
+
+
+;;
+;; A209229 Characteristic function of powers of 2, cf. A000079.
+;; A036987 Fredholm-Rueppel sequence.
+;; A255738 a(1) = 1; for n > 1, a(n) = 1*0^{A000120(n-1) - 1}.
+;; A043545 (Maximal base 2 digit of n) - (minimal base 2 digit of n).
+;; A069517 a(n)=(-1)*sum( d divides n,mu(d)*(-1)^d). a(1)=1 n>1 a(n)=2*A036987(n) 
+;; A127802 a(0)=1, a(n)=3*A036987(n), n>1.
+;; A201219 a(1) = 0; for n>1, a(n) = 1 if n is a power of 2, otherwise a(n) = 2.
+
+;; A043529 Number of distinct base 2 digits of n.
+
+;; A225569 Decimal expansion of sum_{n=0..infinity} 1/10^(3^n), a transcendental number.
+
+(define (A043529 n) (- 2 (A036987 n)))
+
+(define (A127802 n) (if (zero? n) 1 (* 3 (A036987 n)))) ;; [Paul Barry] o=1: a(0)=1, a(n)=3*A036987(n), n>1.
+
+(define (A201219 n) (if (= 1 n) 0 (- 2 (A209229 n)))) ;; [NJAS] o=1: a(1) = 0; for n>1, a(n) = 1 if n is a power of 2, otherwise a(n) = 2.
+
+
+
+(define (A225569 n) (if (= 1 (A053735 (+ 1 n))) 1 0))
+
+;; A101040 [Zumkeller] o=1: If n has one or two prime-factors then 1 else 0.
+
+(define (A101040 n) (if (= 1 n) 0 (A063524 (A032742 (A032742 n)))))
+
+(define (A101040v2 n) (if (and (> n 1) (<= (A001222 n) 2)) 1 0))
+
+;; (define vecA293700 (read-b-file-to-vector "seqs2/b293700_upto10000_from_Robert_Israel.txt" 10001))
+
+;; (define (A293700 n) (vector-ref vecA293700 n))
+
+
+(definec (A293701 n)
+ (if (= 1 n)
+     n
+     (let outloop ((k n)) ;; k = maxlen for palindrome
+       (cond ((<= k (A293701 (- n 1))) (A293701 (- n 1))) ;; If k dips below the prev record, then give the latter.
+             (else
+               (let inloop ((i n)) ;; i = the ending index.
+                 (let ((low-ind (+ 1 (- n k) (- n i))))
+                  (cond ((< i low-ind) (max k (A293701 (- n 1)))) ;; Found a palindrome, of length k, take max(k,a(n-1)).
+                        ((not (= (A293700 i) (A293700 low-ind))) (outloop (- k 1)))
+                        (else (inloop (- i 1)))
+                  )
+                 )
+               )
+             )
+       )
+     )
+ )
+)
+
+
+(define (A295297 n) (A000035 (+ (A000203 n) (A000120 n)))) ;; [AK] o=1: a(n) = (A000120(n)+A000203(n)) mod 2.
+
+(define A295298 (ZERO-POS 1 1 A295297)) ;; [AK] o=1:  Numbers n for which sum of the divisors (A000203) and the binary weight of n (A000120) have the same parity. 
+(define A295299 (NONZERO-POS 1 1 A295297)) ;; [AK] o=2: Numbers n such that the sum of the divisors (A000203) and the binary weight of n (A000120) have different parity. 
+
+(define (A007091 n) (if (zero? n) n (+ (modulo n 5) (* 10 (A007091 (/ (- n (modulo n 5)) 5)))))) ;; [NJAS] o=0: Numbers in base 5.
+
+(define (A007092 n) (if (zero? n) n (+ (modulo n 6) (* 10 (A007092 (/ (- n (modulo n 6)) 6)))))) ;; [NJAS] o=0: Numbers in base 6.
+
+(define A003401 (NONZERO-POS 1 1 (COMPOSE A209229 A000010))) ;; [NJAS, Guy] o=1: Numbers of edges of regular polygons constructible with ruler and compass. 
+
+(define A004169 (ZERO-POS 1 1 (COMPOSE A209229 A000010))) ;; [NJAS] o=1: Values of n for which a regular polygon with n sides cannot be constructed with ruler and compass. 
+
