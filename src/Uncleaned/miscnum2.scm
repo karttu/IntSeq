@@ -1,5 +1,5 @@
 
-;; Last edited 2018-02-22 by Antti Karttunen, added yet more unsorted functions to this old MIT/GNU-Scheme module.
+;; Last edited 2018-04-03 by Antti Karttunen, added yet more unsorted functions to this old MIT/GNU-Scheme module.
 
 (declare (usual-integrations))
 
@@ -15250,4 +15250,44 @@
 ;; A065770 [Bottomley] o=1: Number of prime cascades to reach 1, where a prime cascade (A065769) is multiplicative with a(p(m)^k)=p(m-1)*p(m)^(k-1).
 
 (definec (A065770 n) (if (= 1 n) 0 (+ 1 (A065770 (A065769 n)))))
+
+(define (A062830 n) (+ 1 (A051953 n)))
+
+;; A249904 [Ke Xiao] o=1: a(n) = mu(n) + sigma(n) - n.
+(define (A249904 n) (+ (A000203 n) (A008683 n) (- n)))
+
+;; A089389 [Amarnath Murthy] o=1: Sum of the smallest and the largest nontrivial divisor of n or 0 if n is 1 or a prime. 
+(define (A089389 n) (if (or (= 1 n) (= 1 (A010051 n))) 0 (+ (A020639 n) (A032742 n))))
+
+(define (A297167 n) (- (A252464 n) (A001221 n)))
+
+(define (A297168 n) (if (= 1 n) 0 (- (A156552 n) (A000079 (A297167 n)))))
+(define (A297168v2 n) (- (A156552 n) (A297112 n)))
+
+
+(definec (A302025 n)
+  (cond ((= 1 n) n)
+        ((even? n) (* 2 (A302025 (/ n 2))))
+        (else (A269379 (A302025 (A064989 n))))
+  )
+)
+
+
+(definec (A302026 n)
+  (cond ((= 1 n) n)
+        ((even? n) (* 2 (A302026 (/ n 2))))
+        (else (A003961 (A302026 (A269380 n))))
+  )
+)
+
+;; (same-intfuns1? A000027 (COMPOSE A302025 A302026) 1200) --> #t
+;; (same-intfuns1? A000027 (COMPOSE A302026 A302025) 1200) --> #t
+
+;; (same-intfuns1? A302025 (COMPOSE A269171 A250245) 1200) --> #t
+;; (same-intfuns1? A302025 (COMPOSE A269387 A156552) 1200) --> #t
+
+;; (same-intfuns1? A302026 (COMPOSE A250246 A269172) 1200) --> #t
+;; (same-intfuns1? A302026 (COMPOSE A005940 1+ A269388) 1200) --> #t
+
+
 
